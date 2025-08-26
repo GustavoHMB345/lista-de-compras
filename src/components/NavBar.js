@@ -1,10 +1,53 @@
-import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
-import { styles } from '../styles/globalStyles';
+import React, { useContext } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { DataContext } from '../contexts/DataContext';
 
 import { PlusIcon } from './Icons';
 
+const createStyles = (theme) => StyleSheet.create({
+    navBar: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+        backgroundColor: theme.surface,
+        paddingVertical: 12,
+        paddingHorizontal: 8,
+        borderTopWidth: 1,
+        borderTopColor: theme.border,
+    },
+    navItem: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        flex: 1,
+        paddingVertical: 8,
+    },
+    navIcon: {
+        fontSize: 20,
+        color: theme.textSecondary,
+        marginBottom: 2,
+    },
+    navIconActive: {
+        color: theme.primary,
+    },
+    navText: {
+        fontSize: 12,
+        color: theme.textSecondary,
+    },
+    navTextActive: {
+        color: theme.primary,
+        fontWeight: 'bold',
+    },
+    addButton: {
+        backgroundColor: theme.primary,
+        borderRadius: 24,
+        padding: 8,
+        marginHorizontal: 4,
+    },
+});
+
 export default function NavBar({ navigate, activeScreen, onAddList }) {
+    const { theme } = useContext(DataContext);
+    const styles = createStyles(theme);
     const navItems = [
         { name: 'Dashboard', screen: 'DASHBOARD', icon: '📊' },
         { name: 'Listas', screen: 'LISTS', icon: '🛒' },
@@ -25,8 +68,8 @@ export default function NavBar({ navigate, activeScreen, onAddList }) {
                 <Text style={[styles.navText, activeScreen === navItems[1].screen && styles.navTextActive]}>{navItems[1].name}</Text>
             </TouchableOpacity>
             {/* Botão + */}
-            <TouchableOpacity style={[styles.navItem, { backgroundColor: '#4f46e5', borderRadius: 24, padding: 8, marginHorizontal: 4 }]} onPress={onAddList} activeOpacity={0.8}>
-                <PlusIcon />
+            <TouchableOpacity style={[styles.navItem, styles.addButton]} onPress={onAddList} activeOpacity={0.8}>
+                <PlusIcon theme={theme} />
             </TouchableOpacity>
             {/* Família */}
             <TouchableOpacity style={styles.navItem} onPress={() => navigate(navItems[2].screen)} activeOpacity={0.7}>

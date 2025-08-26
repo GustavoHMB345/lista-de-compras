@@ -1,6 +1,7 @@
 
-import React from 'react';
+import React, { useContext } from 'react';
 import { FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { DataContext } from '../contexts/DataContext';
 
 const CATEGORIES = [
   { key: 'alimentos', label: 'Alimentos', icon: '🍎' },
@@ -10,7 +11,153 @@ const CATEGORIES = [
   { key: 'moveis', label: 'Móveis', icon: '🛋️' },
 ];
 
+const createStyles = (theme) => StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  card: {
+    backgroundColor: theme.surface,
+    borderRadius: 16,
+    padding: 24,
+    width: '85%',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    textAlign: 'center',
+    color: theme.text,
+  },
+  input: {
+    backgroundColor: theme.input,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+    color: theme.text,
+    borderWidth: 1,
+    borderColor: theme.border,
+  },
+  label: {
+    fontWeight: 'bold',
+    marginBottom: 4,
+    marginTop: 8,
+    color: theme.text,
+  },
+  categoryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+    flexWrap: 'wrap',
+  },
+  categoryButton: {
+    backgroundColor: theme.input,
+    borderRadius: 8,
+    padding: 8,
+    alignItems: 'center',
+    flexDirection: 'column',
+    marginRight: 6,
+    marginBottom: 6,
+    minWidth: 70,
+    flex: 1,
+    borderWidth: 1,
+    borderColor: theme.border,
+  },
+  categoryButtonActive: {
+    backgroundColor: theme.primary,
+    borderColor: theme.primary,
+  },
+  categoryIcon: {
+    fontSize: 22,
+    marginBottom: 2,
+  },
+  categoryLabel: {
+    fontSize: 12,
+    color: theme.text,
+    textAlign: 'center',
+  },
+  categoryLabelActive: {
+    color: '#FFFFFF',
+  },
+  productRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  addProductButton: {
+    backgroundColor: theme.primary,
+    borderRadius: 8,
+    padding: 10,
+    marginLeft: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addProductText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  productItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.card,
+    borderRadius: 8,
+    padding: 8,
+    marginBottom: 4,
+    borderWidth: 1,
+    borderColor: theme.border,
+  },
+  productText: {
+    color: theme.text,
+  },
+  removeText: {
+    color: theme.error,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  emptyText: {
+    color: theme.textSecondary,
+    textAlign: 'center',
+    marginVertical: 4,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  cancelButton: {
+    backgroundColor: theme.error,
+    padding: 12,
+    borderRadius: 8,
+    flex: 1,
+    marginRight: 8,
+    alignItems: 'center',
+  },
+  createButton: {
+    backgroundColor: theme.primary,
+    padding: 12,
+    borderRadius: 8,
+    flex: 1,
+    marginLeft: 8,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+});
+
 export default function AddListModal({ visible, onClose, onCreate }) {
+  const { theme } = useContext(DataContext);
+  const styles = createStyles(theme);
+  
   const [name, setName] = React.useState('');
   const [desc, setDesc] = React.useState('');
   const [category, setCategory] = React.useState(CATEGORIES[0].key);
@@ -67,6 +214,7 @@ export default function AddListModal({ visible, onClose, onCreate }) {
             placeholder="Nome da lista"
             value={name}
             onChangeText={setName}
+            
           />
           <TextInput
             style={styles.input}
@@ -84,7 +232,7 @@ export default function AddListModal({ visible, onClose, onCreate }) {
                 activeOpacity={0.8}
               >
                 <Text style={styles.categoryIcon}>{cat.icon}</Text>
-                <Text style={styles.categoryLabel}>{cat.label}</Text>
+                <Text style={[styles.categoryLabel, category === cat.key && styles.categoryLabelActive]}>{cat.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -119,23 +267,23 @@ export default function AddListModal({ visible, onClose, onCreate }) {
             keyExtractor={item => item.id}
             renderItem={({ item }) => (
               <View style={styles.productItem}>
-                <Text style={{ flex: 2 }}>{item.name}</Text>
-                <Text style={{ flex: 1, textAlign: 'center' }}>{item.quantity}</Text>
-                <Text style={{ flex: 1, textAlign: 'center' }}>R$ {item.price.toFixed(2)}</Text>
+                <Text style={[styles.productText, { flex: 2 }]}>{item.name}</Text>
+                <Text style={[styles.productText, { flex: 1, textAlign: 'center' }]}>{item.quantity}</Text>
+                <Text style={[styles.productText, { flex: 1, textAlign: 'center' }]}>R$ {item.price.toFixed(2)}</Text>
                 <TouchableOpacity onPress={() => handleRemoveProduct(item.id)}>
-                  <Text style={{ color: '#ef4444', fontWeight: 'bold', marginLeft: 8 }}>Remover</Text>
+                  <Text style={styles.removeText}>Remover</Text>
                 </TouchableOpacity>
               </View>
             )}
-            ListEmptyComponent={<Text style={{ color: '#6B7280', textAlign: 'center', marginVertical: 4 }}>Nenhum produto adicionado.</Text>}
+            ListEmptyComponent={<Text style={styles.emptyText}>Nenhum produto adicionado.</Text>}
             style={{ maxHeight: 120, marginBottom: 8 }}
           />
           <View style={styles.buttonRow}>
             <TouchableOpacity style={styles.cancelButton} onPress={onClose} activeOpacity={0.8}>
-              <Text style={styles.cancelText}>Cancelar</Text>
+              <Text style={styles.buttonText}>Cancelar</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.createButton} onPress={handleCreate} activeOpacity={0.8}>
-              <Text style={styles.createText}>Criar</Text>
+              <Text style={styles.buttonText}>Criar</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -144,119 +292,4 @@ export default function AddListModal({ visible, onClose, onCreate }) {
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  card: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 24,
-    width: '85%',
-    elevation: 5,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  input: {
-    backgroundColor: '#F3F4F6',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  label: {
-    fontWeight: 'bold',
-    marginBottom: 4,
-    marginTop: 8,
-  },
-  categoryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-    flexWrap: 'wrap',
-  },
-  categoryButton: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 8,
-    padding: 8,
-    alignItems: 'center',
-    flexDirection: 'column',
-    marginRight: 6,
-    marginBottom: 6,
-    minWidth: 70,
-    flex: 1,
-  },
-  categoryButtonActive: {
-    backgroundColor: '#6366F1',
-  },
-  categoryIcon: {
-    fontSize: 22,
-    marginBottom: 2,
-  },
-  categoryLabel: {
-    fontSize: 12,
-    color: '#222',
-    textAlign: 'center',
-  },
-  productRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  addProductButton: {
-    backgroundColor: '#4f46e5',
-    borderRadius: 8,
-    padding: 10,
-    marginLeft: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  addProductText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 18,
-  },
-  productItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 8,
-    padding: 8,
-    marginBottom: 4,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-  },
-  cancelButton: {
-    backgroundColor: '#ef4444',
-    padding: 12,
-    borderRadius: 8,
-    flex: 1,
-    marginRight: 8,
-    alignItems: 'center',
-  },
-  createButton: {
-    backgroundColor: '#4f46e5',
-    padding: 12,
-    borderRadius: 8,
-    flex: 1,
-    marginLeft: 8,
-    alignItems: 'center',
-  },
-  cancelText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  createText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-});
+

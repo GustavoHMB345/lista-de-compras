@@ -4,28 +4,9 @@ import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-nativ
 import NavBar from '../components/NavBar';
 import { DataContext } from '../contexts/DataContext';
 
-const familyStyles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F3F4F6', padding: 16 },
-    header: { fontSize: 28, fontWeight: 'bold', marginBottom: 8 },
-    card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 18 },
-    cardTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
-    membersRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-    memberBox: { alignItems: 'center', margin: 8 },
-    avatar: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
-    avatarText: { color: '#fff', fontWeight: 'bold', fontSize: 18 },
-    memberName: { fontWeight: 'bold', marginTop: 4 },
-    memberEmail: { color: '#6B7280', fontSize: 12 },
-    memberStatus: { color: '#6B7280', fontSize: 12, marginTop: 2 },
-    adminStatus: { color: '#3B82F6', fontWeight: 'bold' },
-    input: { backgroundColor: '#F3F4F6', padding: 10, borderRadius: 8, marginBottom: 8 },
-    errorBox: { backgroundColor: '#FEE2E2', borderColor: '#F87171', borderWidth: 1, borderRadius: 8, padding: 8, marginBottom: 8 },
-    errorText: { color: '#B91C1C', textAlign: 'center', fontSize: 14 },
-    inviteButton: { backgroundColor: '#3B82F6', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 8 },
-    inviteButtonText: { color: '#fff', fontWeight: 'bold' },
-});
-
 function FamilyScreen() {
-    const { families, users, currentUser, updateFamilies, updateUsers } = useContext(DataContext);
+    const { families, users, currentUser, updateFamilies, updateUsers, theme } = useContext(DataContext);
+    const styles = createStyles(theme);
     const [inviteEmail, setInviteEmail] = useState('');
     const [error, setError] = useState('');
     const router = useRouter();
@@ -91,28 +72,28 @@ function FamilyScreen() {
 
     return (
         <>
-            <View style={[familyStyles.container, { flex: 1, paddingTop: 0, paddingBottom: 0 }]}> 
-                <View style={familyStyles.card}>
-                    <Text style={familyStyles.cardTitle}>Membros</Text>
-                    <View style={familyStyles.membersRow}>
+            <View style={[styles.container, { flex: 1, paddingTop: 0, paddingBottom: 0 }]}> 
+                <View style={styles.card}>
+                    <Text style={styles.cardTitle}>Membros</Text>
+                    <View style={styles.membersRow}>
                         {members.map((member, idx) => (
-                            <View key={member.id} style={familyStyles.memberBox}>
-                                <View style={[familyStyles.avatar, { backgroundColor: idx === 0 ? '#3B82F6' : idx === 1 ? '#22C55E' : '#8B5CF6' }]}>
-                                    <Text style={familyStyles.avatarText}>{member.displayName[0]}</Text>
+                            <View key={member.id} style={styles.memberBox}>
+                                <View style={[styles.avatar, { backgroundColor: idx === 0 ? theme.primary : idx === 1 ? theme.success : theme.secondary }]}>
+                                    <Text style={styles.avatarText}>{member.displayName[0]}</Text>
                                 </View>
-                                <Text style={familyStyles.memberName}>{member.displayName}</Text>
-                                <Text style={familyStyles.memberEmail}>{member.email}</Text>
-                                <Text style={[familyStyles.memberStatus, idx === 0 ? familyStyles.adminStatus : familyStyles.memberStatus]}>{idx === 0 ? 'Administrador' : 'Membro'}</Text>
+                                <Text style={styles.memberName}>{member.displayName}</Text>
+                                <Text style={styles.memberEmail}>{member.email}</Text>
+                                <Text style={[styles.memberStatus, idx === 0 ? styles.adminStatus : styles.memberStatus]}>{idx === 0 ? 'Administrador' : 'Membro'}</Text>
                             </View>
                         ))}
                     </View>
                 </View>
-                <View style={familyStyles.card}>
-                    <Text style={familyStyles.cardTitle}>Convidar Novo Membro</Text>
-                    <TextInput style={familyStyles.input} placeholder="Email do membro" value={inviteEmail} onChangeText={setInviteEmail} autoCapitalize="none" />
-                    {error ? <View style={familyStyles.errorBox}><Text style={familyStyles.errorText}>{error}</Text></View> : null}
-                    <TouchableOpacity style={familyStyles.inviteButton} onPress={handleInviteMember} activeOpacity={0.8}>
-                        <Text style={familyStyles.inviteButtonText}>Convidar</Text>
+                <View style={styles.card}>
+                    <Text style={styles.cardTitle}>Convidar Novo Membro</Text>
+                    <TextInput style={styles.input} placeholder="Email do membro" value={inviteEmail} onChangeText={setInviteEmail} autoCapitalize="none" />
+                    {error ? <View style={styles.errorBox}><Text style={styles.errorText}>{error}</Text></View> : null}
+                    <TouchableOpacity style={styles.inviteButton} onPress={handleInviteMember} activeOpacity={0.8}>
+                        <Text style={styles.inviteButtonText}>Convidar</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -120,5 +101,25 @@ function FamilyScreen() {
         </>
     );
 }
+
+const createStyles = (theme) => StyleSheet.create({
+    container: { flex: 1, backgroundColor: theme.background, padding: 16 },
+    header: { fontSize: 28, fontWeight: 'bold', marginBottom: 8, color: theme.text },
+    card: { backgroundColor: theme.card, borderRadius: 16, padding: 16, marginBottom: 18 },
+    cardTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 8, color: theme.text },
+    membersRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+    memberBox: { alignItems: 'center', margin: 8 },
+    avatar: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
+    avatarText: { color: theme.card, fontWeight: 'bold', fontSize: 18 },
+    memberName: { fontWeight: 'bold', marginTop: 4, color: theme.text },
+    memberEmail: { color: theme.textSecondary, fontSize: 12 },
+    memberStatus: { color: theme.textSecondary, fontSize: 12, marginTop: 2 },
+    adminStatus: { color: theme.primary, fontWeight: 'bold' },
+    input: { backgroundColor: theme.input, padding: 10, borderRadius: 8, marginBottom: 8, color: theme.text },
+    errorBox: { backgroundColor: theme.errorLight, borderColor: theme.error, borderWidth: 1, borderRadius: 8, padding: 8, marginBottom: 8 },
+    errorText: { color: theme.error, textAlign: 'center', fontSize: 14 },
+    inviteButton: { backgroundColor: theme.primary, padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 8 },
+    inviteButtonText: { color: theme.card, fontWeight: 'bold' },
+});
 
 export default FamilyScreen;

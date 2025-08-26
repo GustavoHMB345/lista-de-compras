@@ -5,30 +5,33 @@ import { CheckIcon, EditIcon } from '../components/Icons';
 import NavBar from '../components/NavBar';
 import { DataContext } from '../contexts/DataContext';
 
-const profileStyles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6', padding: 16 },
-  header: { fontSize: 28, fontWeight: 'bold', marginBottom: 8 },
-  card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 18 },
+const createProfileStyles = (theme) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: theme.background, padding: 16 },
+  header: { fontSize: 28, fontWeight: 'bold', marginBottom: 8, color: theme.text },
+  card: { backgroundColor: theme.card, borderRadius: 16, padding: 16, marginBottom: 18 },
   avatarBox: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
-  avatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#3B82F6', justifyContent: 'center', alignItems: 'center' },
+  avatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: theme.primary, justifyContent: 'center', alignItems: 'center' },
   avatarText: { color: '#fff', fontWeight: 'bold', fontSize: 22 },
-  name: { fontWeight: 'bold', fontSize: 18 },
-  email: { color: '#6B7280', fontSize: 12 },
-  label: { fontSize: 14, color: '#374151', marginBottom: 4, fontWeight: '500' },
+  name: { fontWeight: 'bold', fontSize: 18, color: theme.text },
+  email: { color: theme.textSecondary, fontSize: 12 },
+  label: { fontSize: 14, color: theme.text, marginBottom: 4, fontWeight: '500' },
   inputRow: { flexDirection: 'row', gap: 8, alignItems: 'center', marginBottom: 8 },
-  input: { backgroundColor: '#F3F4F6', padding: 10, borderRadius: 8, flex: 1 },
-  saveButton: { backgroundColor: '#22C55E', padding: 8, borderRadius: 8 },
-  editButton: { backgroundColor: '#6366F1', padding: 8, borderRadius: 8 },
-  displayName: { fontWeight: 'bold', fontSize: 16 },
-  logoutButton: { backgroundColor: '#F87171', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 18 },
+  input: { backgroundColor: theme.input, padding: 10, borderRadius: 8, flex: 1, color: theme.text },
+  saveButton: { backgroundColor: theme.success, padding: 8, borderRadius: 8 },
+  editButton: { backgroundColor: theme.secondary, padding: 8, borderRadius: 8 },
+  displayName: { fontWeight: 'bold', fontSize: 16, color: theme.text },
+  themeButton: { backgroundColor: theme.surface, padding: 12, borderRadius: 8, alignItems: 'center', marginBottom: 8, borderWidth: 1, borderColor: theme.border },
+  themeButtonText: { color: theme.text, fontWeight: 'bold' },
+  logoutButton: { backgroundColor: theme.error, padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 18 },
   logoutButtonText: { color: '#fff', fontWeight: 'bold' },
 });
 
 function ProfileScreen() {
-  const { currentUser, users, updateUsers, logout } = useContext(DataContext);
+  const { currentUser, users, updateUsers, logout, theme, isDarkMode, toggleTheme } = useContext(DataContext);
   const [displayName, setDisplayName] = useState(currentUser.displayName || '');
   const [isEditing, setIsEditing] = useState(false);
   const router = useRouter();
+  const profileStyles = createProfileStyles(theme);
 
   const handleUpdateProfile = () => {
     if (displayName.trim() === '') return;
@@ -88,6 +91,13 @@ function ProfileScreen() {
             </View>
           )}
         </View>
+        
+        <TouchableOpacity style={profileStyles.themeButton} onPress={toggleTheme} activeOpacity={0.8}>
+          <Text style={profileStyles.themeButtonText}>
+            {isDarkMode ? '☀️ Tema Claro' : '🌙 Tema Escuro'}
+          </Text>
+        </TouchableOpacity>
+        
         <TouchableOpacity style={profileStyles.logoutButton} onPress={logout} activeOpacity={0.85}><Text style={profileStyles.logoutButtonText}>Sair da Conta</Text></TouchableOpacity>
       </View>
   <NavBar navigate={handleNavigate} activeScreen={'PROFILE'} onAddList={handleAddList} />

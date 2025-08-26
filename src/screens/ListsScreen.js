@@ -2,30 +2,32 @@ import { useRouter } from 'expo-router';
 import React, { useContext, useState } from 'react';
 import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import AddListModal from '../components/AddListModal';
+// import {overlayAddNewList} from '../components/AddListModal';
 import { PlusIcon } from '../components/Icons';
 import NavBar from '../components/NavBar';
 import { DataContext } from '../contexts/DataContext';
 
-const listsStyles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6', padding: 16 },
-  header: { fontSize: 28, fontWeight: 'bold', marginBottom: 8 },
+const createListsStyles = (theme) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: theme.background, padding: 16 },
+  header: { fontSize: 28, fontWeight: 'bold', marginBottom: 8, color: theme.text },
   inputRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  input: { backgroundColor: '#F3F4F6', padding: 10, borderRadius: 8, flex: 1 },
-  addButton: { backgroundColor: '#3B82F6', padding: 12, borderRadius: 8, alignItems: 'center' },
-  listCard: { backgroundColor: '#fff', borderRadius: 12, padding: 12, marginBottom: 8, flexDirection: 'row', alignItems: 'center' },
-  listTitle: { fontWeight: 'bold' },
-  listDate: { color: '#6B7280', fontSize: 12 },
-  verButtonBox: { backgroundColor: '#6366F1', borderRadius: 8, padding: 8, marginLeft: 12 },
+  input: { backgroundColor: theme.input, padding: 10, borderRadius: 8, flex: 1, color: theme.text },
+  addButton: { backgroundColor: theme.primary, padding: 12, borderRadius: 8, alignItems: 'center' },
+  listCard: { backgroundColor: theme.card, borderRadius: 12, padding: 12, marginBottom: 8, flexDirection: 'row', alignItems: 'center' },
+  listTitle: { fontWeight: 'bold', color: theme.text },
+  listDate: { color: theme.textSecondary, fontSize: 12 },
+  verButtonBox: { backgroundColor: theme.secondary, borderRadius: 8, padding: 8, marginLeft: 12 },
   verButtonText: { color: '#fff', fontWeight: 'bold' },
-  emptyText: { color: '#6B7280', textAlign: 'center', marginVertical: 12 },
+  emptyText: { color: theme.textSecondary, textAlign: 'center', marginVertical: 12 },
 });
 
 function ListsScreen(props) {
-  const { shoppingLists, currentUser, updateLists } = useContext(DataContext);
+  const { shoppingLists, currentUser, updateLists, theme } = useContext(DataContext);
   const [newListName, setNewListName] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const router = useRouter();
   const activeLists = shoppingLists.filter(l => l.familyId === currentUser.familyId && l.status === 'active');
+  const listsStyles = createListsStyles(theme);
 
   const handleAddList = () => {
     setModalVisible(true);
@@ -93,7 +95,7 @@ function ListsScreen(props) {
             setNewListName('');
             router.push({ pathname: '/list-detail', params: { listId: newList.id } });
           }} activeOpacity={0.8}>
-            <PlusIcon />
+            <PlusIcon/>
           </TouchableOpacity>
         </View>
         <FlatList

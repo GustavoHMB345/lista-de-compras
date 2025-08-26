@@ -5,13 +5,14 @@ import { Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View } from 
 import { DataContext } from '../contexts/DataContext';
 
 export default function AuthScreen() {
-    const { login, register } = useContext(DataContext);
+    const { login, register, theme } = useContext(DataContext);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLogin, setIsLogin] = useState(true);
     const [error, setError] = useState('');
     const [name, setName] = useState('');
     const router = useRouter();
+    const styles = createStyles(theme);
 
     const handleAuth = () => {
         setError('');
@@ -39,28 +40,28 @@ export default function AuthScreen() {
     };
 
     return (
-        <LinearGradient colors={["#3B82F6", "#8B5CF6"]} style={stylesAuth.gradient}>
-            <View style={stylesAuth.centered}>
-                <View style={stylesAuth.card}>
-                    <View style={stylesAuth.tabContainer}>
+        <LinearGradient colors={[theme.primary, theme.secondary]} style={styles.gradient}>
+            <View style={styles.centered}>
+                <View style={styles.card}>
+                    <View style={styles.tabContainer}>
                         <TouchableOpacity
-                            style={[stylesAuth.tab, isLogin && stylesAuth.tabActive]}
+                            style={[styles.tab, isLogin && styles.tabActive]}
                             onPress={() => { setIsLogin(true); setError(''); }}>
-                            <Text style={[stylesAuth.tabText, isLogin && stylesAuth.tabTextActive]}>Login</Text>
+                            <Text style={[styles.tabText, isLogin && styles.tabTextActive]}>Login</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={[stylesAuth.tab, !isLogin && stylesAuth.tabActive]}
+                            style={[styles.tab, !isLogin && styles.tabActive]}
                             onPress={() => { setIsLogin(false); setError(''); }}>
-                            <Text style={[stylesAuth.tabText, !isLogin && stylesAuth.tabTextActive]}>Cadastro</Text>
+                            <Text style={[styles.tabText, !isLogin && styles.tabTextActive]}>Cadastro</Text>
                         </TouchableOpacity>
                     </View>
                     {/* Títulos removidos para experiência sem header visual */}
                     <View style={{ marginTop: 24 }}>
                         {!isLogin && (
                             <View style={{ marginBottom: 12 }}>
-                                <Text style={stylesAuth.label}>Nome</Text>
+                                <Text style={styles.label}>Nome</Text>
                                 <TextInput
-                                    style={stylesAuth.input}
+                                    style={styles.input}
                                     placeholder="Seu nome completo"
                                     value={name}
                                     onChangeText={setName}
@@ -68,9 +69,9 @@ export default function AuthScreen() {
                             </View>
                         )}
                         <View style={{ marginBottom: 12 }}>
-                            <Text style={stylesAuth.label}>Email</Text>
+                            <Text style={styles.label}>Email</Text>
                             <TextInput
-                                style={stylesAuth.input}
+                                style={styles.input}
                                 placeholder="seu@email.com"
                                 value={email}
                                 onChangeText={setEmail}
@@ -79,9 +80,9 @@ export default function AuthScreen() {
                             />
                         </View>
                         <View style={{ marginBottom: 12 }}>
-                            <Text style={stylesAuth.label}>Senha</Text>
+                            <Text style={styles.label}>Senha</Text>
                             <TextInput
-                                style={stylesAuth.input}
+                                style={styles.input}
                                 placeholder="••••••••"
                                 value={password}
                                 onChangeText={setPassword}
@@ -89,15 +90,15 @@ export default function AuthScreen() {
                             />
                         </View>
                         {error ? (
-                            <View style={stylesAuth.errorBox}>
-                                <Text style={stylesAuth.errorText}>{error}</Text>
+                            <View style={styles.errorBox}>
+                                <Text style={styles.errorText}>{error}</Text>
                             </View>
                         ) : null}
-                        <TouchableOpacity style={stylesAuth.button} onPress={handleAuth} activeOpacity={0.8}>
-                            <Text style={stylesAuth.buttonText}>{isLogin ? 'Entrar' : 'Cadastrar'}</Text>
+                        <TouchableOpacity style={styles.button} onPress={handleAuth} activeOpacity={0.8}>
+                            <Text style={styles.buttonText}>{isLogin ? 'Entrar' : 'Cadastrar'}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity onPress={() => { setIsLogin(!isLogin); setError(''); }} activeOpacity={0.7}>
-                            <Text style={stylesAuth.toggleText}>
+                            <Text style={styles.toggleText}>
                                 {isLogin ? 'Não tem uma conta? Cadastre-se.' : 'Já tem uma conta? Faça login.'}
                             </Text>
                         </TouchableOpacity>
@@ -109,7 +110,7 @@ export default function AuthScreen() {
 }
 
 const { width } = Dimensions.get('window');
-const stylesAuth = StyleSheet.create({
+const createStyles = (theme) => StyleSheet.create({
     gradient: {
         flex: 1,
     },
@@ -120,10 +121,10 @@ const stylesAuth = StyleSheet.create({
     },
     card: {
         width: width > 400 ? 380 : '90%',
-        backgroundColor: '#fff',
+        backgroundColor: theme.card,
         borderRadius: 24,
         padding: 28,
-        shadowColor: '#000',
+        shadowColor: theme.text,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.15,
         shadowRadius: 12,
@@ -131,7 +132,7 @@ const stylesAuth = StyleSheet.create({
     },
     tabContainer: {
         flexDirection: 'row',
-        backgroundColor: '#F3F4F6',
+        backgroundColor: theme.surface,
         borderRadius: 12,
         marginBottom: 18,
     },
@@ -142,8 +143,8 @@ const stylesAuth = StyleSheet.create({
         alignItems: 'center',
     },
     tabActive: {
-        backgroundColor: '#fff',
-        shadowColor: '#000',
+        backgroundColor: theme.card,
+        shadowColor: theme.text,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.08,
         shadowRadius: 4,
@@ -151,56 +152,57 @@ const stylesAuth = StyleSheet.create({
     },
     tabText: {
         fontSize: 16,
-        color: '#6B7280',
+        color: theme.textSecondary,
         fontWeight: '500',
     },
     tabTextActive: {
-        color: '#3B82F6',
+        color: theme.primary,
         fontWeight: 'bold',
     },
     title: {
         textAlign: 'center',
         fontSize: 28,
         fontWeight: 'bold',
-        color: '#111827',
+        color: theme.text,
         marginBottom: 4,
     },
     subtitle: {
         textAlign: 'center',
-        color: '#6B7280',
+        color: theme.textSecondary,
         marginBottom: 8,
     },
     label: {
         fontSize: 14,
-        color: '#374151',
+        color: theme.text,
         marginBottom: 4,
         fontWeight: '500',
     },
     input: {
         width: '100%',
-        backgroundColor: '#F3F4F6',
+        backgroundColor: theme.input,
         padding: 12,
         borderRadius: 10,
         borderWidth: 1,
-        borderColor: '#D1D5DB',
+        borderColor: theme.border,
         fontSize: 16,
+        color: theme.text,
     },
     errorBox: {
-        backgroundColor: '#FEE2E2',
-        borderColor: '#F87171',
+        backgroundColor: theme.errorLight,
+        borderColor: theme.error,
         borderWidth: 1,
         borderRadius: 8,
         padding: 8,
         marginBottom: 8,
     },
     errorText: {
-        color: '#B91C1C',
+        color: theme.error,
         textAlign: 'center',
         fontSize: 14,
     },
     button: {
         width: '100%',
-        backgroundColor: '#3B82F6',
+        backgroundColor: theme.primary,
         paddingVertical: 14,
         borderRadius: 10,
         alignItems: 'center',
@@ -208,13 +210,13 @@ const stylesAuth = StyleSheet.create({
         marginBottom: 4,
     },
     buttonText: {
-        color: '#fff',
+        color: theme.card,
         fontWeight: 'bold',
         fontSize: 16,
     },
     toggleText: {
         marginTop: 12,
-        color: '#6366F1',
+        color: theme.primary,
         fontWeight: '500',
         textAlign: 'center',
     },

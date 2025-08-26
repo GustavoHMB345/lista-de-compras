@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { createContext, useState } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 import { LayoutAnimation, Platform, UIManager } from 'react-native';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -7,6 +7,38 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 export const DataContext = createContext();
+
+// Definição dos temas
+const lightTheme = {
+    background: '#F3F4F6',
+    surface: '#FFFFFF',
+    card: '#FFFFFF',
+    primary: '#3B82F6',
+    secondary: '#6366F1',
+    text: '#111827',
+    textSecondary: '#6B7280',
+    border: '#E5E7EB',
+    input: '#F9FAFB',
+    error: '#EF4444',
+    success: '#10B981',
+    warning: '#F59E0B',
+};
+
+const darkTheme = {
+    background: '#111827',
+    surface: '#1F2937',
+    card: '#374151',
+    primary: '#60A5FA',
+    secondary: '#818CF8',
+    text: '#F9FAFB',
+    textSecondary: '#9CA3AF',
+    border: '#4B5563',
+    input: '#8f97a5ff',
+    error: '#F87171',
+    success: '#34D399',
+    warning: '#FBBF24',
+    placeholderTextColor: '#898989ff',
+};
 
 export const DataProvider = ({ children }) => {
     const [data, setData] = useState({
@@ -31,6 +63,8 @@ export const DataProvider = ({ children }) => {
         currentUser: null,
     });
     const [loading, setLoading] = useState(true);
+    const [isDarkMode, setIsDarkMode] = useState(false);
+    const theme = isDarkMode ? darkTheme : lightTheme;
 
     const loadData = async () => {
         try {
@@ -42,10 +76,26 @@ export const DataProvider = ({ children }) => {
                     setData(parsed);
                 }
             }
+            
+            // Carregar preferência de tema
+            const themePreference = await AsyncStorage.getItem('@SuperLista:theme');
+            if (themePreference) {
+                setIsDarkMode(JSON.parse(themePreference));
+            }
         } catch (e) {
             console.error("Failed to load data.", e);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const toggleTheme = async () => {
+        try {
+            const newThemeMode = !isDarkMode;
+            setIsDarkMode(newThemeMode);
+            await AsyncStorage.setItem('@SuperLista:theme', JSON.stringify(newThemeMode));
+        } catch (e) {
+            console.error("Failed to save theme preference.", e);
         }
     };
 
@@ -116,8 +166,25 @@ export const DataProvider = ({ children }) => {
         saveData(newData);
     };
 
+    // Carregar dados na inicialização
+    useEffect(() => {
+        loadData();
+    }, []);
+
     return (
-        <DataContext.Provider value={{ ...data, loading, login, logout, register, updateLists, updateFamilies, updateUsers }}>
+        <DataContext.Provider value={{ 
+            ...data, 
+            loading, 
+            theme, 
+            isDarkMode, 
+            toggleTheme,
+            login, 
+            logout, 
+            register, 
+            updateLists, 
+            updateFamilies, 
+            updateUsers 
+        }}>
             {children}
         </DataContext.Provider>
     );

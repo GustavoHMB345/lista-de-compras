@@ -5,41 +5,9 @@ import { CheckIcon } from '../components/Icons';
 import NavBar from '../components/NavBar';
 import { DataContext } from '../contexts/DataContext';
 
-const detailStyles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6', padding: 16 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  backButton: { padding: 8 },
-  header: { fontSize: 24, fontWeight: 'bold' },
-  date: { color: '#6B7280', fontSize: 12 },
-  card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 18 },
-  cardTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
-  input: { backgroundColor: '#F3F4F6', padding: 10, borderRadius: 8, marginBottom: 8 },
-  inputRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
-  addButton: { backgroundColor: '#3B82F6', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 8 },
-  addButtonText: { color: '#fff', fontWeight: 'bold' },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', marginVertical: 12 },
-  itemCard: { backgroundColor: '#fff', borderRadius: 12, padding: 12, marginBottom: 8, flexDirection: 'row', alignItems: 'center' },
-  itemCardPurchased: { backgroundColor: '#D1FAE5' },
-  itemName: { fontWeight: 'bold' },
-  itemNamePurchased: { textDecorationLine: 'line-through', color: '#6B7280' },
-  itemSubText: { color: '#6B7280', fontSize: 12 },
-  emptyText: { color: '#6B7280', textAlign: 'center', marginVertical: 12 },
-  membersRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  memberAvatarBox: { alignItems: 'center', margin: 8 },
-  memberAvatar: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
-  memberAvatarText: { color: '#fff', fontWeight: 'bold', fontSize: 18 },
-  memberName: { fontWeight: 'bold', marginTop: 4 },
-  memberButton: { padding: 6, borderRadius: 6, marginTop: 4 },
-  memberButtonAdd: { backgroundColor: '#22C55E' },
-  memberButtonRemove: { backgroundColor: '#F87171' },
-  memberButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
-  archiveButton: { backgroundColor: '#6366F1', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 18 },
-  archiveButtonText: { color: '#fff', fontWeight: 'bold' },
-});
-
 function ListDetailScreen(props) {
-  const { shoppingLists, updateLists, families, users, currentUser } = useContext(DataContext);
+  const { shoppingLists, updateLists, families, users, currentUser, theme } = useContext(DataContext);
+  const styles = createStyles(theme);
   const [newItemName, setNewItemName] = useState('');
   const [newItemQty, setNewItemQty] = useState('1');
   const [newItemPrice, setNewItemPrice] = useState('');
@@ -68,7 +36,7 @@ function ListDetailScreen(props) {
     }
   };
 
-  if (!list) return <View style={detailStyles.centered}><Text style={detailStyles.emptyText}>Lista não encontrada.</Text></View>;
+  if (!list) return <View style={styles.centered}><Text style={styles.emptyText}>Lista não encontrada.</Text></View>;
 
   const handleAddItem = () => {
     if (newItemName.trim() === '') return;
@@ -125,55 +93,88 @@ function ListDetailScreen(props) {
 
   return (
     <>
-      <ScrollView style={[detailStyles.container, { flex: 1, paddingTop: 0, paddingBottom: 0 }]}> 
+      <ScrollView style={[styles.container, { flex: 1, paddingTop: 0, paddingBottom: 0 }]}> 
         {/* Header visual removido */}
-        <View style={detailStyles.card}>
-          <Text style={detailStyles.cardTitle}>Adicionar Item</Text>
-          <TextInput style={detailStyles.input} placeholder="Nome do item" value={newItemName} onChangeText={setNewItemName} />
-          <View style={detailStyles.inputRow}>
-            <TextInput style={[detailStyles.input, {flex: 1, marginRight: 10}]} placeholder="Qtd." value={newItemQty} onChangeText={setNewItemQty} keyboardType="number-pad" />
-            <TextInput style={[detailStyles.input, {flex: 2}]} placeholder="Preço (opcional)" value={newItemPrice} onChangeText={setNewItemPrice} keyboardType="numeric" />
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Adicionar Item</Text>
+          <TextInput style={styles.input} placeholder="Nome do item" value={newItemName} onChangeText={setNewItemName} />
+          <View style={styles.inputRow}>
+            <TextInput style={[styles.input, {flex: 1, marginRight: 10}]} placeholder="Qtd." value={newItemQty} onChangeText={setNewItemQty} keyboardType="number-pad" />
+            <TextInput style={[styles.input, {flex: 2}]} placeholder="Preço (opcional)" value={newItemPrice} onChangeText={setNewItemPrice} keyboardType="numeric" />
           </View>
-          <TouchableOpacity style={detailStyles.addButton} onPress={handleAddItem} activeOpacity={0.8}><Text style={detailStyles.addButtonText}>Adicionar</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.addButton} onPress={handleAddItem} activeOpacity={0.8}><Text style={styles.addButtonText}>Adicionar</Text></TouchableOpacity>
         </View>
-        <Text style={detailStyles.sectionTitle}>Itens da Lista</Text>
+        <Text style={styles.sectionTitle}>Itens da Lista</Text>
         <FlatList
           data={list.items || []}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingBottom: 18 }}
           scrollEnabled={false}
           renderItem={({ item }) => (
-            <TouchableOpacity style={[detailStyles.itemCard, item.isPurchased && detailStyles.itemCardPurchased]} onPress={() => handleTogglePurchased(item.id)} activeOpacity={0.8}>
+            <TouchableOpacity style={[styles.itemCard, item.isPurchased && styles.itemCardPurchased]} onPress={() => handleTogglePurchased(item.id)} activeOpacity={0.8}>
               <View style={{flex: 1}}>
-                <Text style={[detailStyles.itemName, item.isPurchased && detailStyles.itemNamePurchased]}>{item.name}</Text>
-                <Text style={detailStyles.itemSubText}>Qtd: {item.quantity} {item.price > 0 && `- R$ ${item.price.toFixed(2)}`}</Text>
+                <Text style={[styles.itemName, item.isPurchased && styles.itemNamePurchased]}>{item.name}</Text>
+                <Text style={styles.itemSubText}>Qtd: {item.quantity} {item.price > 0 && `- R$ ${item.price.toFixed(2)}`}</Text>
               </View>
               {item.isPurchased && <CheckIcon />}
             </TouchableOpacity>
           )}
-          ListEmptyComponent={<Text style={detailStyles.emptyText}>Nenhum item na lista.</Text>}
+          ListEmptyComponent={<Text style={styles.emptyText}>Nenhum item na lista.</Text>}
         />
-        <View style={detailStyles.card}>
-          <Text style={detailStyles.cardTitle}>Membros na Lista</Text>
-          <View style={detailStyles.membersRow}>
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Membros na Lista</Text>
+          <View style={styles.membersRow}>
             {familyMembers.map(member => (
-              <View key={member.id} style={detailStyles.memberAvatarBox}>
-                <View style={[detailStyles.memberAvatar, { backgroundColor: '#3B82F6' }]}>
-                  <Text style={detailStyles.memberAvatarText}>{member.displayName[0]}</Text>
+              <View key={member.id} style={styles.memberAvatarBox}>
+                <View style={[styles.memberAvatar, { backgroundColor: theme.primary }]}>
+                  <Text style={styles.memberAvatarText}>{member.displayName[0]}</Text>
                 </View>
-                <Text style={detailStyles.memberName}>{member.displayName}</Text>
-                <TouchableOpacity style={[detailStyles.memberButton, list.members.includes(member.id) ? detailStyles.memberButtonRemove : detailStyles.memberButtonAdd]} onPress={() => handleMemberToggle(member.id)} activeOpacity={0.8}>
-                  <Text style={detailStyles.memberButtonText}>{list.members.includes(member.id) ? 'Remover' : 'Adicionar'}</Text>
+                <Text style={styles.memberName}>{member.displayName}</Text>
+                <TouchableOpacity style={[styles.memberButton, list.members.includes(member.id) ? styles.memberButtonRemove : styles.memberButtonAdd]} onPress={() => handleMemberToggle(member.id)} activeOpacity={0.8}>
+                  <Text style={styles.memberButtonText}>{list.members.includes(member.id) ? 'Remover' : 'Adicionar'}</Text>
                 </TouchableOpacity>
               </View>
             ))}
           </View>
         </View>
-        <TouchableOpacity style={detailStyles.archiveButton} onPress={handleArchiveList} activeOpacity={0.85}><Text style={detailStyles.archiveButtonText}>Finalizar e Arquivar Lista</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.archiveButton} onPress={handleArchiveList} activeOpacity={0.85}><Text style={styles.archiveButtonText}>Finalizar e Arquivar Lista</Text></TouchableOpacity>
       </ScrollView>
-  <NavBar navigate={handleNavigate} activeScreen={'LISTS'} onAddList={handleAddList} />
+  <NavBar navigate={handleNavigate} activeScreen={'LISTS'} />
     </>
   );
 }
+
+const createStyles = (theme) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: theme.background, padding: 16 },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  backButton: { padding: 8 },
+  header: { fontSize: 24, fontWeight: 'bold', color: theme.text },
+  date: { color: theme.textSecondary, fontSize: 12 },
+  card: { backgroundColor: theme.card, borderRadius: 16, padding: 16, marginBottom: 18 },
+  cardTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 8, color: theme.text },
+  input: { backgroundColor: theme.input, padding: 10, borderRadius: 8, marginBottom: 8, color: theme.text },
+  inputRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
+  addButton: { backgroundColor: theme.primary, padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 8 },
+  addButtonText: { color: theme.card, fontWeight: 'bold' },
+  sectionTitle: { fontSize: 16, fontWeight: 'bold', marginVertical: 12, color: theme.text },
+  itemCard: { backgroundColor: theme.card, borderRadius: 12, padding: 12, marginBottom: 8, flexDirection: 'row', alignItems: 'center' },
+  itemCardPurchased: { backgroundColor: theme.successLight },
+  itemName: { fontWeight: 'bold', color: theme.text },
+  itemNamePurchased: { textDecorationLine: 'line-through', color: theme.textSecondary },
+  itemSubText: { color: theme.textSecondary, fontSize: 12 },
+  emptyText: { color: theme.textSecondary, textAlign: 'center', marginVertical: 12 },
+  membersRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  memberAvatarBox: { alignItems: 'center', margin: 8 },
+  memberAvatar: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
+  memberAvatarText: { color: theme.card, fontWeight: 'bold', fontSize: 18 },
+  memberName: { fontWeight: 'bold', marginTop: 4, color: theme.text },
+  memberButton: { padding: 6, borderRadius: 6, marginTop: 4 },
+  memberButtonAdd: { backgroundColor: theme.success },
+  memberButtonRemove: { backgroundColor: theme.error },
+  memberButtonText: { color: theme.card, fontWeight: 'bold', fontSize: 12 },
+  archiveButton: { backgroundColor: theme.secondary, padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 18 },
+  archiveButtonText: { color: theme.card, fontWeight: 'bold' },
+});
 
 export default ListDetailScreen;

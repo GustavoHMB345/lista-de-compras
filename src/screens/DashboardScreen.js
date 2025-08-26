@@ -1,13 +1,13 @@
 import { useRouter } from 'expo-router';
 import React, { useContext, useEffect, useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { BarChart } from 'react-native-gifted-charts';
 import NavBar from '../components/NavBar';
 import { DataContext } from '../contexts/DataContext';
-import { styles } from '../styles/globalStyles';
 
 export default function DashboardScreen() {
-    const { shoppingLists, currentUser } = useContext(DataContext);
+    const { shoppingLists, currentUser, theme } = useContext(DataContext);
+    const styles = createStyles(theme);
     const [topItems, setTopItems] = useState([]);
     const router = useRouter();
 
@@ -70,8 +70,8 @@ export default function DashboardScreen() {
                     <Text style={styles.cardTitle}>Top 5 Itens Mais Comprados</Text>
                     {topItems.length > 0 ? (
                         <BarChart
-                            data={topItems.map(item => ({ value: item.count, label: item.name, frontColor: '#4f46e5' }))}
-                            barWidth={40} spacing={20} yAxisTextStyle={{color: '#333'}} xAxisLabelTextStyle={{color: '#333', textAlign: 'center'}} isAnimated
+                            data={topItems.map(item => ({ value: item.count, label: item.name, frontColor: theme.primary }))}
+                            barWidth={40} spacing={20} yAxisTextStyle={{color: theme.text}} xAxisLabelTextStyle={{color: theme.text, textAlign: 'center'}} isAnimated
                         />
                     ) : <Text style={styles.emptyText}>Nenhum item comprado ainda.</Text>}
                 </View>
@@ -92,3 +92,61 @@ export default function DashboardScreen() {
         </>
     );
 }
+
+const createStyles = (theme) => StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: theme.background,
+        padding: 16,
+    },
+    card: {
+        backgroundColor: theme.card,
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 18,
+        shadowColor: theme.text,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    cardTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: theme.text,
+        marginBottom: 8,
+    },
+    emptyText: {
+        color: theme.textSecondary,
+        textAlign: 'center',
+        marginVertical: 12,
+    },
+    priceItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 6,
+        paddingVertical: 4,
+    },
+    priceItemName: {
+        color: theme.text,
+        fontSize: 14,
+    },
+    priceItemValue: {
+        color: theme.primary,
+        fontWeight: 'bold',
+        fontSize: 14,
+    },
+    buttonOutline: {
+        borderWidth: 1,
+        borderColor: theme.primary,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginTop: 8,
+    },
+    buttonOutlineText: {
+        color: theme.primary,
+        fontWeight: 'bold',
+    },
+});
