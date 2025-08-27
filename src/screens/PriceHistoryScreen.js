@@ -96,41 +96,15 @@ const historyStyles = StyleSheet.create({
 
 
 function PriceHistoryScreen() {
-  // MOCK para visual igual ao anexo
-  const items = [
-    { name: 'Leite Integral', emoji: '🥛', price1: '13', price2: '3.30' },
-    { name: 'Churrasco burritego', emoji: '🍅', price1: '13', price2: '3.30' },
-    { name: 'Pão da Forma', emoji: '🗂️', price1: '13', price2: '3.30' },
-    { name: 'Pão da Forma', emoji: '🗂️', price1: '25', price2: '3.30' },
-  ];
+  // Aqui você deve buscar os dados reais do contexto ou API
+  const items = [];
   return (
     <View style={historyStyles.bg}>
       <View style={historyStyles.cardContainer}>
         <Text style={historyStyles.title}>Histórico de Preços</Text>
-        <Text style={historyStyles.subtitle}>Demexhei do do dalemitma Onetugo And tams do Poemsa d eciotids</Text>
+        <Text style={historyStyles.subtitle}>Veja aqui o histórico de preços dos itens cadastrados.</Text>
         <ScrollView style={{ width: '100%' }} contentContainerStyle={{ gap: 12 }} showsVerticalScrollIndicator={false}>
-          {items.length === 0 && (
-            <Text style={historyStyles.emptyText}>Nenhum histórico encontrado.</Text>
-          )}
-          {items.map((item, idx) => (
-            <View key={idx} style={historyStyles.itemCard}>
-              <View style={historyStyles.emojiCircle}>
-                <Text style={{ fontSize: 28 }}>{item.emoji}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={historyStyles.itemName}>{item.name}</Text>
-                <View style={{ flexDirection: 'row', gap: 8 }}>
-                  <Text style={historyStyles.itemSubPrice}>R$ {item.price1}</Text>
-                  <Text style={historyStyles.itemSubPrice2}>R$ {item.price2}</Text>
-                </View>
-              </View>
-              <View style={historyStyles.itemRight}>
-                <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#e5e7eb', alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ color: '#b0b4be', fontWeight: 'bold', fontSize: 18 }}>•</Text>
-                </View>
-              </View>
-            </View>
-          ))}
+          <Text style={historyStyles.emptyText}>Nenhum histórico encontrado.</Text>
         </ScrollView>
       </View>
     </View>

@@ -8,25 +8,11 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 
 export const DataContext = createContext();
 
+
 export const DataProvider = ({ children }) => {
     const [data, setData] = useState({
-        users: [
-            {
-                id: 'user_teste',
-                email: 'seu@email.com',
-                password: '1515',
-                displayName: 'Teste',
-                familyId: 'family_teste'
-            }
-        ],
-        families: [
-            {
-                id: 'family_teste',
-                name: 'Família de Teste',
-                owner: 'user_teste',
-                members: ['user_teste']
-            }
-        ],
+        users: [],
+        families: [],
         shoppingLists: [],
         currentUser: null,
     });

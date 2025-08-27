@@ -18,26 +18,24 @@ const CARD_WIDTH = Math.min(180, width * 0.42);
 const CONTAINER_WIDTH = Math.min(420, width * 0.98);
 
 
+
 export default function DashboardScreen() {
-    const { shoppingLists, currentUser } = useContext(DataContext);
+    const { shoppingLists, currentUser, loading } = useContext(DataContext);
     const [topItems, setTopItems] = useState([]);
     const router = useRouter();
 
-    // MOCK para visual igual ao anexo
     useEffect(() => {
-        setTopItems([
-            {
-                name: 'leite integral',
-                avgPrice: '9.30',
-                count: '442 3 4 332',
-            },
-            {
-                name: 'siboda konola dumiamo',
-                avgPrice: '30',
-                count: '',
-            },
-        ]);
-    }, []);
+        if (!loading && !currentUser) {
+            router.replace('/auth');
+        }
+    }, [loading, currentUser]);
+
+    useEffect(() => {
+        if (!loading && currentUser) {
+            // Aqui você pode calcular os topItems reais a partir de shoppingLists
+            setTopItems([]); // Exemplo: [] até implementar lógica real
+        }
+    }, [loading, currentUser, shoppingLists]);
 
     const handleNavigate = (screen) => {
         switch (screen) {
@@ -58,6 +56,16 @@ export default function DashboardScreen() {
         }
     };
 
+    if (loading) {
+        return (
+            <View style={[styles.root, { justifyContent: 'center', alignItems: 'center' }]}> 
+                <Text style={{ color: '#222', fontSize: 18 }}>Carregando...</Text>
+            </View>
+        );
+    }
+    if (!currentUser) {
+        return null;
+    }
     return (
         <View style={styles.root}>
             <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -65,7 +73,10 @@ export default function DashboardScreen() {
                     <Text style={styles.title}>Dashboard</Text>
                     <Text style={styles.subtitle}>Itens Mais Procurados</Text>
                     <View style={styles.itemsRow}>
-                        {topItems.map((item, idx) => (
+                        {topItems.length === 0 && (
+                            <Text style={{ color: '#fff', fontSize: 16, textAlign: 'center', width: '100%' }}>Nenhum item encontrado.</Text>
+                        )}
+                        {topItems.length > 0 && topItems.map((item, idx) => (
                             <View key={idx} style={[styles.itemCard, { backgroundColor: cardColors[idx % cardColors.length], maxWidth: CARD_WIDTH }]}> 
                                 <View style={styles.emojiCircle}>
                                     <Text style={styles.emoji}>{itemEmojis[item.name] || '🛒'}</Text>
