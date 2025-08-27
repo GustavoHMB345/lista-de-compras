@@ -1,87 +1,138 @@
-import { useRouter } from 'expo-router';
-import React, { useContext, useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { DataContext } from '../contexts/DataContext';
+import React from 'react';
+import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+
+const { width } = Dimensions.get('window');
+const MAX_CARD_WIDTH = Math.min(420, width * 0.98);
 const historyStyles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6', padding: 16 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  backButton: { padding: 8 },
-  header: { fontSize: 24, fontWeight: 'bold' },
-  subtitle: { fontSize: 16, color: '#6B7280', marginBottom: 16 },
-  itemCard: { backgroundColor: '#fff', borderRadius: 12, padding: 12, marginBottom: 8, flexDirection: 'row', alignItems: 'center' },
-  itemLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  emoji: { fontSize: 24, marginRight: 8 },
-  itemName: { fontWeight: 'bold' },
-  itemSubText: { color: '#6B7280', fontSize: 12 },
-  itemRight: { marginLeft: 'auto' },
-  emptyText: { color: '#6B7280', textAlign: 'center', marginVertical: 12 },
+  bg: {
+    flex: 1,
+    backgroundColor: '#e6f0fa',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+  },
+  cardContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 22,
+    padding: 24,
+    width: MAX_CARD_WIDTH,
+    maxWidth: '98%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.10,
+    shadowRadius: 12,
+    elevation: 6,
+    alignItems: 'flex-start',
+    marginTop: 24,
+    marginBottom: 24,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#222',
+    marginBottom: 2,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: '#b0b4be',
+    marginBottom: 18,
+  },
+  itemCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
+    width: '100%',
+  },
+  emojiCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  itemName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#222',
+  },
+  itemSubPrice: {
+    fontSize: 15,
+    color: '#38bdf8',
+    fontWeight: 'bold',
+    marginTop: 2,
+  },
+  itemSubPrice2: {
+    fontSize: 15,
+    color: '#94a3b8',
+    marginTop: 2,
+  },
+  itemRight: {
+    marginLeft: 'auto',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    color: '#6B7280',
+    textAlign: 'center',
+    marginVertical: 12,
+    fontSize: 15,
+    width: '100%',
+  },
 });
 
-function PriceHistoryScreen(props) {
-  const { shoppingLists, currentUser } = useContext(DataContext);
-  const [allItems, setAllItems] = useState([]);
-  const router = useRouter();
-  const emojis = {
-    leite: '🥛',
-    pão: '🍞',
-    ovos: '🥚',
-    queijo: '🧀',
-    banana: '🍌',
-  };
 
-  useEffect(() => {
-    const archivedLists = shoppingLists.filter(l => l.familyId === currentUser.familyId && l.status === 'archived');
-    const itemPrices = {};
-    archivedLists.forEach(list => {
-      (list.items || []).forEach(item => {
-        const itemName = item.name.trim().toLowerCase();
-        if (item.price && item.price > 0) {
-          if (!itemPrices[itemName]) {
-            itemPrices[itemName] = { total: 0, count: 0 };
-          }
-          itemPrices[itemName].total += item.price * item.quantity;
-          itemPrices[itemName].count += item.quantity;
-        }
-      });
-    });
-    const sortedItems = Object.keys(itemPrices)
-      .map(name => ({
-        name,
-        avgPrice: itemPrices[name].count > 0 ? (itemPrices[name].total / itemPrices[name].count) : 0
-      }))
-      .filter(item => item.avgPrice > 0)
-      .sort((a, b) => a.avgPrice - b.avgPrice);
-    setAllItems(sortedItems);
-  }, [shoppingLists, currentUser]);
-
+function PriceHistoryScreen() {
+  // MOCK para visual igual ao anexo
+  const items = [
+    { name: 'Leite Integral', emoji: '🥛', price1: '13', price2: '3.30' },
+    { name: 'Churrasco burritego', emoji: '🍅', price1: '13', price2: '3.30' },
+    { name: 'Pão da Forma', emoji: '🗂️', price1: '13', price2: '3.30' },
+    { name: 'Pão da Forma', emoji: '🗂️', price1: '25', price2: '3.30' },
+  ];
   return (
-    <View style={historyStyles.container}>
-  {/* Header visual removido */}
-      <FlatList
-        data={allItems}
-        keyExtractor={(item) => item.name}
-        contentContainerStyle={{ paddingBottom: 24 }}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={historyStyles.itemCard}
-            onPress={() => router.push({ pathname: '/item-price-detail', params: { itemName: item.name } })}
-            activeOpacity={0.8}
-          >
-            <View style={historyStyles.itemLeft}>
-              <Text style={historyStyles.emoji}>{emojis[item.name] || '🛒'}</Text>
-              <View>
+    <View style={historyStyles.bg}>
+      <View style={historyStyles.cardContainer}>
+        <Text style={historyStyles.title}>Histórico de Preços</Text>
+        <Text style={historyStyles.subtitle}>Demexhei do do dalemitma Onetugo And tams do Poemsa d eciotids</Text>
+        <ScrollView style={{ width: '100%' }} contentContainerStyle={{ gap: 12 }} showsVerticalScrollIndicator={false}>
+          {items.length === 0 && (
+            <Text style={historyStyles.emptyText}>Nenhum histórico encontrado.</Text>
+          )}
+          {items.map((item, idx) => (
+            <View key={idx} style={historyStyles.itemCard}>
+              <View style={historyStyles.emojiCircle}>
+                <Text style={{ fontSize: 28 }}>{item.emoji}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
                 <Text style={historyStyles.itemName}>{item.name}</Text>
-                <Text style={historyStyles.itemSubText}>Média: R$ {item.avgPrice.toFixed(2)}</Text>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <Text style={historyStyles.itemSubPrice}>R$ {item.price1}</Text>
+                  <Text style={historyStyles.itemSubPrice2}>R$ {item.price2}</Text>
+                </View>
+              </View>
+              <View style={historyStyles.itemRight}>
+                <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#e5e7eb', alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ color: '#b0b4be', fontWeight: 'bold', fontSize: 18 }}>•</Text>
+                </View>
               </View>
             </View>
-            <View style={historyStyles.itemRight}>
-              {/* Variação percentual pode ser calculada se desejado */}
-            </View>
-          </TouchableOpacity>
-        )}
-        ListEmptyComponent={<Text style={historyStyles.emptyText}>Nenhum dado de preço encontrado.</Text>}
-      />
+          ))}
+        </ScrollView>
+      </View>
     </View>
   );
 }

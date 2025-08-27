@@ -1,22 +1,64 @@
 import { useRouter } from 'expo-router';
 import React, { useContext, useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
 import { DataContext } from '../contexts/DataContext';
 
+
+const { width } = Dimensions.get('window');
+const MAX_CARD_WIDTH = Math.min(420, width * 0.98);
 const detailStyles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6', padding: 16 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  backButton: { padding: 8 },
-  headerInfo: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  emoji: { fontSize: 28, marginRight: 8 },
-  header: { fontSize: 24, fontWeight: 'bold' },
-  card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 18 },
-  cardTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
-  emptyText: { color: '#6B7280', textAlign: 'center', marginVertical: 12 },
-  priceItemRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  priceItemDate: { color: '#6B7280' },
-  priceItemValue: { color: '#3B82F6', fontWeight: 'bold' },
+  container: {
+    flex: 1,
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+  },
+  scrollContent: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    minHeight: width > 400 ? 0 : 600,
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 22,
+    marginBottom: 18,
+    width: MAX_CARD_WIDTH,
+    maxWidth: '98%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.10,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  cardTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#222',
+  },
+  emptyText: {
+    color: '#6B7280',
+    textAlign: 'center',
+    marginVertical: 12,
+    fontSize: 15,
+  },
+  priceItemRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 7,
+    paddingVertical: 2,
+  },
+  priceItemDate: {
+    color: '#6B7280',
+    fontSize: 15,
+  },
+  priceItemValue: {
+    color: '#3B82F6',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
 });
 
 function ItemPriceDetailScreen(props) {
@@ -56,8 +98,7 @@ function ItemPriceDetailScreen(props) {
   }, [shoppingLists, currentUser, itemName]);
 
   return (
-    <ScrollView style={detailStyles.container}>
-  {/* Header visual removido */}
+    <ScrollView style={detailStyles.container} contentContainerStyle={detailStyles.scrollContent} showsVerticalScrollIndicator={false}>
       <View style={detailStyles.card}>
         <Text style={detailStyles.cardTitle}>Flutuação de Preço</Text>
         {priceData.length > 1 ? (
@@ -68,8 +109,8 @@ function ItemPriceDetailScreen(props) {
             thickness={3}
             startFillColor="rgba(59, 130, 246, 0.2)"
             endFillColor="rgba(59, 130, 246, 0.01)"
-            yAxisTextStyle={{color: '#333'}}
-            xAxisLabelTextStyle={{color: '#333'}}
+            yAxisTextStyle={{ color: '#333' }}
+            xAxisLabelTextStyle={{ color: '#333' }}
             noOfSections={4}
             spacing={50}
             initialSpacing={20}

@@ -1,53 +1,116 @@
 import { useRouter } from 'expo-router';
 import React, { useContext, useState } from 'react';
-import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import AddListModal from '../components/AddListModal';
-import { PlusIcon } from '../components/Icons';
 import NavBar from '../components/NavBar';
 import { DataContext } from '../contexts/DataContext';
 
+
+const { width } = Dimensions.get('window');
+const MAX_CARD_WIDTH = Math.min(420, width * 0.98);
 const listsStyles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6', padding: 16 },
-  header: { fontSize: 28, fontWeight: 'bold', marginBottom: 8 },
-  inputRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  input: { backgroundColor: '#F3F4F6', padding: 10, borderRadius: 8, flex: 1 },
-  addButton: { backgroundColor: '#3B82F6', padding: 12, borderRadius: 8, alignItems: 'center' },
-  listCard: { backgroundColor: '#fff', borderRadius: 12, padding: 12, marginBottom: 8, flexDirection: 'row', alignItems: 'center' },
-  listTitle: { fontWeight: 'bold' },
-  listDate: { color: '#6B7280', fontSize: 12 },
-  verButtonBox: { backgroundColor: '#6366F1', borderRadius: 8, padding: 8, marginLeft: 12 },
-  verButtonText: { color: '#fff', fontWeight: 'bold' },
-  emptyText: { color: '#6B7280', textAlign: 'center', marginVertical: 12 },
+  bg: {
+    flex: 1,
+    backgroundColor: '#e6f0fa',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+  },
+  cardContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 22,
+    padding: 24,
+    width: MAX_CARD_WIDTH,
+    maxWidth: '98%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.10,
+    shadowRadius: 12,
+    elevation: 6,
+    alignItems: 'flex-start',
+    marginTop: 24,
+    marginBottom: 24,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#222',
+    marginBottom: 2,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#222',
+    marginBottom: 18,
+  },
+  itemCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
+    width: '100%',
+  },
+  emojiCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  itemName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#222',
+  },
+  itemSubPrice: {
+    fontSize: 13,
+    color: '#94a3b8',
+  },
+  itemPrice: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#222',
+    marginLeft: 10,
+  },
+  emptyText: {
+    color: '#6B7280',
+    textAlign: 'center',
+    marginVertical: 12,
+    fontSize: 15,
+    width: '100%',
+  },
 });
 
-function ListsScreen(props) {
+function ListsScreen() {
   const { shoppingLists, currentUser, updateLists } = useContext(DataContext);
-  const [newListName, setNewListName] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const router = useRouter();
-  const activeLists = shoppingLists.filter(l => l.familyId === currentUser.familyId && l.status === 'active');
 
-  const handleAddList = () => {
-    setModalVisible(true);
+  // Emojis padrão para categorias
+  const categoryEmojis = {
+    alimentos: '🍎',
+    limpeza: '�',
+    tecnologia: '💻',
+    vestuario: '👕',
+    moveis: '🛋️',
+    outros: '🛒',
   };
 
-  const handleCreateList = ({ name, desc, category, icon, items }) => {
-    const newList = {
-      id: `list_${Date.now()}`,
-      name,
-      description: desc,
-      category: category || '',
-      icon: icon || '',
-      familyId: currentUser.familyId,
-      createdAt: new Date().toISOString(),
-      status: 'active',
-      members: [currentUser.id],
-      items: items && items.length > 0 ? items : [],
-    };
-    updateLists([...shoppingLists, newList]);
-    router.push({ pathname: '/list-detail', params: { listId: newList.id } });
-  };
+  // Filtra listas do usuário logado
+  const userLists = shoppingLists.filter(l => l.familyId === currentUser?.familyId);
 
+  // Navegação entre listas
   const handleNavigate = (screen) => {
     switch (screen) {
       case 'DASHBOARD':
@@ -69,61 +132,51 @@ function ListsScreen(props) {
 
   return (
     <>
-      <View style={[listsStyles.container, { flex: 1, paddingTop: 0, paddingBottom: 0 }]}> 
-  {/* Header visual removido */}
-        <View style={listsStyles.inputRow}>
-          <TextInput
-            style={listsStyles.input}
-            placeholder="Nome da nova lista"
-            value={newListName}
-            onChangeText={setNewListName}
-          />
-          <TouchableOpacity style={listsStyles.addButton} onPress={() => {
-            if (newListName.trim() === '') return;
-            const newList = {
-              id: `list_${Date.now()}`,
-              name: newListName,
-              familyId: currentUser.familyId,
-              createdAt: new Date().toISOString(),
-              status: 'active',
-              members: [currentUser.id],
-              items: []
-            };
-            updateLists([...shoppingLists, newList]);
-            setNewListName('');
-            router.push({ pathname: '/list-detail', params: { listId: newList.id } });
-          }} activeOpacity={0.8}>
-            <PlusIcon />
-          </TouchableOpacity>
+      <View style={listsStyles.bg}>
+        <View style={listsStyles.cardContainer}>
+          <Text style={listsStyles.title}>Suas Listas</Text>
+          <Text style={listsStyles.subtitle}>Listas criadas por você</Text>
+          <ScrollView style={{ width: '100%' }} contentContainerStyle={{ gap: 12 }} showsVerticalScrollIndicator={false}>
+            {userLists.length === 0 && (
+              <Text style={listsStyles.emptyText}>Nenhuma lista criada ainda.</Text>
+            )}
+            {userLists.map((item, idx) => (
+              <TouchableOpacity
+                key={item.id}
+                style={listsStyles.itemCard}
+                onPress={() => router.push({ pathname: '/list-detail', params: { listId: item.id } })}
+                activeOpacity={0.8}
+              >
+                <View style={listsStyles.emojiCircle}>
+                  <Text style={{ fontSize: 28 }}>{categoryEmojis[item.category] || categoryEmojis['outros']}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={listsStyles.itemName}>{item.name}</Text>
+                  {item.description ? (
+                    <Text style={listsStyles.itemSubPrice}>{item.description}</Text>
+                  ) : null}
+                </View>
+                <Text style={listsStyles.itemPrice}>{item.items && item.items.length > 0 ? `${item.items.length} itens` : ''}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
-        <FlatList
-          data={activeLists}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: 24 }}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={listsStyles.listCard}
-              onPress={() => router.push({ pathname: '/list-detail', params: { listId: item.id } })}
-              activeOpacity={0.8}
-            >
-              <View style={{ flex: 1 }}>
-                <Text style={listsStyles.listTitle}>{item.name}</Text>
-                <Text style={listsStyles.listDate}>Criada em {new Date(item.createdAt).toLocaleDateString()}</Text>
-              </View>
-              <View style={listsStyles.verButtonBox}>
-                <Text style={listsStyles.verButtonText}>Ver</Text>
-              </View>
-            </TouchableOpacity>
-          )}
-          ListEmptyComponent={<Text style={listsStyles.emptyText}>Crie sua primeira lista de compras!</Text>}
-        />
       </View>
       <AddListModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
-        onCreate={handleCreateList}
+        onCreate={(newList) => {
+          updateLists([...shoppingLists, {
+            ...newList,
+            id: `list_${Date.now()}`,
+            familyId: currentUser.familyId,
+            createdAt: new Date().toISOString(),
+            status: 'active',
+            members: [currentUser.id],
+          }]);
+        }}
       />
-      <NavBar navigate={handleNavigate} activeScreen={'LISTS'} onAddList={handleAddList} />
+      <NavBar navigate={handleNavigate} activeScreen={'LISTS'} onAddList={() => setModalVisible(true)} />
     </>
   );
 }

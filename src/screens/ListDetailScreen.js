@@ -1,41 +1,179 @@
 import { useRouter } from 'expo-router';
 import React, { useContext, useState } from 'react';
-import { Alert, FlatList, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Dimensions, FlatList, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { CheckIcon } from '../components/Icons';
 import NavBar from '../components/NavBar';
 import { DataContext } from '../contexts/DataContext';
 
+
+const { width } = Dimensions.get('window');
+const MAX_CARD_WIDTH = Math.min(420, width * 0.98);
 const detailStyles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6', padding: 16 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  backButton: { padding: 8 },
-  header: { fontSize: 24, fontWeight: 'bold' },
-  date: { color: '#6B7280', fontSize: 12 },
-  card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 18 },
-  cardTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
-  input: { backgroundColor: '#F3F4F6', padding: 10, borderRadius: 8, marginBottom: 8 },
-  inputRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
-  addButton: { backgroundColor: '#3B82F6', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 8 },
-  addButtonText: { color: '#fff', fontWeight: 'bold' },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', marginVertical: 12 },
-  itemCard: { backgroundColor: '#fff', borderRadius: 12, padding: 12, marginBottom: 8, flexDirection: 'row', alignItems: 'center' },
-  itemCardPurchased: { backgroundColor: '#D1FAE5' },
-  itemName: { fontWeight: 'bold' },
-  itemNamePurchased: { textDecorationLine: 'line-through', color: '#6B7280' },
-  itemSubText: { color: '#6B7280', fontSize: 12 },
-  emptyText: { color: '#6B7280', textAlign: 'center', marginVertical: 12 },
-  membersRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  memberAvatarBox: { alignItems: 'center', margin: 8 },
-  memberAvatar: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
-  memberAvatarText: { color: '#fff', fontWeight: 'bold', fontSize: 18 },
-  memberName: { fontWeight: 'bold', marginTop: 4 },
-  memberButton: { padding: 6, borderRadius: 6, marginTop: 4 },
-  memberButtonAdd: { backgroundColor: '#22C55E' },
-  memberButtonRemove: { backgroundColor: '#F87171' },
-  memberButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
-  archiveButton: { backgroundColor: '#6366F1', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 18 },
-  archiveButtonText: { color: '#fff', fontWeight: 'bold' },
+  container: {
+    flex: 1,
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+  },
+  scrollContent: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    minHeight: width > 400 ? 0 : 600,
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 22,
+    marginBottom: 18,
+    width: MAX_CARD_WIDTH,
+    maxWidth: '98%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.10,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  cardTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#222',
+  },
+  input: {
+    backgroundColor: '#F3F4F6',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    fontSize: 16,
+    width: '100%',
+  },
+  inputRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 8,
+  },
+  addButton: {
+    backgroundColor: '#3B82F6',
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  addButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: 'bold',
+    marginVertical: 12,
+    color: '#222',
+    width: MAX_CARD_WIDTH,
+    alignSelf: 'center',
+  },
+  itemCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: MAX_CARD_WIDTH,
+    alignSelf: 'center',
+  },
+  itemCardPurchased: {
+    backgroundColor: '#D1FAE5',
+  },
+  itemName: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#222',
+  },
+  itemNamePurchased: {
+    textDecorationLine: 'line-through',
+    color: '#6B7280',
+  },
+  itemSubText: {
+    color: '#6B7280',
+    fontSize: 12,
+  },
+  emptyText: {
+    color: '#6B7280',
+    textAlign: 'center',
+    marginVertical: 12,
+    fontSize: 15,
+  },
+  membersRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+    justifyContent: 'flex-start',
+  },
+  memberAvatarBox: {
+    alignItems: 'center',
+    margin: 8,
+    minWidth: 90,
+    maxWidth: 120,
+    flex: 1,
+  },
+  memberAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  memberAvatarText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 22,
+  },
+  memberName: {
+    fontWeight: 'bold',
+    marginTop: 2,
+    fontSize: 15,
+    color: '#222',
+    textAlign: 'center',
+  },
+  memberButton: {
+    padding: 6,
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  memberButtonAdd: {
+    backgroundColor: '#22C55E',
+  },
+  memberButtonRemove: {
+    backgroundColor: '#F87171',
+  },
+  memberButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 13,
+  },
+  archiveButton: {
+    backgroundColor: '#6366F1',
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 18,
+    width: MAX_CARD_WIDTH,
+    alignSelf: 'center',
+  },
+  archiveButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
 });
 
 function ListDetailScreen(props) {
@@ -125,14 +263,13 @@ function ListDetailScreen(props) {
 
   return (
     <>
-      <ScrollView style={[detailStyles.container, { flex: 1, paddingTop: 0, paddingBottom: 0 }]}> 
-        {/* Header visual removido */}
+      <ScrollView style={detailStyles.container} contentContainerStyle={detailStyles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={detailStyles.card}>
           <Text style={detailStyles.cardTitle}>Adicionar Item</Text>
           <TextInput style={detailStyles.input} placeholder="Nome do item" value={newItemName} onChangeText={setNewItemName} />
           <View style={detailStyles.inputRow}>
-            <TextInput style={[detailStyles.input, {flex: 1, marginRight: 10}]} placeholder="Qtd." value={newItemQty} onChangeText={setNewItemQty} keyboardType="number-pad" />
-            <TextInput style={[detailStyles.input, {flex: 2}]} placeholder="Preço (opcional)" value={newItemPrice} onChangeText={setNewItemPrice} keyboardType="numeric" />
+            <TextInput style={[detailStyles.input, { flex: 1, marginRight: 10 }]} placeholder="Qtd." value={newItemQty} onChangeText={setNewItemQty} keyboardType="number-pad" />
+            <TextInput style={[detailStyles.input, { flex: 2 }]} placeholder="Preço (opcional)" value={newItemPrice} onChangeText={setNewItemPrice} keyboardType="numeric" />
           </View>
           <TouchableOpacity style={detailStyles.addButton} onPress={handleAddItem} activeOpacity={0.8}><Text style={detailStyles.addButtonText}>Adicionar</Text></TouchableOpacity>
         </View>
@@ -140,11 +277,11 @@ function ListDetailScreen(props) {
         <FlatList
           data={list.items || []}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: 18 }}
+          contentContainerStyle={{ paddingBottom: 18, alignItems: 'center' }}
           scrollEnabled={false}
           renderItem={({ item }) => (
             <TouchableOpacity style={[detailStyles.itemCard, item.isPurchased && detailStyles.itemCardPurchased]} onPress={() => handleTogglePurchased(item.id)} activeOpacity={0.8}>
-              <View style={{flex: 1}}>
+              <View style={{ flex: 1 }}>
                 <Text style={[detailStyles.itemName, item.isPurchased && detailStyles.itemNamePurchased]}>{item.name}</Text>
                 <Text style={detailStyles.itemSubText}>Qtd: {item.quantity} {item.price > 0 && `- R$ ${item.price.toFixed(2)}`}</Text>
               </View>
@@ -171,7 +308,7 @@ function ListDetailScreen(props) {
         </View>
         <TouchableOpacity style={detailStyles.archiveButton} onPress={handleArchiveList} activeOpacity={0.85}><Text style={detailStyles.archiveButtonText}>Finalizar e Arquivar Lista</Text></TouchableOpacity>
       </ScrollView>
-  <NavBar navigate={handleNavigate} activeScreen={'LISTS'} onAddList={handleAddList} />
+      <NavBar navigate={handleNavigate} activeScreen={'LISTS'} onAddList={handleAddList} />
     </>
   );
 }

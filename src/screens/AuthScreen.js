@@ -4,6 +4,7 @@ import React, { useContext, useState } from 'react';
 import { Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { DataContext } from '../contexts/DataContext';
 
+
 export default function AuthScreen() {
     const { login, register } = useContext(DataContext);
     const [email, setEmail] = useState('');
@@ -18,18 +19,18 @@ export default function AuthScreen() {
         if (isLogin) {
             const success = login(email, password);
             if (success) {
-                router.replace('/dashboard'); // Redireciona para tela principal (dashboard)
+                router.replace('/dashboard');
                 return;
             }
-            setError("Email ou senha inválidos.");
+            setError('Email ou senha inválidos.');
         } else {
             if (!name.trim()) {
-                setError("Nome é obrigatório.");
+                setError('Nome é obrigatório.');
                 return;
             }
             const result = register(email, password);
             if (result.success) {
-                router.replace('/dashboard'); // Redireciona após cadastro
+                router.replace('/dashboard');
                 return;
             }
             if (!result.success) {
@@ -54,10 +55,9 @@ export default function AuthScreen() {
                             <Text style={[stylesAuth.tabText, !isLogin && stylesAuth.tabTextActive]}>Cadastro</Text>
                         </TouchableOpacity>
                     </View>
-                    {/* Títulos removidos para experiência sem header visual */}
-                    <View style={{ marginTop: 24 }}>
+                    <View style={stylesAuth.formArea}>
                         {!isLogin && (
-                            <View style={{ marginBottom: 12 }}>
+                            <View style={stylesAuth.inputBox}>
                                 <Text style={stylesAuth.label}>Nome</Text>
                                 <TextInput
                                     style={stylesAuth.input}
@@ -67,7 +67,7 @@ export default function AuthScreen() {
                                 />
                             </View>
                         )}
-                        <View style={{ marginBottom: 12 }}>
+                        <View style={stylesAuth.inputBox}>
                             <Text style={stylesAuth.label}>Email</Text>
                             <TextInput
                                 style={stylesAuth.input}
@@ -78,7 +78,7 @@ export default function AuthScreen() {
                                 keyboardType="email-address"
                             />
                         </View>
-                        <View style={{ marginBottom: 12 }}>
+                        <View style={stylesAuth.inputBox}>
                             <Text style={stylesAuth.label}>Senha</Text>
                             <TextInput
                                 style={stylesAuth.input}
@@ -88,11 +88,11 @@ export default function AuthScreen() {
                                 secureTextEntry
                             />
                         </View>
-                        {error ? (
+                        {!!error && (
                             <View style={stylesAuth.errorBox}>
                                 <Text style={stylesAuth.errorText}>{error}</Text>
                             </View>
-                        ) : null}
+                        )}
                         <TouchableOpacity style={stylesAuth.button} onPress={handleAuth} activeOpacity={0.8}>
                             <Text style={stylesAuth.buttonText}>{isLogin ? 'Entrar' : 'Cadastrar'}</Text>
                         </TouchableOpacity>
@@ -119,21 +119,21 @@ const stylesAuth = StyleSheet.create({
         alignItems: 'center',
     },
     card: {
-        width: width > 400 ? 380 : '90%',
+        width: width > 420 ? 380 : '92%',
         backgroundColor: '#fff',
         borderRadius: 24,
-        padding: 28,
+        padding: 24,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 12,
-        elevation: 8,
+        shadowOpacity: 0.13,
+        shadowRadius: 10,
+        elevation: 7,
     },
     tabContainer: {
         flexDirection: 'row',
         backgroundColor: '#F3F4F6',
         borderRadius: 12,
-        marginBottom: 18,
+        marginBottom: 16,
     },
     tab: {
         flex: 1,
@@ -158,17 +158,11 @@ const stylesAuth = StyleSheet.create({
         color: '#3B82F6',
         fontWeight: 'bold',
     },
-    title: {
-        textAlign: 'center',
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: '#111827',
-        marginBottom: 4,
+    formArea: {
+        marginTop: 18,
     },
-    subtitle: {
-        textAlign: 'center',
-        color: '#6B7280',
-        marginBottom: 8,
+    inputBox: {
+        marginBottom: 12,
     },
     label: {
         fontSize: 14,
