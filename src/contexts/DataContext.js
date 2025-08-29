@@ -11,8 +11,23 @@ export const DataContext = createContext();
 
 export const DataProvider = ({ children }) => {
     const [data, setData] = useState({
-        users: [],
-        families: [],
+        users: [
+            {
+                id: 'user_teste',
+                email: 'teste@teste.com',
+                password: '123456',
+                displayName: 'Usuário Teste',
+                familyId: 'family_teste',
+            }
+        ],
+        families: [
+            {
+                id: 'family_teste',
+                name: 'Família Teste',
+                owner: 'user_teste',
+                members: ['user_teste'],
+            }
+        ],
         shoppingLists: [],
         currentUser: null,
     });

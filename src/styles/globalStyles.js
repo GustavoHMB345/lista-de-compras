@@ -38,7 +38,7 @@ export const styles = StyleSheet.create({
     navIconActive: { color: '#4f46e5' },
     navText: { fontSize: 12, color: '#6b7280' },
     navTextActive: { color: '#4f46e5', fontWeight: 'bold' },
-    card: { backgroundColor: 'white', borderRadius: 12, padding: 20, marginBottom: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
+    card: { backgroundColor: 'white', borderRadius: 12, padding: 20, marginBottom: 20, boxShadow: '0px 2px 4px rgba(0,0,0,0.1)', elevation: 3 },
     cardTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 15 },
     emptyText: { textAlign: 'center', color: '#6b7280', marginTop: 20, fontStyle: 'italic' },
     priceItem: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },

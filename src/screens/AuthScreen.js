@@ -19,7 +19,7 @@ export default function AuthScreen() {
         if (isLogin) {
             const success = login(email, password);
             if (success) {
-                router.replace('/dashboard');
+                router.replace('/');
                 return;
             }
             setError('Email ou senha inválidos.');
@@ -30,7 +30,7 @@ export default function AuthScreen() {
             }
             const result = register(email, password);
             if (result.success) {
-                router.replace('/dashboard');
+                router.replace('/');
                 return;
             }
             if (!result.success) {
@@ -71,7 +71,7 @@ export default function AuthScreen() {
                             <Text style={stylesAuth.label}>Email</Text>
                             <TextInput
                                 style={stylesAuth.input}
-                                placeholder="seu@email.com"
+                                placeholder="Digite seu email"
                                 value={email}
                                 onChangeText={setEmail}
                                 autoCapitalize="none"
@@ -95,6 +95,21 @@ export default function AuthScreen() {
                         )}
                         <TouchableOpacity style={stylesAuth.button} onPress={handleAuth} activeOpacity={0.8}>
                             <Text style={stylesAuth.buttonText}>{isLogin ? 'Entrar' : 'Cadastrar'}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[stylesAuth.button, { backgroundColor: '#6366F1', marginTop: 0 }]}
+                            onPress={() => {
+                                setError('');
+                                const success = login('teste@teste.com', '123456');
+                                if (success) {
+                                    router.replace('/');
+                                } else {
+                                    setError('Usuário de teste não encontrado.');
+                                }
+                            }}
+                            activeOpacity={0.85}
+                        >
+                            <Text style={stylesAuth.buttonText}>Usuário de teste</Text>
                         </TouchableOpacity>
                         <TouchableOpacity onPress={() => { setIsLogin(!isLogin); setError(''); }} activeOpacity={0.7}>
                             <Text style={stylesAuth.toggleText}>
