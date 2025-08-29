@@ -2,6 +2,8 @@
 import { useRouter } from 'expo-router';
 import { useContext, useEffect, useState } from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import AddListModal from '../components/AddListModal';
 import NavBar from '../components/NavBar';
 import { DataContext } from '../contexts/DataContext';
 
@@ -17,11 +19,10 @@ const { width } = Dimensions.get('window');
 const CARD_WIDTH = Math.min(180, width * 0.42);
 const CONTAINER_WIDTH = Math.min(420, width * 0.98);
 
-
-
 export default function DashboardScreen() {
-    const { shoppingLists, currentUser, loading } = useContext(DataContext);
+    const { shoppingLists, currentUser, loading, updateLists } = useContext(DataContext);
     const [topItems, setTopItems] = useState([]);
+    const [modalVisible, setModalVisible] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
@@ -67,7 +68,7 @@ export default function DashboardScreen() {
         return null;
     }
     return (
-        <View style={styles.root}>
+        <SafeAreaView style={styles.root} edges={['top']}>
             <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
                 <View style={[styles.card, { width: CONTAINER_WIDTH }]}>  
                     <Text style={styles.title}>Dashboard</Text>
@@ -89,8 +90,29 @@ export default function DashboardScreen() {
                     </View>
                 </View>
             </ScrollView>
-            <NavBar navigate={handleNavigate} activeScreen={'DASHBOARD'} />
-        </View>
+            <AddListModal
+                visible={modalVisible}
+                onClose={() => setModalVisible(false)}
+                onCreate={(newList) => {
+                    updateLists([
+                        ...shoppingLists,
+                        {
+                            ...newList,
+                            id: `list_${Date.now()}`,
+                            familyId: currentUser.familyId,
+                            createdAt: new Date().toISOString(),
+                            status: 'active',
+                            members: [currentUser.id],
+                        },
+                    ]);
+                }}
+            />
+            <NavBar
+                navigate={handleNavigate}
+                activeScreen={'DASHBOARD'}
+                onAddList={() => setModalVisible(true)}
+            />
+        </SafeAreaView>
     );
 }
 
@@ -102,8 +124,7 @@ const styles = StyleSheet.create({
     scroll: {
         flexGrow: 1,
         alignItems: 'center',
-        justifyContent: 'center',
-        paddingBottom: 60,
+        paddingBottom: 32,
     },
     card: {
         backgroundColor: '#fff',

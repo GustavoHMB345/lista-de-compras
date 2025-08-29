@@ -10,6 +10,9 @@ export const DataContext = createContext();
 
 
 export const DataProvider = ({ children }) => {
+    React.useEffect(() => {
+        loadData();
+    }, []);
     const [data, setData] = useState({
         users: [
             {
@@ -36,13 +39,39 @@ export const DataProvider = ({ children }) => {
     const loadData = async () => {
         try {
             const storedData = await AsyncStorage.getItem('@SuperLista:data');
+            let parsed = null;
             if (storedData) {
-                const parsed = JSON.parse(storedData);
-                // Se não houver usuários, mantém o usuário de teste
-                if (parsed.users && parsed.users.length > 0) {
-                    setData(parsed);
-                }
+                parsed = JSON.parse(storedData);
             }
+            // Garante que o usuário de teste sempre exista
+            const testUser = {
+                id: 'user_teste',
+                email: 'teste@teste.com',
+                password: '123456',
+                displayName: 'Usuário Teste',
+                familyId: 'family_teste',
+            };
+            const testFamily = {
+                id: 'family_teste',
+                name: 'Família Teste',
+                owner: 'user_teste',
+                members: ['user_teste'],
+            };
+            let users = parsed?.users || [];
+            let families = parsed?.families || [];
+            // Adiciona usuário/família de teste se não existir
+            if (!users.some(u => u.email === testUser.email)) {
+                users = [testUser, ...users];
+            }
+            if (!families.some(f => f.id === testFamily.id)) {
+                families = [testFamily, ...families];
+            }
+            setData({
+                ...data,
+                ...parsed,
+                users,
+                families,
+            });
         } catch (e) {
             console.error("Failed to load data.", e);
         } finally {
@@ -61,18 +90,25 @@ export const DataProvider = ({ children }) => {
         }
     };
 
-    const login = (email, password) => {
-        console.log('Usuários disponíveis:', data.users);
-        console.log('Tentativa de login:', email, password);
-        const user = data.users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
-        if (user) {
-            const newData = { ...data, currentUser: user };
-            saveData(newData);
-            console.log('Login bem-sucedido:', user);
-            return true;
+    const login = async (email, password) => {
+        try {
+            const storedData = await AsyncStorage.getItem('@SuperLista:data');
+            let users = data.users;
+            if (storedData) {
+                const parsed = JSON.parse(storedData);
+                users = parsed.users || users;
+            }
+            const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
+            if (user) {
+                const newData = { ...data, currentUser: user };
+                await saveData(newData);
+                setData(newData);
+                return { success: true };
+            }
+            return { success: false, message: 'Email ou senha inválidos.' };
+        } catch (e) {
+            return { success: false, message: 'Erro ao acessar dados.' };
         }
-        console.log('Login falhou');
-        return false;
     };
 
     const logout = () => {
@@ -80,26 +116,36 @@ export const DataProvider = ({ children }) => {
         saveData(newData);
     };
 
-    const register = (email, password) => {
-        if (data.users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
-            return { success: false, message: "Este email já está em uso." };
+    const register = async (email, password) => {
+        try {
+            const storedData = await AsyncStorage.getItem('@SuperLista:data');
+            let users = data.users;
+            let families = data.families;
+            if (storedData) {
+                const parsed = JSON.parse(storedData);
+                users = parsed.users || users;
+                families = parsed.families || families;
+            }
+            if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
+                return { success: false, message: "Este email já está em uso." };
+            }
+            const userId = `user_${Date.now()}`;
+            const familyId = `family_${Date.now()}`;
+            const displayName = email.split('@')[0];
+            const newUser = { id: userId, email, password, displayName, familyId };
+            const newFamily = { id: familyId, name: `Família de ${displayName}`, owner: userId, members: [userId] };
+            const newData = {
+                ...data,
+                users: [...users, newUser],
+                families: [...families, newFamily],
+                currentUser: newUser,
+            };
+            await saveData(newData);
+            setData(newData);
+            return { success: true };
+        } catch (e) {
+            return { success: false, message: 'Erro ao registrar usuário.' };
         }
-
-        const userId = `user_${Date.now()}`;
-        const familyId = `family_${Date.now()}`;
-        const displayName = email.split('@')[0];
-
-        const newUser = { id: userId, email, password, displayName, familyId };
-        const newFamily = { id: familyId, name: `Família de ${displayName}`, owner: userId, members: [userId] };
-
-        const newData = {
-            ...data,
-            users: [...data.users, newUser],
-            families: [...data.families, newFamily],
-            currentUser: newUser,
-        };
-        saveData(newData);
-        return { success: true };
     };
     
     const updateLists = (newLists) => {

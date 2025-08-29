@@ -1,6 +1,8 @@
 import { useRouter } from 'expo-router';
 import React, { useContext, useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import AddListModal from '../components/AddListModal';
 import NavBar from '../components/NavBar';
 import { DataContext } from '../contexts/DataContext';
 
@@ -121,9 +123,10 @@ const familyStyles = StyleSheet.create({
 });
 
 function FamilyScreen() {
-    const { families, users, currentUser, updateFamilies, updateUsers } = useContext(DataContext);
+    const { families, users, currentUser, updateFamilies, updateUsers, shoppingLists, updateLists } = useContext(DataContext);
     const [inviteEmail, setInviteEmail] = useState('');
     const [error, setError] = useState('');
+    const [modalVisible, setModalVisible] = useState(false);
     const router = useRouter();
     const family = families.find(f => f.id === currentUser.familyId);
     const members = users.filter(u => family?.members.includes(u.id));
@@ -177,46 +180,55 @@ function FamilyScreen() {
         }
     };
 
-    // Função para criar lista instantânea
-    const handleAddList = () => {
-        // Adiciona uma lista instantânea (sem navegação)
-        if (typeof updateFamilies === 'function' && typeof updateUsers === 'function') {
-            // Aqui você pode implementar lógica de criação de lista se desejar
-        }
-    };
-
-        return (
-            <>
-                <View style={familyStyles.container}>
-                    <View style={familyStyles.card}>
-                        <Text style={familyStyles.cardTitle}>Membros</Text>
-                        <View style={familyStyles.membersRow}>
-                            {members.map((member, idx) => (
-                                <View key={member.id} style={familyStyles.memberBox}>
-                                    <View style={[familyStyles.avatar, { backgroundColor: idx === 0 ? '#3B82F6' : idx === 1 ? '#22C55E' : '#8B5CF6' }]}> 
-                                        <Text style={familyStyles.avatarText}>{member.displayName[0]}</Text>
-                                    </View>
-                                    <Text style={familyStyles.memberName}>{member.displayName}</Text>
-                                    <Text style={familyStyles.memberEmail}>{member.email}</Text>
-                                    <Text style={[familyStyles.memberStatus, idx === 0 ? familyStyles.adminStatus : null]}>{idx === 0 ? 'Administrador' : 'Membro'}</Text>
+    return (
+        <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+            <View style={familyStyles.container}>
+                <View style={familyStyles.card}>
+                    <Text style={familyStyles.cardTitle}>Membros</Text>
+                    <View style={familyStyles.membersRow}>
+                        {members.map((member, idx) => (
+                            <View key={member.id} style={familyStyles.memberBox}>
+                                <View style={[familyStyles.avatar, { backgroundColor: idx === 0 ? '#3B82F6' : idx === 1 ? '#22C55E' : '#8B5CF6' }]}> 
+                                    <Text style={familyStyles.avatarText}>{member.displayName[0]}</Text>
                                 </View>
-                            ))}
-                        </View>
-                    </View>
-                    <View style={familyStyles.card}>
-                        <Text style={familyStyles.cardTitle}>Convidar Novo Membro</Text>
-                        <TextInput style={familyStyles.input} placeholder="Email do membro" value={inviteEmail} onChangeText={setInviteEmail} autoCapitalize="none" />
-                        {!!error && (
-                            <View style={familyStyles.errorBox}><Text style={familyStyles.errorText}>{error}</Text></View>
-                        )}
-                        <TouchableOpacity style={familyStyles.inviteButton} onPress={handleInviteMember} activeOpacity={0.8}>
-                            <Text style={familyStyles.inviteButtonText}>Convidar</Text>
-                        </TouchableOpacity>
+                                <Text style={familyStyles.memberName}>{member.displayName}</Text>
+                                <Text style={familyStyles.memberEmail}>{member.email}</Text>
+                                <Text style={[familyStyles.memberStatus, idx === 0 ? familyStyles.adminStatus : null]}>{idx === 0 ? 'Administrador' : 'Membro'}</Text>
+                            </View>
+                        ))}
                     </View>
                 </View>
-                <NavBar navigate={handleNavigate} activeScreen={'FAMILY'} onAddList={handleAddList} />
-            </>
-        );
+                <View style={familyStyles.card}>
+                    <Text style={familyStyles.cardTitle}>Convidar Novo Membro</Text>
+                    <TextInput style={familyStyles.input} placeholder="Email do membro" value={inviteEmail} onChangeText={setInviteEmail} autoCapitalize="none" />
+                    {!!error && (
+                        <View style={familyStyles.errorBox}><Text style={familyStyles.errorText}>{error}</Text></View>
+                    )}
+                    <TouchableOpacity style={familyStyles.inviteButton} onPress={handleInviteMember} activeOpacity={0.8}>
+                        <Text style={familyStyles.inviteButtonText}>Convidar</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+            <AddListModal
+                visible={modalVisible}
+                onClose={() => setModalVisible(false)}
+                onCreate={(newList) => {
+                    updateLists([
+                        ...shoppingLists,
+                        {
+                            ...newList,
+                            id: `list_${Date.now()}`,
+                            familyId: currentUser.familyId,
+                            createdAt: new Date().toISOString(),
+                            status: 'active',
+                            members: [currentUser.id],
+                        },
+                    ]);
+                }}
+            />
+            <NavBar navigate={handleNavigate} activeScreen={'FAMILY'} onAddList={() => setModalVisible(true)} />
+        </SafeAreaView>
+    );
 }
 
 export default FamilyScreen;

@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import React, { useContext, useState } from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AddListModal from '../components/AddListModal';
 import NavBar from '../components/NavBar';
 import { DataContext } from '../contexts/DataContext';
@@ -131,7 +132,7 @@ function ListsScreen() {
   };
 
   return (
-    <>
+    <SafeAreaView style={{ flex: 1 }} edges={['top']}>
       <View style={listsStyles.bg}>
         <View style={listsStyles.cardContainer}>
           <Text style={listsStyles.title}>Suas Listas</Text>
@@ -177,7 +178,7 @@ function ListsScreen() {
         }}
       />
       <NavBar navigate={handleNavigate} activeScreen={'LISTS'} onAddList={() => setModalVisible(true)} />
-    </>
+    </SafeAreaView>
   );
 }
 

@@ -14,23 +14,23 @@ export default function AuthScreen() {
     const [name, setName] = useState('');
     const router = useRouter();
 
-    const handleAuth = () => {
+    const handleAuth = async () => {
         setError('');
         if (isLogin) {
-            const success = login(email, password);
-            if (success) {
-                router.replace('/');
+            const result = await login(email, password);
+            if (result.success) {
+                router.replace('/dashboard');
                 return;
             }
-            setError('Email ou senha inválidos.');
+            setError(result.message || 'Email ou senha inválidos.');
         } else {
             if (!name.trim()) {
                 setError('Nome é obrigatório.');
                 return;
             }
-            const result = register(email, password);
+            const result = await register(email, password);
             if (result.success) {
-                router.replace('/');
+                router.replace('/dashboard');
                 return;
             }
             if (!result.success) {
@@ -98,11 +98,13 @@ export default function AuthScreen() {
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[stylesAuth.button, { backgroundColor: '#6366F1', marginTop: 0 }]}
-                            onPress={() => {
+                            onPress={async () => {
                                 setError('');
-                                const success = login('teste@teste.com', '123456');
-                                if (success) {
-                                    router.replace('/');
+                                setEmail('teste@teste.com');
+                                setPassword('123456');
+                                const result = await login('teste@teste.com', '123456');
+                                if (result.success) {
+                                    router.replace('/dashboard');
                                 } else {
                                     setError('Usuário de teste não encontrado.');
                                 }
