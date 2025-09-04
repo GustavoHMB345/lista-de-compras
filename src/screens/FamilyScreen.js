@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router';
 import React, { useContext, useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AddListModal from '../components/AddListModal';
 import NavBar from '../components/NavBar';
+import SwipeNavigator from '../components/SwipeNavigator';
 import { DataContext } from '../contexts/DataContext';
 
 import { Dimensions } from 'react-native';
@@ -181,7 +182,15 @@ function FamilyScreen() {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#e6f0fa' }} edges={['top']}>
+            <SwipeNavigator onSwipeLeft={() => handleNavigate('LISTS')} onSwipeRight={() => handleNavigate('DASHBOARD')}>
+            <ScrollView
+                contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center' }}
+                showsVerticalScrollIndicator={false}
+                bounces
+                alwaysBounceVertical
+                overScrollMode="always"
+            >
             <View style={familyStyles.container}>
                 <View style={familyStyles.card}>
                     <Text style={familyStyles.cardTitle}>Membros</Text>
@@ -209,6 +218,8 @@ function FamilyScreen() {
                     </TouchableOpacity>
                 </View>
             </View>
+            </ScrollView>
+            </SwipeNavigator>
             <AddListModal
                 visible={modalVisible}
                 onClose={() => setModalVisible(false)}

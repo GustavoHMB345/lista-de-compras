@@ -1,13 +1,14 @@
-
 import React from 'react';
 import { FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { CategoryIcon } from './Icons';
 
 const CATEGORIES = [
-  { key: 'alimentos', label: 'Alimentos', icon: '🍎' },
-  { key: 'limpeza', label: 'Produtos de Limpeza', icon: '🧼' },
-  { key: 'tecnologia', label: 'Itens Tecnológicos', icon: '💻' },
-  { key: 'vestuario', label: 'Vestuário', icon: '👕' },
-  { key: 'moveis', label: 'Móveis', icon: '🛋️' },
+  { key: 'alimentos', label: 'Alimentos' },
+  { key: 'limpeza', label: 'Limpeza' },
+  { key: 'tecnologia', label: 'Tecnologia' },
+  { key: 'vestuario', label: 'Vestuário' },
+  { key: 'moveis', label: 'Móveis' },
+  { key: 'outros', label: 'Outros' },
 ];
 
 export default function AddListModal({ visible, onClose, onCreate }) {
@@ -18,16 +19,36 @@ export default function AddListModal({ visible, onClose, onCreate }) {
   const [productName, setProductName] = React.useState('');
   const [productQty, setProductQty] = React.useState('1');
   const [productPrice, setProductPrice] = React.useState('');
+  const [nameError, setNameError] = React.useState('');
+
+  const normalizeNumber = (val) => {
+    if (typeof val === 'number') return val;
+    if (!val) return 0;
+    const n = parseFloat(String(val).replace(/,/g, '.'));
+    return isNaN(n) ? 0 : n;
+  };
+
+  const productsCount = products.length;
+  const estimatedTotal = products.reduce((sum, p) => sum + normalizeNumber(p.price) * (parseInt(p.quantity) || 1), 0);
+
+  const validateName = (v) => {
+    if (!v || v.trim().length < 3) {
+      setNameError('Informe um nome com ao menos 3 caracteres.');
+      return false;
+    }
+    setNameError('');
+    return true;
+  };
 
   const handleAddProduct = () => {
     if (!productName.trim()) return;
-    setProducts([
-      ...products,
+    setProducts((prev) => [
+      ...prev,
       {
         id: `prod_${Date.now()}_${Math.random()}`,
-        name: productName,
+        name: productName.trim(),
         quantity: parseInt(productQty) || 1,
-        price: productPrice ? parseFloat(productPrice.replace(',', '.')) : 0,
+        price: normalizeNumber(productPrice),
         category,
       },
     ]);
@@ -40,20 +61,33 @@ export default function AddListModal({ visible, onClose, onCreate }) {
     setProducts(products.filter(p => p.id !== id));
   };
 
+  const handleIncQty = (id) => {
+    setProducts(p => p.map(item => item.id === id ? { ...item, quantity: (parseInt(item.quantity) || 1) + 1 } : item));
+  };
+  const handleDecQty = (id) => {
+    setProducts(p => p.map(item => item.id === id ? { ...item, quantity: Math.max(1, (parseInt(item.quantity) || 1) - 1) } : item));
+  };
+  const handlePriceChange = (id, val) => {
+    setProducts(p => p.map(item => item.id === id ? { ...item, price: normalizeNumber(val) } : item));
+  };
+
+  const canCreate = name.trim().length >= 3;
+
   const handleCreate = () => {
-    if (name.trim() === '') return;
-    const selectedCategory = CATEGORIES.find(c => c.key === category);
+    if (!validateName(name)) return;
     onCreate({
-      name,
-      desc,
+      name: name.trim(),
+      desc: desc.trim(),
       category,
-      icon: selectedCategory ? selectedCategory.icon : '',
       items: products,
     });
     setName('');
     setDesc('');
     setCategory(CATEGORIES[0].key);
     setProducts([]);
+    setProductName('');
+    setProductQty('1');
+    setProductPrice('');
     onClose();
   };
 
@@ -66,8 +100,9 @@ export default function AddListModal({ visible, onClose, onCreate }) {
             style={styles.input}
             placeholder="Nome da lista"
             value={name}
-            onChangeText={setName}
+            onChangeText={(v) => { setName(v); if (nameError) validateName(v); }}
           />
+          {!!nameError && <Text style={styles.errorText}>{nameError}</Text>}
           <TextInput
             style={styles.input}
             placeholder="Descrição (opcional)"
@@ -81,13 +116,14 @@ export default function AddListModal({ visible, onClose, onCreate }) {
                 key={cat.key}
                 style={[styles.categoryButton, category === cat.key && styles.categoryButtonActive]}
                 onPress={() => setCategory(cat.key)}
-                activeOpacity={0.8}
+                activeOpacity={0.85}
               >
-                <Text style={styles.categoryIcon}>{cat.icon}</Text>
-                <Text style={styles.categoryLabel}>{cat.label}</Text>
+                <CategoryIcon type={cat.key} size={40} />
+                <Text style={[styles.categoryLabel, category === cat.key && styles.categoryLabelActive]}>{cat.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
+
           <Text style={styles.label}>Adicionar Produtos</Text>
           <View style={styles.productRow}>
             <TextInput
@@ -110,31 +146,50 @@ export default function AddListModal({ visible, onClose, onCreate }) {
               onChangeText={setProductPrice}
               keyboardType="numeric"
             />
-            <TouchableOpacity style={styles.addProductButton} onPress={handleAddProduct} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.addProductButton} onPress={handleAddProduct} activeOpacity={0.85}>
               <Text style={styles.addProductText}>+</Text>
             </TouchableOpacity>
           </View>
+
+          <View style={styles.totalsRow}>
+            <Text style={styles.totalsText}>{productsCount} {productsCount === 1 ? 'produto' : 'produtos'}</Text>
+            <Text style={styles.totalsText}>Estimado: R$ {estimatedTotal.toFixed(2)}</Text>
+          </View>
+
           <FlatList
             data={products}
             keyExtractor={item => item.id}
             renderItem={({ item }) => (
               <View style={styles.productItem}>
-                <Text style={{ flex: 2 }}>{item.name}</Text>
-                <Text style={{ flex: 1, textAlign: 'center' }}>{item.quantity}</Text>
-                <Text style={{ flex: 1, textAlign: 'center' }}>R$ {item.price.toFixed(2)}</Text>
+                <Text style={{ flex: 2, fontWeight: '600', color: '#111827' }}>{item.name}</Text>
+                <View style={styles.qtyBox}>
+                  <TouchableOpacity onPress={() => handleDecQty(item.id)} style={styles.qtyBtn} activeOpacity={0.7}><Text style={styles.qtyBtnText}>-</Text></TouchableOpacity>
+                  <Text style={styles.qtyValue}>{item.quantity}</Text>
+                  <TouchableOpacity onPress={() => handleIncQty(item.id)} style={styles.qtyBtn} activeOpacity={0.7}><Text style={styles.qtyBtnText}>+</Text></TouchableOpacity>
+                </View>
+                <View style={styles.priceBox}>
+                  <Text style={styles.pricePrefix}>R$</Text>
+                  <TextInput
+                    style={styles.priceInput}
+                    value={String(item.price ?? '')}
+                    onChangeText={(v) => handlePriceChange(item.id, v)}
+                    keyboardType="numeric"
+                  />
+                </View>
                 <TouchableOpacity onPress={() => handleRemoveProduct(item.id)}>
                   <Text style={{ color: '#ef4444', fontWeight: 'bold', marginLeft: 8 }}>Remover</Text>
                 </TouchableOpacity>
               </View>
             )}
             ListEmptyComponent={<Text style={{ color: '#6B7280', textAlign: 'center', marginVertical: 4 }}>Nenhum produto adicionado.</Text>}
-            style={{ maxHeight: 120, marginBottom: 8 }}
+            style={{ maxHeight: 160, marginBottom: 8 }}
           />
+
           <View style={styles.buttonRow}>
             <TouchableOpacity style={styles.cancelButton} onPress={onClose} activeOpacity={0.8}>
               <Text style={styles.cancelText}>Cancelar</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.createButton} onPress={handleCreate} activeOpacity={0.8}>
+            <TouchableOpacity style={[styles.createButton, !canCreate && styles.createButtonDisabled]} onPress={handleCreate} activeOpacity={0.8} disabled={!canCreate}>
               <Text style={styles.createText}>Criar</Text>
             </TouchableOpacity>
           </View>
@@ -164,6 +219,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
+  errorText: {
+    color: '#ef4444',
+    marginTop: -6,
+    marginBottom: 10,
+  },
   input: {
     backgroundColor: '#F3F4F6',
     padding: 12,
@@ -182,27 +242,30 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   categoryButton: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 8,
-    padding: 8,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
     alignItems: 'center',
     flexDirection: 'column',
     marginRight: 6,
     marginBottom: 6,
-    minWidth: 70,
-    flex: 1,
+    minWidth: 84,
   },
   categoryButtonActive: {
-    backgroundColor: '#6366F1',
-  },
-  categoryIcon: {
-    fontSize: 22,
-    marginBottom: 2,
+    backgroundColor: '#EEF2FF',
+    borderWidth: 1,
+    borderColor: '#6366F1',
   },
   categoryLabel: {
     fontSize: 12,
     color: '#222',
     textAlign: 'center',
+    marginTop: 6,
+  },
+  categoryLabelActive: {
+    color: '#4f46e5',
+    fontWeight: '600',
   },
   productRow: {
     flexDirection: 'row',
@@ -230,6 +293,45 @@ const styles = StyleSheet.create({
     padding: 8,
     marginBottom: 4,
   },
+  qtyBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    marginHorizontal: 6,
+  },
+  qtyBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  qtyBtnText: {
+    fontSize: 18,
+    color: '#111827',
+  },
+  qtyValue: {
+    minWidth: 24,
+    textAlign: 'center',
+    fontWeight: '600',
+    color: '#111827',
+  },
+  priceBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    marginLeft: 6,
+  },
+  pricePrefix: {
+    color: '#6B7280',
+    marginRight: 4,
+  },
+  priceInput: {
+    minWidth: 56,
+    paddingVertical: 2,
+    color: '#111827',
+  },
   buttonRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -251,6 +353,9 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     alignItems: 'center',
   },
+  createButtonDisabled: {
+    backgroundColor: '#9ca3af',
+  },
   cancelText: {
     color: 'white',
     fontWeight: 'bold',
@@ -258,5 +363,14 @@ const styles = StyleSheet.create({
   createText: {
     color: 'white',
     fontWeight: 'bold',
+  },
+  totalsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  totalsText: {
+    color: '#111827',
+    fontWeight: '600',
   },
 });

@@ -1,10 +1,7 @@
-import { useRouter } from 'expo-router';
-import { useEffect } from 'react';
+import { Redirect, useRootNavigationState } from 'expo-router';
 
 export default function IndexRedirect() {
-  const router = useRouter();
-  useEffect(() => {
-    router.replace('/auth');
-  }, []);
-  return null;
+  const rootNavigation = useRootNavigationState();
+  if (!rootNavigation?.key) return null; // Aguarda Root Layout montar
+  return <Redirect href="/auth" />;
 }

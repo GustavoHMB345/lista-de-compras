@@ -1,5 +1,5 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { PlusIcon } from './Icons';
@@ -62,11 +62,9 @@ export default function NavBar({ navigate, activeScreen, onAddList }) {
                 <TouchableOpacity style={styles.navBarItemCustom} onPress={() => navigate('FAMILY')} activeOpacity={0.7}>
                     <FamilyIcon active={activeScreen === 'FAMILY'} />
                 </TouchableOpacity>
-                <View style={styles.navBarCenterBtnWrap}>
-                    <TouchableOpacity style={styles.navBarCenterBtnCustom} onPress={onAddList} activeOpacity={0.85}>
-                        <PlusIcon />
-                    </TouchableOpacity>
-                </View>
+                <TouchableOpacity style={styles.navBarCenterBtnCustom} onPress={onAddList} activeOpacity={0.85}>
+                    <PlusIcon />
+                </TouchableOpacity>
                 <TouchableOpacity style={styles.navBarItemCustom} onPress={() => navigate('LISTS')} activeOpacity={0.7}>
                     <ListIcon active={activeScreen === 'LISTS'} />
                 </TouchableOpacity>
@@ -105,14 +103,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         height: 56,
     },
-    navBarCenterBtnWrap: {
-        position: 'relative',
-        top: -18,
-        zIndex: 2,
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: 64,
-    },
     navBarCenterBtnCustom: {
         width: 56,
         height: 56,
@@ -125,6 +115,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 12,
         elevation: 12,
+        alignSelf: 'center',
     },
     iconWrap: {
         alignItems: 'center',

@@ -1,10 +1,11 @@
 import { useRouter } from 'expo-router';
 import React, { useContext, useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AddListModal from '../components/AddListModal';
 import { CheckIcon, EditIcon } from '../components/Icons';
 import NavBar from '../components/NavBar';
+import SwipeNavigator from '../components/SwipeNavigator';
 import { DataContext } from '../contexts/DataContext';
 
 const profileStyles = StyleSheet.create({
@@ -62,7 +63,15 @@ function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#e6f0fa' }} edges={['top']}>
+      <SwipeNavigator onSwipeLeft={() => handleNavigate('DASHBOARD')} onSwipeRight={() => handleNavigate('LISTS')}>
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1, padding: 16 }}
+        showsVerticalScrollIndicator={false}
+        bounces
+        alwaysBounceVertical
+        overScrollMode="always"
+      >
       <View style={[profileStyles.container, { flex: 1, paddingTop: 0, paddingBottom: 0 }]}> 
         {/* Header visual removido */}
         <View style={profileStyles.card}>
@@ -87,7 +96,9 @@ function ProfileScreen() {
           )}
         </View>
         <TouchableOpacity style={profileStyles.logoutButton} onPress={logout} activeOpacity={0.85}><Text style={profileStyles.logoutButtonText}>Sair da Conta</Text></TouchableOpacity>
-      </View>
+  </View>
+  </ScrollView>
+  </SwipeNavigator>
       <AddListModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}

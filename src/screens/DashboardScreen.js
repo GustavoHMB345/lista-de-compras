@@ -1,17 +1,18 @@
 
-import { useRouter } from 'expo-router';
+import { useRootNavigationState, useRouter } from 'expo-router';
 import { useContext, useEffect, useState } from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AddListModal from '../components/AddListModal';
 import NavBar from '../components/NavBar';
+import SwipeNavigator from '../components/SwipeNavigator';
 import { DataContext } from '../contexts/DataContext';
 
 const dashboardBg = '#e6f0fa';
 const cardColors = ['#b6d6f6', '#b6d6f6'];
 const itemEmojis = {
     'leite integral': '🥛',
-    'siboda konola dumiamo': '🍞',
+    'pão integral': '🍞',
     'pão': '🍞',
 };
 
@@ -19,17 +20,19 @@ const { width } = Dimensions.get('window');
 const CARD_WIDTH = Math.min(180, width * 0.42);
 const CONTAINER_WIDTH = Math.min(420, width * 0.98);
 
+
 export default function DashboardScreen() {
     const { shoppingLists, currentUser, loading, updateLists } = useContext(DataContext);
     const [topItems, setTopItems] = useState([]);
     const [modalVisible, setModalVisible] = useState(false);
     const router = useRouter();
+    const rootNavigation = useRootNavigationState();
 
     useEffect(() => {
-        if (!loading && !currentUser) {
+        if (!loading && !currentUser && rootNavigation?.key) {
             router.replace('/auth');
         }
-    }, [loading, currentUser]);
+    }, [loading, currentUser, rootNavigation?.key]);
 
     useEffect(() => {
         if (!loading && currentUser) {
@@ -69,7 +72,17 @@ export default function DashboardScreen() {
     }
     return (
         <SafeAreaView style={styles.root} edges={['top']}>
-            <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+            <SwipeNavigator
+                onSwipeLeft={() => handleNavigate('FAMILY')}
+                onSwipeRight={() => handleNavigate('PROFILE')}
+            >
+            <ScrollView
+                contentContainerStyle={styles.scroll}
+                showsVerticalScrollIndicator={false}
+                bounces
+                alwaysBounceVertical
+                overScrollMode="always"
+            >
                 <View style={[styles.card, { width: CONTAINER_WIDTH }]}>  
                     <Text style={styles.title}>Dashboard</Text>
                     <Text style={styles.subtitle}>Itens Mais Procurados</Text>
@@ -90,6 +103,7 @@ export default function DashboardScreen() {
                     </View>
                 </View>
             </ScrollView>
+            </SwipeNavigator>
             <AddListModal
                 visible={modalVisible}
                 onClose={() => setModalVisible(false)}

@@ -3,7 +3,9 @@ import React, { useContext, useState } from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AddListModal from '../components/AddListModal';
+import { CategoryIcon } from '../components/Icons';
 import NavBar from '../components/NavBar';
+import SwipeNavigator from '../components/SwipeNavigator';
 import { DataContext } from '../contexts/DataContext';
 
 
@@ -98,15 +100,7 @@ function ListsScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const router = useRouter();
 
-  // Emojis padrão para categorias
-  const categoryEmojis = {
-    alimentos: '🍎',
-    limpeza: '�',
-    tecnologia: '💻',
-    vestuario: '👕',
-    moveis: '🛋️',
-    outros: '🛒',
-  };
+  // Ícones por categoria são renderizados via <CategoryIcon />
 
   // Filtra listas do usuário logado
   const userLists = shoppingLists.filter(l => l.familyId === currentUser?.familyId);
@@ -132,12 +126,20 @@ function ListsScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#e6f0fa' }} edges={['top']}>
+      <SwipeNavigator onSwipeLeft={() => handleNavigate('PROFILE')} onSwipeRight={() => handleNavigate('FAMILY')}>
       <View style={listsStyles.bg}>
         <View style={listsStyles.cardContainer}>
           <Text style={listsStyles.title}>Suas Listas</Text>
           <Text style={listsStyles.subtitle}>Listas criadas por você</Text>
-          <ScrollView style={{ width: '100%' }} contentContainerStyle={{ gap: 12 }} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={{ width: '100%' }}
+            contentContainerStyle={{ gap: 12 }}
+            showsVerticalScrollIndicator={false}
+            bounces
+            alwaysBounceVertical
+            overScrollMode="always"
+          >
             {userLists.length === 0 && (
               <Text style={listsStyles.emptyText}>Nenhuma lista criada ainda.</Text>
             )}
@@ -148,21 +150,20 @@ function ListsScreen() {
                 onPress={() => router.push({ pathname: '/list-detail', params: { listId: item.id } })}
                 activeOpacity={0.8}
               >
-                <View style={listsStyles.emojiCircle}>
-                  <Text style={{ fontSize: 28 }}>{categoryEmojis[item.category] || categoryEmojis['outros']}</Text>
-                </View>
+                <CategoryIcon type={item.category || 'outros'} size={44} />
                 <View style={{ flex: 1 }}>
                   <Text style={listsStyles.itemName}>{item.name}</Text>
-                  {item.description ? (
-                    <Text style={listsStyles.itemSubPrice}>{item.description}</Text>
+                  {item.desc || item.description ? (
+                    <Text style={listsStyles.itemSubPrice}>{item.desc || item.description}</Text>
                   ) : null}
                 </View>
                 <Text style={listsStyles.itemPrice}>{item.items && item.items.length > 0 ? `${item.items.length} itens` : ''}</Text>
               </TouchableOpacity>
             ))}
-          </ScrollView>
+      </ScrollView>
         </View>
       </View>
+    </SwipeNavigator>
       <AddListModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}

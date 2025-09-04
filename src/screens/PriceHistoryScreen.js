@@ -1,5 +1,11 @@
-import React from 'react';
+import { useRouter } from 'expo-router';
+import React, { useContext, useState } from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import AddListModal from '../components/AddListModal';
+import NavBar from '../components/NavBar';
+import SwipeNavigator from '../components/SwipeNavigator';
+import { DataContext } from '../contexts/DataContext';
 
 
 const { width } = Dimensions.get('window');
@@ -96,18 +102,73 @@ const historyStyles = StyleSheet.create({
 
 
 function PriceHistoryScreen() {
+  const { shoppingLists, currentUser, updateLists } = useContext(DataContext);
+  const [modalVisible, setModalVisible] = useState(false);
+  const router = useRouter();
+
+  const handleNavigate = (screen) => {
+    switch (screen) {
+      case 'DASHBOARD':
+        router.push('/dashboard');
+        break;
+      case 'LISTS':
+        router.push('/lists');
+        break;
+      case 'FAMILY':
+        router.push('/family');
+        break;
+      case 'PROFILE':
+        router.push('/profile');
+        break;
+      default:
+        break;
+    }
+  };
+
   // Aqui você deve buscar os dados reais do contexto ou API
   const items = [];
   return (
-    <View style={historyStyles.bg}>
-      <View style={historyStyles.cardContainer}>
-        <Text style={historyStyles.title}>Histórico de Preços</Text>
-        <Text style={historyStyles.subtitle}>Veja aqui o histórico de preços dos itens cadastrados.</Text>
-        <ScrollView style={{ width: '100%' }} contentContainerStyle={{ gap: 12 }} showsVerticalScrollIndicator={false}>
-          <Text style={historyStyles.emptyText}>Nenhum histórico encontrado.</Text>
-        </ScrollView>
-      </View>
-    </View>
+    <SafeAreaView style={historyStyles.bg} edges={['top']}>
+      <SwipeNavigator
+        onSwipeLeft={() => handleNavigate('PROFILE')}
+        onSwipeRight={() => handleNavigate('FAMILY')}
+      >
+        <View style={{ flex: 1, alignItems: 'center' }}>
+          <View style={historyStyles.cardContainer}>
+            <Text style={historyStyles.title}>Histórico de Preços</Text>
+            <Text style={historyStyles.subtitle}>Veja aqui o histórico de preços dos itens cadastrados.</Text>
+            <ScrollView
+              style={{ width: '100%' }}
+              contentContainerStyle={{ gap: 12 }}
+              showsVerticalScrollIndicator={false}
+              bounces
+              alwaysBounceVertical
+              overScrollMode="always"
+            >
+              <Text style={historyStyles.emptyText}>Nenhum histórico encontrado.</Text>
+            </ScrollView>
+          </View>
+        </View>
+      </SwipeNavigator>
+      <AddListModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        onCreate={(newList) => {
+          updateLists([
+            ...shoppingLists,
+            {
+              ...newList,
+              id: `list_${Date.now()}`,
+              familyId: currentUser.familyId,
+              createdAt: new Date().toISOString(),
+              status: 'active',
+              members: [currentUser.id],
+            },
+          ]);
+        }}
+      />
+      <NavBar navigate={handleNavigate} activeScreen={'LISTS'} onAddList={() => setModalVisible(true)} />
+    </SafeAreaView>
   );
 }
 

@@ -2,15 +2,23 @@ import { useRouter } from 'expo-router';
 import React, { useContext, useEffect, useState } from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import AddListModal from '../components/AddListModal';
+import NavBar from '../components/NavBar';
+import SwipeNavigator from '../components/SwipeNavigator';
 import { DataContext } from '../contexts/DataContext';
 
 
 const { width } = Dimensions.get('window');
 const MAX_CARD_WIDTH = Math.min(420, width * 0.98);
 const detailStyles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: '#e6f0fa',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#e6f0fa',
     paddingHorizontal: 0,
     paddingVertical: 0,
   },
@@ -62,8 +70,9 @@ const detailStyles = StyleSheet.create({
 });
 
 function ItemPriceDetailScreen(props) {
-  const { shoppingLists, currentUser } = useContext(DataContext);
+  const { shoppingLists, currentUser, updateLists } = useContext(DataContext);
   const [priceData, setPriceData] = useState([]);
+  const [modalVisible, setModalVisible] = useState(false);
   const router = useRouter();
   // itemName pode vir de props.route.params ou ser ajustado conforme navegação
   const itemName = props?.route?.params?.itemName || '';
@@ -97,39 +106,87 @@ function ItemPriceDetailScreen(props) {
     setPriceData(data);
   }, [shoppingLists, currentUser, itemName]);
 
+  const handleNavigate = (screen) => {
+    switch (screen) {
+      case 'DASHBOARD':
+        router.push('/dashboard');
+        break;
+      case 'LISTS':
+        router.push('/lists');
+        break;
+      case 'FAMILY':
+        router.push('/family');
+        break;
+      case 'PROFILE':
+        router.push('/profile');
+        break;
+      default:
+        break;
+    }
+  };
+
   return (
-    <ScrollView style={detailStyles.container} contentContainerStyle={detailStyles.scrollContent} showsVerticalScrollIndicator={false}>
-      <View style={detailStyles.card}>
-        <Text style={detailStyles.cardTitle}>Flutuação de Preço</Text>
-        {priceData.length > 1 ? (
-          <LineChart
-            data={priceData}
-            isAnimated
-            color="#3B82F6"
-            thickness={3}
-            startFillColor="rgba(59, 130, 246, 0.2)"
-            endFillColor="rgba(59, 130, 246, 0.01)"
-            yAxisTextStyle={{ color: '#333' }}
-            xAxisLabelTextStyle={{ color: '#333' }}
-            noOfSections={4}
-            spacing={50}
-            initialSpacing={20}
-            style={{ marginVertical: 10 }}
-          />
-        ) : (
-          <Text style={detailStyles.emptyText}>Dados insuficientes para gerar um gráfico (mínimo 2 registros).</Text>
-        )}
-      </View>
-      <View style={detailStyles.card}>
-        <Text style={detailStyles.cardTitle}>Registros de Preço</Text>
-        {priceData.length > 0 ? priceData.map((item, index) => (
-          <View key={index} style={detailStyles.priceItemRow}>
-            <Text style={detailStyles.priceItemDate}>{new Date(item.date).toLocaleDateString()}</Text>
-            <Text style={detailStyles.priceItemValue}>R$ {item.price.toFixed(2)}</Text>
+    <SafeAreaView style={detailStyles.root} edges={['top']}>
+      <SwipeNavigator
+        onSwipeLeft={() => handleNavigate('LISTS')}
+        onSwipeRight={() => handleNavigate('DASHBOARD')}
+      >
+        <ScrollView
+          style={detailStyles.container}
+          contentContainerStyle={detailStyles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          bounces
+          alwaysBounceVertical
+          overScrollMode="always"
+        >
+          <View style={detailStyles.card}>
+            <Text style={detailStyles.cardTitle}>Flutuação de Preço</Text>
+            {priceData.length > 1 ? (
+              <LineChart
+                data={priceData}
+                isAnimated
+                color="#3B82F6"
+                thickness={3}
+                startFillColor="rgba(59, 130, 246, 0.2)"
+                endFillColor="rgba(59, 130, 246, 0.01)"
+                yAxisTextStyle={{ color: '#333' }}
+                xAxisLabelTextStyle={{ color: '#333' }}
+                noOfSections={4}
+                spacing={50}
+                initialSpacing={20}
+                style={{ marginVertical: 10 }}
+              />
+            ) : (
+              <Text style={detailStyles.emptyText}>Dados insuficientes para gerar um gráfico (mínimo 2 registros).</Text>
+            )}
           </View>
-        )) : <Text style={detailStyles.emptyText}>Nenhum registro encontrado.</Text>}
-      </View>
-    </ScrollView>
+          <View style={detailStyles.card}>
+            <Text style={detailStyles.cardTitle}>Registros de Preço</Text>
+            {priceData.length > 0 ? priceData.map((item, index) => (
+              <View key={index} style={detailStyles.priceItemRow}>
+                <Text style={detailStyles.priceItemDate}>{new Date(item.date).toLocaleDateString()}</Text>
+                <Text style={detailStyles.priceItemValue}>R$ {item.price.toFixed(2)}</Text>
+              </View>
+            )) : <Text style={detailStyles.emptyText}>Nenhum registro encontrado.</Text>}
+          </View>
+        </ScrollView>
+      </SwipeNavigator>
+      <AddListModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        onCreate={(newList) => {
+          updateLists((shoppingLists || []).concat({
+            ...newList,
+            id: `list_${Date.now()}`,
+            familyId: currentUser.familyId,
+            createdAt: new Date().toISOString(),
+            status: 'active',
+            members: [currentUser.id],
+          }));
+        }}
+      />
+  <NavBar navigate={handleNavigate} activeScreen={'LISTS'} onAddList={() => setModalVisible(true)} />
+    </SafeAreaView>
   );
 }
 
