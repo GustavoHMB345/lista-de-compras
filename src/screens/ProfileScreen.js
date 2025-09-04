@@ -1,10 +1,11 @@
 import { useRouter } from 'expo-router';
 import React, { useContext, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Animated, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AddListModal from '../components/AddListModal';
 import { CheckIcon, EditIcon } from '../components/Icons';
 import NavBar from '../components/NavBar';
+import PageDots from '../components/PageDots';
 import SwipeNavigator from '../components/SwipeNavigator';
 import { DataContext } from '../contexts/DataContext';
 
@@ -33,6 +34,7 @@ function ProfileScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const router = useRouter();
+  const progress = useState(new Animated.Value(0))[0];
 
   const handleUpdateProfile = () => {
     if (displayName.trim() === '') return;
@@ -64,7 +66,7 @@ function ProfileScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#e6f0fa' }} edges={['top']}>
-      <SwipeNavigator onSwipeLeft={() => handleNavigate('DASHBOARD')} onSwipeRight={() => handleNavigate('LISTS')}>
+  <SwipeNavigator onSwipeRight={() => handleNavigate('DASHBOARD')} isLast progress={progress}>
       <ScrollView
         contentContainerStyle={{ flexGrow: 1, padding: 16 }}
         showsVerticalScrollIndicator={false}
@@ -98,6 +100,7 @@ function ProfileScreen() {
         <TouchableOpacity style={profileStyles.logoutButton} onPress={logout} activeOpacity={0.85}><Text style={profileStyles.logoutButtonText}>Sair da Conta</Text></TouchableOpacity>
   </View>
   </ScrollView>
+  <PageDots total={4} index={3} style={{ position: 'absolute', top: 8, alignSelf: 'center' }} />
   </SwipeNavigator>
       <AddListModal
         visible={modalVisible}
@@ -116,7 +119,7 @@ function ProfileScreen() {
           ]);
         }}
       />
-      <NavBar navigate={handleNavigate} activeScreen={'PROFILE'} onAddList={() => setModalVisible(true)} />
+  <NavBar navigate={handleNavigate} activeScreen={'PROFILE'} onAddList={() => setModalVisible(true)} progress={progress} />
     </SafeAreaView>
   );
 }

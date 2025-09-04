@@ -28,7 +28,7 @@ export default function AuthScreen() {
                 setError('Nome é obrigatório.');
                 return;
             }
-            const result = await register(email, password);
+            const result = await register(email, password, name);
             if (result.success) {
                 router.replace('/dashboard');
                 return;

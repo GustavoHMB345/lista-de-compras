@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import React, { useContext, useState } from 'react';
 import { Alert, FlatList, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AddListModal from '../components/AddListModal';
 import { CategoryIcon, CheckIcon } from '../components/Icons';
@@ -55,6 +56,8 @@ function ListDetailScreen(props) {
   const total = (list.items || []).reduce((sum, it) => sum + (Number(it.price) || 0), 0);
   const purchasedCount = (list.items || []).filter(it => it.isPurchased).length;
 
+  const canEdit = list.status !== 'archived' && list.members?.includes(currentUser.id);
+
   const handleAddItem = () => {
     if (newItemName.trim() === '') return;
     const newItem = {
@@ -79,6 +82,17 @@ function ListDetailScreen(props) {
         const updatedItems = (l.items || []).map(item =>
           item.id === itemId ? { ...item, isPurchased: !item.isPurchased } : item
         );
+        return { ...l, items: updatedItems };
+      }
+      return l;
+    });
+    updateLists(updatedLists);
+  };
+
+  const handleDeleteItem = (itemId) => {
+    const updatedLists = shoppingLists.map(l => {
+      if (l.id === listId) {
+        const updatedItems = (l.items || []).filter(item => item.id !== itemId);
         return { ...l, items: updatedItems };
       }
       return l;
@@ -134,15 +148,17 @@ function ListDetailScreen(props) {
             </View>
           </View>
 
-          <View style={detailStyles.card}>
-            <Text style={detailStyles.cardTitle}>Adicionar Item</Text>
-            <TextInput style={detailStyles.input} placeholder="Nome do item" value={newItemName} onChangeText={setNewItemName} />
-            <View style={detailStyles.inputRow}>
-              <TextInput style={[detailStyles.input, { flex: 1, marginRight: 10 }]} placeholder="Qtd." value={newItemQty} onChangeText={setNewItemQty} keyboardType="number-pad" />
-              <TextInput style={[detailStyles.input, { flex: 2 }]} placeholder="Preço (opcional)" value={newItemPrice} onChangeText={setNewItemPrice} keyboardType="numeric" />
+          {canEdit && (
+            <View style={detailStyles.card}>
+              <Text style={detailStyles.cardTitle}>Adicionar Item</Text>
+              <TextInput style={detailStyles.input} placeholder="Nome do item" value={newItemName} onChangeText={setNewItemName} />
+              <View style={detailStyles.inputRow}>
+                <TextInput style={[detailStyles.input, { flex: 1, marginRight: 10 }]} placeholder="Qtd." value={newItemQty} onChangeText={setNewItemQty} keyboardType="number-pad" />
+                <TextInput style={[detailStyles.input, { flex: 2 }]} placeholder="Preço (opcional)" value={newItemPrice} onChangeText={setNewItemPrice} keyboardType="numeric" />
+              </View>
+              <TouchableOpacity style={detailStyles.addButton} onPress={handleAddItem} activeOpacity={0.8}><Text style={detailStyles.addButtonText}>Adicionar</Text></TouchableOpacity>
             </View>
-            <TouchableOpacity style={detailStyles.addButton} onPress={handleAddItem} activeOpacity={0.8}><Text style={detailStyles.addButtonText}>Adicionar</Text></TouchableOpacity>
-          </View>
+          )}
 
           <View style={[detailStyles.card, { paddingBottom: 8 }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -169,13 +185,29 @@ function ListDetailScreen(props) {
             contentContainerStyle={{ paddingBottom: 18, alignItems: 'center' }}
             scrollEnabled={false}
             renderItem={({ item }) => (
-              <TouchableOpacity style={[detailStyles.itemCard, item.isPurchased && detailStyles.itemCardPurchased]} onPress={() => handleTogglePurchased(item.id)} activeOpacity={0.8}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[detailStyles.itemName, item.isPurchased && detailStyles.itemNamePurchased]}>{item.name}</Text>
-                  <Text style={detailStyles.itemSubText}>Qtd: {item.quantity} {item.price > 0 && `- R$ ${Number(item.price).toFixed(2)}`}</Text>
-                </View>
-                {item.isPurchased && <CheckIcon />}
-              </TouchableOpacity>
+              <Swipeable
+                renderRightActions={() => (
+                  canEdit ? (
+                    <TouchableOpacity
+                      style={{ backgroundColor: '#F87171', justifyContent: 'center', paddingHorizontal: 16, borderTopRightRadius: 16, borderBottomRightRadius: 16 }}
+                      onPress={() => handleDeleteItem(item.id)}
+                      activeOpacity={0.85}
+                    >
+                      <Text style={{ color: '#fff', fontWeight: 'bold' }}>Apagar</Text>
+                    </TouchableOpacity>
+                  ) : <View />
+                )}
+                leftThreshold={32}
+                rightThreshold={32}
+              >
+                <TouchableOpacity style={[detailStyles.itemCard, item.isPurchased && detailStyles.itemCardPurchased]} onPress={() => handleTogglePurchased(item.id)} activeOpacity={0.8}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[detailStyles.itemName, item.isPurchased && detailStyles.itemNamePurchased]}>{item.name}</Text>
+                    <Text style={detailStyles.itemSubText}>Qtd: {item.quantity} {item.price > 0 && `- R$ ${Number(item.price).toFixed(2)}`}</Text>
+                  </View>
+                  {item.isPurchased && <CheckIcon />}
+                </TouchableOpacity>
+              </Swipeable>
             )}
             ListEmptyComponent={<Text style={detailStyles.emptyText}>Nenhum item na lista.</Text>}
           />

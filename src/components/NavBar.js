@@ -1,5 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Animated, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { PlusIcon } from './Icons';
@@ -52,26 +52,49 @@ const ProfileIcon = ({ active }) => (
     </GradientIcon>
 );
 
-export default function NavBar({ navigate, activeScreen, onAddList }) {
+export default function NavBar({ navigate, activeScreen, onAddList, progress }) {
+    const animatedOpacity = progress
+        ? progress.interpolate({ inputRange: [-1, 0, 1], outputRange: [0.95, 1, 0.95], extrapolate: 'clamp' })
+        : 1;
+    const animatedScale = progress
+        ? progress.interpolate({ inputRange: [-1, 0, 1], outputRange: [0.98, 1, 0.98], extrapolate: 'clamp' })
+        : 1;
+    // Animações específicas do botão central "+"
+    const centerScale = progress
+        ? progress.interpolate({ inputRange: [-1, -0.3, 0, 0.3, 1], outputRange: [1.06, 1.03, 1, 1.03, 1.06], extrapolate: 'clamp' })
+        : 1;
+    const haloOpacity = progress
+        ? progress.interpolate({ inputRange: [-1, 0, 1], outputRange: [0.18, 0, 0.18], extrapolate: 'clamp' })
+        : 0;
+    const haloScale = progress
+        ? progress.interpolate({ inputRange: [-1, 0, 1], outputRange: [1.2, 1, 1.2], extrapolate: 'clamp' })
+        : 1;
     return (
         <SafeAreaView edges={['bottom']} style={styles.navBarSafeAreaCustom}>
-            <View style={styles.navBarContainerCustom}>
-                <TouchableOpacity style={styles.navBarItemCustom} onPress={() => navigate('DASHBOARD')} activeOpacity={0.7}>
-                    <HomeIcon active={activeScreen === 'DASHBOARD'} />
-                </TouchableOpacity>
+            <Animated.View style={[styles.navBarContainerCustom, { opacity: animatedOpacity, transform: [{ scale: animatedScale }] }] }>
+                {/* Left side: Family (1), Lists (2) */}
                 <TouchableOpacity style={styles.navBarItemCustom} onPress={() => navigate('FAMILY')} activeOpacity={0.7}>
                     <FamilyIcon active={activeScreen === 'FAMILY'} />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.navBarCenterBtnCustom} onPress={onAddList} activeOpacity={0.85}>
-                    <PlusIcon />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.navBarItemCustom} onPress={() => navigate('LISTS')} activeOpacity={0.7}>
                     <ListIcon active={activeScreen === 'LISTS'} />
                 </TouchableOpacity>
+                <View style={styles.centerWrapper}>
+                    <Animated.View pointerEvents="none" style={[styles.navBarCenterHalo, { opacity: haloOpacity, transform: [{ scale: haloScale }] }]} />
+                    <Animated.View style={{ transform: [{ scale: centerScale }] }}>
+                        <TouchableOpacity style={styles.navBarCenterBtnCustom} onPress={onAddList} activeOpacity={0.85}>
+                            <PlusIcon />
+                        </TouchableOpacity>
+                    </Animated.View>
+                </View>
+                {/* Right side: Dashboard (3), Profile (4) */}
+                <TouchableOpacity style={styles.navBarItemCustom} onPress={() => navigate('DASHBOARD')} activeOpacity={0.7}>
+                    <HomeIcon active={activeScreen === 'DASHBOARD'} />
+                </TouchableOpacity>
                 <TouchableOpacity style={styles.navBarItemCustom} onPress={() => navigate('PROFILE')} activeOpacity={0.7}>
                     <ProfileIcon active={activeScreen === 'PROFILE'} />
                 </TouchableOpacity>
-            </View>
+            </Animated.View>
         </SafeAreaView>
     );
 }
@@ -116,6 +139,24 @@ const styles = StyleSheet.create({
         shadowRadius: 12,
         elevation: 12,
         alignSelf: 'center',
+    },
+    centerWrapper: {
+        width: 72,
+        height: 72,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    navBarCenterHalo: {
+        position: 'absolute',
+        width: 72,
+        height: 72,
+        borderRadius: 36,
+        backgroundColor: '#6C7DFF',
+        opacity: 0,
+        shadowColor: '#6C7DFF',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.6,
+        shadowRadius: 20,
     },
     iconWrap: {
         alignItems: 'center',

@@ -116,7 +116,7 @@ export const DataProvider = ({ children }) => {
         saveData(newData);
     };
 
-    const register = async (email, password) => {
+    const register = async (email, password, displayNameFromParam) => {
         try {
             const storedData = await AsyncStorage.getItem('@SuperLista:data');
             let users = data.users;
@@ -131,7 +131,7 @@ export const DataProvider = ({ children }) => {
             }
             const userId = `user_${Date.now()}`;
             const familyId = `family_${Date.now()}`;
-            const displayName = email.split('@')[0];
+            const displayName = (displayNameFromParam && displayNameFromParam.trim()) || email.split('@')[0];
             const newUser = { id: userId, email, password, displayName, familyId };
             const newFamily = { id: familyId, name: `Família de ${displayName}`, owner: userId, members: [userId] };
             const newData = {

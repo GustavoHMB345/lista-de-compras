@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router';
 import React, { useContext, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Animated, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AddListModal from '../components/AddListModal';
 import NavBar from '../components/NavBar';
+import PageDots from '../components/PageDots';
 import SwipeNavigator from '../components/SwipeNavigator';
 import { DataContext } from '../contexts/DataContext';
 
@@ -129,6 +130,7 @@ function FamilyScreen() {
     const [error, setError] = useState('');
     const [modalVisible, setModalVisible] = useState(false);
     const router = useRouter();
+    const progress = useState(new Animated.Value(0))[0];
     const family = families.find(f => f.id === currentUser.familyId);
     const members = users.filter(u => family?.members.includes(u.id));
 
@@ -183,7 +185,7 @@ function FamilyScreen() {
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: '#e6f0fa' }} edges={['top']}>
-            <SwipeNavigator onSwipeLeft={() => handleNavigate('LISTS')} onSwipeRight={() => handleNavigate('DASHBOARD')}>
+            <SwipeNavigator onSwipeLeft={() => handleNavigate('LISTS')} isFirst progress={progress}>
             <ScrollView
                 contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center' }}
                 showsVerticalScrollIndicator={false}
@@ -219,6 +221,7 @@ function FamilyScreen() {
                 </View>
             </View>
             </ScrollView>
+            <PageDots total={4} index={0} style={{ position: 'absolute', top: 8, alignSelf: 'center' }} />
             </SwipeNavigator>
             <AddListModal
                 visible={modalVisible}
@@ -237,7 +240,7 @@ function FamilyScreen() {
                     ]);
                 }}
             />
-            <NavBar navigate={handleNavigate} activeScreen={'FAMILY'} onAddList={() => setModalVisible(true)} />
+            <NavBar navigate={handleNavigate} activeScreen={'FAMILY'} onAddList={() => setModalVisible(true)} progress={progress} />
         </SafeAreaView>
     );
 }

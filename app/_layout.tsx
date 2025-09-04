@@ -6,6 +6,7 @@ import 'react-native-reanimated';
 
 
 import { useColorScheme } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { DataProvider } from '../src/contexts/DataContext';
 
 export default function RootLayout() {
@@ -21,8 +22,13 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <DataProvider>
-        <Stack>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <DataProvider>
+          <Stack>
+          <Stack.Screen name="splash" options={{ headerShown: false }} />
+          <Stack.Screen name="welcome" options={{ headerShown: false }} />
+          <Stack.Screen name="sign-in" options={{ headerShown: false }} />
+          <Stack.Screen name="sign-up" options={{ headerShown: false }} />
           <Stack.Screen name="auth" options={{ headerShown: false }} />
           <Stack.Screen name="dashboard" options={{ headerShown: false }} />
           <Stack.Screen name="lists" options={{ headerShown: false }} />
@@ -32,9 +38,10 @@ export default function RootLayout() {
           <Stack.Screen name="list-detail" options={{ headerShown: false }} />
           <Stack.Screen name="price-history" options={{ headerShown: false }} />
           <Stack.Screen name="+not-found" />
-        </Stack>
-        <StatusBar style="auto" />
-      </DataProvider>
+          </Stack>
+          <StatusBar style="auto" />
+        </DataProvider>
+      </GestureHandlerRootView>
     </ThemeProvider>
   );
 }

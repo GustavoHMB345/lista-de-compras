@@ -1,10 +1,11 @@
 
 import { useRootNavigationState, useRouter } from 'expo-router';
 import { useContext, useEffect, useState } from 'react';
-import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AddListModal from '../components/AddListModal';
 import NavBar from '../components/NavBar';
+import PageDots from '../components/PageDots';
 import SwipeNavigator from '../components/SwipeNavigator';
 import { DataContext } from '../contexts/DataContext';
 
@@ -26,11 +27,12 @@ export default function DashboardScreen() {
     const [topItems, setTopItems] = useState([]);
     const [modalVisible, setModalVisible] = useState(false);
     const router = useRouter();
+    const progress = useState(new Animated.Value(0))[0];
     const rootNavigation = useRootNavigationState();
 
     useEffect(() => {
         if (!loading && !currentUser && rootNavigation?.key) {
-            router.replace('/auth');
+            router.replace('/welcome');
         }
     }, [loading, currentUser, rootNavigation?.key]);
 
@@ -73,8 +75,9 @@ export default function DashboardScreen() {
     return (
         <SafeAreaView style={styles.root} edges={['top']}>
             <SwipeNavigator
-                onSwipeLeft={() => handleNavigate('FAMILY')}
-                onSwipeRight={() => handleNavigate('PROFILE')}
+                onSwipeLeft={() => handleNavigate('PROFILE')}
+                onSwipeRight={() => handleNavigate('LISTS')}
+                progress={progress}
             >
             <ScrollView
                 contentContainerStyle={styles.scroll}
@@ -103,6 +106,7 @@ export default function DashboardScreen() {
                     </View>
                 </View>
             </ScrollView>
+            <PageDots total={4} index={2} style={{ position: 'absolute', top: 8, alignSelf: 'center' }} />
             </SwipeNavigator>
             <AddListModal
                 visible={modalVisible}
@@ -125,6 +129,7 @@ export default function DashboardScreen() {
                 navigate={handleNavigate}
                 activeScreen={'DASHBOARD'}
                 onAddList={() => setModalVisible(true)}
+                progress={progress}
             />
         </SafeAreaView>
     );
