@@ -1,40 +1,58 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React, { useContext, useState } from 'react';
-import { Animated, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useContext, useEffect, useState } from 'react';
+import { Animated, Dimensions, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AddListModal from '../components/AddListModal';
 import { CheckIcon, EditIcon } from '../components/Icons';
-import NavBar from '../components/NavBar';
-import PageDots from '../components/PageDots';
 import SwipeNavigator from '../components/SwipeNavigator';
+import TabBar from '../components/TabBar';
 import { DataContext } from '../contexts/DataContext';
 
+const { width } = Dimensions.get('window');
+const __fs = Math.min(1.2, Math.max(0.9, width / 390));
 const profileStyles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6', padding: 16 },
-  header: { fontSize: 28, fontWeight: 'bold', marginBottom: 8 },
-  card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 18 },
-  avatarBox: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
-  avatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#3B82F6', justifyContent: 'center', alignItems: 'center' },
-  avatarText: { color: '#fff', fontWeight: 'bold', fontSize: 22 },
-  name: { fontWeight: 'bold', fontSize: 18 },
-  email: { color: '#6B7280', fontSize: 12 },
-  label: { fontSize: 14, color: '#374151', marginBottom: 4, fontWeight: '500' },
-  inputRow: { flexDirection: 'row', gap: 8, alignItems: 'center', marginBottom: 8 },
-  input: { backgroundColor: '#F3F4F6', padding: 10, borderRadius: 8, flex: 1 },
-  saveButton: { backgroundColor: '#22C55E', padding: 8, borderRadius: 8 },
-  editButton: { backgroundColor: '#6366F1', padding: 8, borderRadius: 8 },
-  displayName: { fontWeight: 'bold', fontSize: 16 },
-  logoutButton: { backgroundColor: '#F87171', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 18 },
-  logoutButtonText: { color: '#fff', fontWeight: 'bold' },
+  root: { flex: 1 },
+  scrollContent: { flexGrow: 1, alignItems: 'center', paddingVertical: 24, paddingHorizontal: 12 },
+  headerWrap: { alignItems: 'center', marginBottom: 20 },
+  title: { fontSize: 30 * __fs, fontWeight: 'bold', color: '#111827' },
+  subtitle: { fontSize: 14 * __fs, color: '#6B7280', marginTop: 4 },
+  card: { width: '96%', maxWidth: 820, backgroundColor: '#fff', borderRadius: 22, padding: 18, marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 4 },
+  avatarBox: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
+  avatar: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#6366F1', justifyContent: 'center', alignItems: 'center' },
+  avatarText: { color: '#fff', fontWeight: 'bold', fontSize: 26 * __fs },
+  userMeta: { marginLeft: 14, flex: 1 },
+  name: { fontWeight: '700', fontSize: 20 * __fs, color: '#111827' },
+  email: { color: '#6B7280', fontSize: 13 * __fs, marginTop: 2 },
+  label: { fontSize: 13 * __fs, color: '#374151', marginBottom: 6, fontWeight: '600' },
+  inputRow: { flexDirection: 'row', gap: 10, alignItems: 'center', marginBottom: 8 },
+  input: { backgroundColor: '#F1F5F9', paddingVertical: 12, paddingHorizontal: 14, borderRadius: 12, flex: 1, borderWidth: 1, borderColor: '#E2E8F0', color: '#111827' },
+  saveButton: { backgroundColor: '#16A34A', padding: 12, borderRadius: 12 },
+  editButton: { backgroundColor: '#2563EB', padding: 12, borderRadius: 12 },
+  displayName: { fontWeight: '700', fontSize: 18 * __fs, color: '#111827', flex: 1 },
+  actionRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
+  sectionTitle: { fontSize: 16 * __fs, fontWeight: '700', color: '#111827', marginBottom: 10 },
+  logoutButton: { backgroundColor: '#DC2626', paddingVertical: 14, borderRadius: 16, alignItems: 'center', marginTop: 8 },
+  logoutButtonText: { color: '#fff', fontWeight: '700', fontSize: 15 * __fs },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },
+  infoLabel: { color: '#6B7280', fontSize: 12 * __fs },
+  infoValue: { color: '#111827', fontWeight: '600', fontSize: 12 * __fs },
 });
 
 function ProfileScreen() {
   const { currentUser, users, updateUsers, logout, shoppingLists, updateLists } = useContext(DataContext);
-  const [displayName, setDisplayName] = useState(currentUser.displayName || '');
+  const [displayName, setDisplayName] = useState(currentUser?.displayName || '');
   const [isEditing, setIsEditing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const router = useRouter();
   const progress = useState(new Animated.Value(0))[0];
+
+  // Sync display name when user loads (unless editing)
+  useEffect(() => {
+    if (currentUser && !isEditing) {
+      setDisplayName(currentUser.displayName || '');
+    }
+  }, [currentUser, isEditing]);
 
   const handleUpdateProfile = () => {
     if (displayName.trim() === '') return;
@@ -64,44 +82,59 @@ function ProfileScreen() {
     }
   };
 
+  if (!currentUser) {
+    return (
+      <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f0f5ff' }}>
+        <Text style={{ color: '#111827', fontSize: 16 }}>Carregando perfil...</Text>
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#e6f0fa' }} edges={['top']}>
-  <SwipeNavigator onSwipeRight={() => handleNavigate('DASHBOARD')} isLast progress={progress}>
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1, padding: 16 }}
-        showsVerticalScrollIndicator={false}
-        bounces
-        alwaysBounceVertical
-        overScrollMode="always"
-      >
-      <View style={[profileStyles.container, { flex: 1, paddingTop: 0, paddingBottom: 0 }]}> 
-        {/* Header visual removido */}
-        <View style={profileStyles.card}>
-          <View style={profileStyles.avatarBox}>
-            <View style={profileStyles.avatar}><Text style={profileStyles.avatarText}>{(displayName || currentUser.email)[0]}</Text></View>
-            <View>
-              <Text style={profileStyles.name}>{displayName}</Text>
-              <Text style={profileStyles.email}>{currentUser.email}</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f0f5ff' }} edges={['top']}>
+      <SwipeNavigator onSwipeRight={() => handleNavigate('DASHBOARD')} isLast progress={progress}>
+        <LinearGradient colors={["#EFF6FF", "#E0E7FF"]} style={profileStyles.root}>
+          <ScrollView contentContainerStyle={profileStyles.scrollContent} showsVerticalScrollIndicator={false}>
+            <View style={profileStyles.headerWrap}>
+              <Text style={profileStyles.title}>👤 Minha Conta</Text>
+              <Text style={profileStyles.subtitle}>Gerencie seu perfil e preferências</Text>
             </View>
-          </View>
-          <Text style={profileStyles.label}>Nome de Exibição</Text>
-          {isEditing ? (
-            <View style={profileStyles.inputRow}>
-              <TextInput style={profileStyles.input} value={displayName} onChangeText={setDisplayName} />
-              <TouchableOpacity onPress={handleUpdateProfile} style={profileStyles.saveButton} activeOpacity={0.8}><CheckIcon /></TouchableOpacity>
+
+            <View style={profileStyles.card}>
+              <View style={profileStyles.avatarBox}>
+                <View style={profileStyles.avatar}><Text style={profileStyles.avatarText}>{(displayName || currentUser.email || '?')[0]}</Text></View>
+                <View style={profileStyles.userMeta}>
+                  <Text style={profileStyles.name}>{displayName}</Text>
+                  <Text style={profileStyles.email}>{currentUser.email || ''}</Text>
+                </View>
+              </View>
+              <Text style={profileStyles.label}>Nome de Exibição</Text>
+              {isEditing ? (
+                <View style={profileStyles.inputRow}>
+                  <TextInput style={profileStyles.input} value={displayName} onChangeText={setDisplayName} placeholder="Seu nome" />
+                  <TouchableOpacity onPress={handleUpdateProfile} style={profileStyles.saveButton} activeOpacity={0.85}><CheckIcon /></TouchableOpacity>
+                </View>
+              ) : (
+                <View style={profileStyles.inputRow}>
+                  <Text style={profileStyles.displayName}>{displayName}</Text>
+                  <TouchableOpacity onPress={() => setIsEditing(true)} style={profileStyles.editButton} activeOpacity={0.85}><EditIcon /></TouchableOpacity>
+                </View>
+              )}
             </View>
-          ) : (
-            <View style={profileStyles.inputRow}>
-              <Text style={profileStyles.displayName}>{displayName}</Text>
-              <TouchableOpacity onPress={() => setIsEditing(true)} style={profileStyles.editButton} activeOpacity={0.8}><EditIcon /></TouchableOpacity>
+
+            <View style={profileStyles.card}>
+              <Text style={profileStyles.sectionTitle}>Resumo</Text>
+              <View style={profileStyles.infoRow}><Text style={profileStyles.infoLabel}>Listas Totais</Text><Text style={profileStyles.infoValue}>{shoppingLists.filter(l => l.familyId === currentUser.familyId).length}</Text></View>
+              <View style={profileStyles.infoRow}><Text style={profileStyles.infoLabel}>Listas Ativas</Text><Text style={profileStyles.infoValue}>{shoppingLists.filter(l => l.familyId === currentUser.familyId && l.status !== 'archived').length}</Text></View>
+              <View style={profileStyles.infoRow}><Text style={profileStyles.infoLabel}>Listas Arquivadas</Text><Text style={profileStyles.infoValue}>{shoppingLists.filter(l => l.familyId === currentUser.familyId && l.status === 'archived').length}</Text></View>
             </View>
-          )}
-        </View>
-        <TouchableOpacity style={profileStyles.logoutButton} onPress={logout} activeOpacity={0.85}><Text style={profileStyles.logoutButtonText}>Sair da Conta</Text></TouchableOpacity>
-  </View>
-  </ScrollView>
-  <PageDots total={4} index={3} style={{ position: 'absolute', top: 8, alignSelf: 'center' }} />
-  </SwipeNavigator>
+
+            <TouchableOpacity style={profileStyles.logoutButton} onPress={logout} activeOpacity={0.9}>
+              <Text style={profileStyles.logoutButtonText}>Sair da Conta</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </LinearGradient>
+      </SwipeNavigator>
       <AddListModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
@@ -119,7 +152,7 @@ function ProfileScreen() {
           ]);
         }}
       />
-  <NavBar navigate={handleNavigate} activeScreen={'PROFILE'} onAddList={() => setModalVisible(true)} progress={progress} />
+  <TabBar active={'PROFILE'} onNavigate={handleNavigate} onAddList={() => setModalVisible(true)} />
     </SafeAreaView>
   );
 }

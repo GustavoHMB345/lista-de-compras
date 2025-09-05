@@ -1,101 +1,127 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React, { useContext, useState } from 'react';
-import { Animated, Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { Animated, Dimensions, FlatList, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AddListModal from '../components/AddListModal';
 import { CategoryIcon } from '../components/Icons';
-import NavBar from '../components/NavBar';
-import PageDots from '../components/PageDots';
 import SwipeNavigator from '../components/SwipeNavigator';
+import TabBar from '../components/TabBar';
 import { DataContext } from '../contexts/DataContext';
 
 
 const { width } = Dimensions.get('window');
-const MAX_CARD_WIDTH = Math.min(420, width * 0.98);
+const __fs = Math.min(1.2, Math.max(0.9, width / 390));
+const MAX_CARD_WIDTH = Math.min(820, width * 0.98);
 const listsStyles = StyleSheet.create({
-  bg: {
-    flex: 1,
-    backgroundColor: '#e6f0fa',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 0,
-    paddingVertical: 0,
-  },
-  cardContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 22,
-    padding: 24,
+  bg: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 0, paddingVertical: 0 },
+  container: {
     width: MAX_CARD_WIDTH,
     maxWidth: '98%',
+    paddingVertical: 24,
+  },
+  headerWrap: { alignItems: 'center', marginBottom: 16 },
+  headerTitle: { fontSize: 28 * __fs, fontWeight: 'bold', color: '#111827', marginBottom: 4 },
+  headerSubtitle: { fontSize: 15 * __fs, color: '#6B7280' },
+  filtersCard: {
+    backgroundColor: '#fff',
+    borderRadius: 22,
+    padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.10,
+    shadowOpacity: 0.08,
     shadowRadius: 12,
-    elevation: 6,
-    alignItems: 'flex-start',
-    marginTop: 24,
-    marginBottom: 24,
+    elevation: 4,
+    marginBottom: 16,
   },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#222',
-    marginBottom: 2,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#222',
-    marginBottom: 18,
-  },
-  itemCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f8fafc',
-    borderRadius: 14,
-    padding: 12,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 1,
-    width: '100%',
-  },
-  emojiCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
+  formRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  formCol: { flexGrow: 1, flexBasis: 180 },
+  label: { fontSize: 12 * __fs, fontWeight: '600', color: '#374151', marginBottom: 6 },
+  input: {
+    backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    fontSize: 14 * __fs,
+    color: '#111827',
   },
-  itemName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#222',
+  clearBtn: {
+    backgroundColor: '#6B7280',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    alignSelf: 'flex-end',
   },
-  itemSubPrice: {
-    fontSize: 13,
-    color: '#94a3b8',
+  clearBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 * __fs },
+  listsGrid: { marginTop: 8 },
+  listCard: { flex: 1, backgroundColor: '#fff', borderRadius: 22, padding: 16, borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 3, margin: 8 },
+  listHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
+  listTitle: { fontSize: 16 * __fs, fontWeight: '700', color: '#111827', flex: 1, paddingRight: 8 },
+  chip: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
   },
-  itemPrice: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#222',
-    marginLeft: 10,
+  chipText: { fontSize: 11 * __fs, fontWeight: '600' },
+  dateRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  dateDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#9CA3AF', marginRight: 6 },
+  dateText: { color: '#6B7280', fontSize: 12 * __fs },
+  progressWrap: { marginBottom: 10 },
+  progressMeta: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  progressMetaLabel: { color: '#6B7280', fontSize: 12 * __fs },
+  progressMetaValue: { color: '#2563EB', fontWeight: '600', fontSize: 12 * __fs },
+  progressTrack: { backgroundColor: '#E5E7EB', height: 6, borderRadius: 3, overflow: 'hidden' },
+  progressBar: { height: 6, borderRadius: 3 },
+  footerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  footerLeft: { flexDirection: 'row', alignItems: 'center' },
+  footerLeftText: { color: '#6B7280', fontSize: 12 * __fs },
+  statusText: { fontSize: 12 * __fs, fontWeight: '600' },
+  noResultsWrap: { alignItems: 'center', paddingVertical: 32 },
+  noResultsEmoji: { fontSize: 48 },
+  noResultsTitle: { fontSize: 16 * __fs, fontWeight: '600', color: '#374151', marginTop: 8 },
+  noResultsSubtitle: { color: '#6B7280', marginTop: 4, fontSize: 13 * __fs },
+  // FAB removido (uso substituído pelo botão central da TabBar)
+  chipsRow: { flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' },
+  chipFilter: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#F9FAFB',
   },
-  emptyText: {
-    color: '#6B7280',
-    textAlign: 'center',
-    marginVertical: 12,
-    fontSize: 15,
-    width: '100%',
+  chipFilterActive: {
+    backgroundColor: '#2563EB',
+    borderColor: '#2563EB',
   },
+  chipFilterText: { fontSize: 12 * __fs, color: '#374151', fontWeight: '600' },
+  chipFilterTextActive: { color: '#fff' },
+  dateButton: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    justifyContent: 'center',
+  },
+  dateButtonText: { fontSize: 14 * __fs, color: '#111827' },
+  listHeaderLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  listHeaderLeftTextWrap: { marginLeft: 10, flex: 1 },
 });
+
+// Priority color tokens (inspired by Tailwind classes from the HTML reference)
+const PRIORITY_COLORS = {
+  high: { bg: '#FEE2E2', text: '#991B1B', border: '#FCA5A5', label: 'Alta' },
+  medium: { bg: '#FEF3C7', text: '#92400E', border: '#FCD34D', label: 'Média' },
+  low: { bg: '#DCFCE7', text: '#166534', border: '#86EFAC', label: 'Baixa' },
+};
 
 function ListsScreen() {
   const { shoppingLists, currentUser, updateLists } = useContext(DataContext);
@@ -103,10 +129,78 @@ function ListsScreen() {
   const router = useRouter();
   const progress = useState(new Animated.Value(0))[0];
 
-  // Ícones por categoria são renderizados via <CategoryIcon />
-
   // Filtra listas do usuário logado
-  const userLists = shoppingLists.filter(l => l.familyId === currentUser?.familyId);
+  const userLists = shoppingLists.filter(l => !currentUser || l.familyId === currentUser.familyId);
+
+  // Filtros
+  const [search, setSearch] = useState('');
+  const [dateFilter, setDateFilter] = useState(''); // AAAA-MM-DD
+  const [statusFilter, setStatusFilter] = useState('all'); // all | active | archived
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [dateObj, setDateObj] = useState(null);
+
+  // Load saved filters on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const saved = await AsyncStorage.getItem('@lists_filters');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (typeof parsed.search === 'string') setSearch(parsed.search);
+          if (typeof parsed.dateFilter === 'string') setDateFilter(parsed.dateFilter);
+          if (parsed.dateFilter) setDateObj(new Date(parsed.dateFilter));
+          if (['all', 'active', 'archived'].includes(parsed.statusFilter)) setStatusFilter(parsed.statusFilter);
+        }
+      } catch {}
+    })();
+  }, []);
+
+  // Persist filters on change
+  useEffect(() => {
+    const payload = { search, dateFilter, statusFilter };
+    AsyncStorage.setItem('@lists_filters', JSON.stringify(payload)).catch(() => {});
+  }, [search, dateFilter, statusFilter]);
+
+  const clearFilters = () => {
+    setSearch('');
+    setDateFilter('');
+  setStatusFilter('all');
+  setDateObj(null);
+  };
+
+  const filteredLists = useMemo(() => {
+    const s = search.trim().toLowerCase();
+    return userLists.filter((l) => {
+      const matchesSearch = !s || (l.name || '').toLowerCase().includes(s) || (l.desc || l.description || '').toLowerCase().includes(s);
+      const createdAt = l.createdAt ? String(l.createdAt).slice(0, 10) : '';
+      const matchesDate = !dateFilter || createdAt === dateFilter;
+      const matchesStatus = statusFilter === 'all' || (statusFilter === 'active' ? l.status !== 'archived' : l.status === 'archived');
+      return matchesSearch && matchesDate && matchesStatus;
+    });
+  }, [userLists, search, dateFilter, statusFilter]);
+
+  // Helpers
+  const formatDate = (iso) => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  };
+
+  const getCounts = React.useCallback((list) => {
+    const total = (list.items || []).length;
+    const completed = (list.items || []).filter((it) => it.done || it.completed || it.checked).length;
+    return { total, completed };
+  }, []);
+
+  const getPriority = React.useCallback((list) => {
+    const { total } = getCounts(list);
+    if (total >= 8) return 'high';
+    if (total >= 4) return 'medium';
+    return 'low';
+  }, [getCounts]);
 
   // Navegação entre listas
   const handleNavigate = (screen) => {
@@ -128,7 +222,7 @@ function ListsScreen() {
     }
   };
 
-  const renderRightActions = (list) => (
+  const renderRightActions = useCallback((list) => (
     <View style={{ flexDirection: 'row', height: '100%' }}>
       <TouchableOpacity
         style={{ backgroundColor: '#F87171', justifyContent: 'center', paddingHorizontal: 16, borderTopRightRadius: 14, borderBottomRightRadius: 14 }}
@@ -141,9 +235,9 @@ function ListsScreen() {
         <Text style={{ color: '#fff', fontWeight: 'bold' }}>Apagar</Text>
       </TouchableOpacity>
     </View>
-  );
+  ), [shoppingLists, updateLists]);
 
-  const renderLeftActions = (list) => (
+  const renderLeftActions = useCallback((list) => (
     <View style={{ flexDirection: 'row', height: '100%' }}>
       <TouchableOpacity
         style={{ backgroundColor: '#111827', justifyContent: 'center', paddingHorizontal: 16, borderTopLeftRadius: 14, borderBottomLeftRadius: 14 }}
@@ -156,71 +250,191 @@ function ListsScreen() {
         <Text style={{ color: '#fff', fontWeight: 'bold' }}>{/* toggle */}Arquivar</Text>
       </TouchableOpacity>
     </View>
-  );
+  ), [shoppingLists, updateLists]);
+
+  // Memoized item renderer component to reduce closures & improve perf.
+  const ListCard = useCallback(({ item }) => {
+    const { total, completed } = getCounts(item);
+    const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const isCompleted = total > 0 && completed === total;
+    const priority = getPriority(item);
+    const pc = PRIORITY_COLORS[priority] || PRIORITY_COLORS.medium;
+    const barColor = isCompleted ? '#22C55E' : '#3B82F6';
+    return (
+      <Swipeable
+        renderRightActions={() => renderRightActions(item)}
+        renderLeftActions={() => renderLeftActions(item)}
+        friction={2}
+        rightThreshold={32}
+        leftThreshold={32}
+      >
+        <TouchableOpacity
+          style={listsStyles.listCard}
+          onPress={() => router.push({ pathname: '/list-detail', params: { listId: item.id } })}
+          activeOpacity={0.92}
+        >
+          <View style={listsStyles.listHeaderRow}>
+            <View style={listsStyles.listHeaderLeft}>
+              <CategoryIcon type={item.category || 'outros'} size={42} neutral />
+              <View style={listsStyles.listHeaderLeftTextWrap}>
+                <Text style={listsStyles.listTitle} numberOfLines={2}>{item.name || 'Sem nome'}</Text>
+              </View>
+            </View>
+            <View style={[listsStyles.chip, { backgroundColor: pc.bg, borderColor: pc.border }]}>
+              <Text style={[listsStyles.chipText, { color: pc.text }]}>{pc.label}</Text>
+            </View>
+          </View>
+          <View style={listsStyles.dateRow}>
+            <View style={listsStyles.dateDot} />
+            <Text style={listsStyles.dateText}>{formatDate(item.createdAt)}</Text>
+          </View>
+          <View style={listsStyles.progressWrap}>
+            <View style={listsStyles.progressMeta}>
+              <Text style={listsStyles.progressMetaLabel}>Progresso</Text>
+              <Text style={[listsStyles.progressMetaValue, { color: barColor }]}>{completed}/{total} itens</Text>
+            </View>
+            <View style={listsStyles.progressTrack}>
+              <View style={[listsStyles.progressBar, { width: `${pct}%`, backgroundColor: barColor }]} />
+            </View>
+          </View>
+          <View style={listsStyles.footerRow}>
+            <View style={listsStyles.footerLeft}>
+              <Text style={listsStyles.footerLeftText}>{total} itens</Text>
+            </View>
+            <Text style={[listsStyles.statusText, { color: isCompleted ? '#16A34A' : '#2563EB' }]}>
+              {isCompleted ? '✓ Concluída' : 'Em andamento'}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      </Swipeable>
+    );
+  }, [renderLeftActions, renderRightActions, router, getCounts, getPriority]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#e6f0fa' }} edges={['top']}>
-  <SwipeNavigator onSwipeLeft={() => handleNavigate('DASHBOARD')} onSwipeRight={() => handleNavigate('FAMILY')} progress={progress}>
-  <View style={listsStyles.bg}>
-        <View style={listsStyles.cardContainer}>
-          <Text style={listsStyles.title}>Suas Listas</Text>
-          <Text style={listsStyles.subtitle}>Listas criadas por você</Text>
-          <ScrollView
-            style={{ width: '100%' }}
-            contentContainerStyle={{ gap: 12 }}
-            showsVerticalScrollIndicator={false}
-            bounces
-            alwaysBounceVertical
-            overScrollMode="always"
-          >
-            {userLists.length === 0 && (
-              <Text style={listsStyles.emptyText}>Nenhuma lista criada ainda.</Text>
+  <SafeAreaView style={{ flex: 1, backgroundColor: '#f0f5ff' }} edges={['top']}>
+      <SwipeNavigator onSwipeLeft={() => handleNavigate('DASHBOARD')} onSwipeRight={() => handleNavigate('FAMILY')} progress={progress}>
+    <LinearGradient colors={["#EFF6FF", "#E0E7FF"]} style={listsStyles.bg}>
+          <View style={listsStyles.container}>
+            <View style={listsStyles.headerWrap}>
+              <Text style={listsStyles.headerTitle}>🛒 Minhas Listas</Text>
+              <Text style={listsStyles.headerSubtitle}>Organize suas compras de forma inteligente</Text>
+            </View>
+
+            <View style={listsStyles.filtersCard}>
+              <View style={listsStyles.formRow}>
+                <View style={[listsStyles.formCol, { flex: 1 }]}>
+                  <Text style={listsStyles.label}>🔍 Pesquisar lista</Text>
+                  <TextInput
+                    style={listsStyles.input}
+                    placeholder="Digite o nome da lista..."
+                    value={search}
+                    onChangeText={setSearch}
+                  />
+                </View>
+                <View style={[listsStyles.formCol, { maxWidth: 240 }]}>
+                  <Text style={listsStyles.label}>📅 Filtrar por data</Text>
+                  {Platform.OS === 'web' ? (
+                    <TextInput
+                      style={listsStyles.input}
+                      placeholder="AAAA-MM-DD"
+                      value={dateFilter}
+                      onChangeText={setDateFilter}
+                    />
+                  ) : (
+                    <TouchableOpacity
+                      style={listsStyles.dateButton}
+                      onPress={() => setShowDatePicker(true)}
+                      activeOpacity={0.85}
+                    >
+                      <Text style={listsStyles.dateButtonText}>
+                        {dateFilter ? `${dateFilter}` : 'Escolher data'}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <View style={[listsStyles.formCol, { maxWidth: 140, alignSelf: 'flex-end' }]}>
+                  <TouchableOpacity style={listsStyles.clearBtn} onPress={clearFilters} activeOpacity={0.85}>
+                    <Text style={listsStyles.clearBtnText}>Limpar</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+              <View style={listsStyles.chipsRow}>
+                {[
+                  { key: 'all', label: 'Todas' },
+                  { key: 'active', label: 'Ativas' },
+                  { key: 'archived', label: 'Arquivadas' },
+                ].map(({ key, label }) => {
+                  const active = statusFilter === key;
+                  return (
+                    <TouchableOpacity
+                      key={key}
+                      onPress={() => setStatusFilter(key)}
+                      style={[listsStyles.chipFilter, active && listsStyles.chipFilterActive]}
+                      activeOpacity={0.9}
+                    >
+                      <Text style={[listsStyles.chipFilterText, active && listsStyles.chipFilterTextActive]}>{label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              {showDatePicker && Platform.OS !== 'web' && (
+                <DateTimePicker
+                  value={dateObj || new Date()}
+                  mode="date"
+                  display={Platform.OS === 'ios' ? 'inline' : 'default'}
+                  onChange={(event, selectedDate) => {
+                    if (Platform.OS === 'android') setShowDatePicker(false);
+                    if (!selectedDate) return;
+                    setDateObj(selectedDate);
+                    const y = selectedDate.getFullYear();
+                    const m = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                    const d = String(selectedDate.getDate()).padStart(2, '0');
+                    setDateFilter(`${y}-${m}-${d}`);
+                  }}
+                  maximumDate={new Date()}
+                />
+              )}
+            </View>
+
+      {filteredLists.length === 0 ? (
+              <View style={listsStyles.noResultsWrap}>
+                <Text style={listsStyles.noResultsEmoji}>🔍</Text>
+                <Text style={listsStyles.noResultsTitle}>Nenhuma lista encontrada</Text>
+                <Text style={listsStyles.noResultsSubtitle}>Tente ajustar os filtros de pesquisa</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={filteredLists}
+                keyExtractor={(item) => item.id}
+                numColumns={width >= 720 ? 3 : width >= 520 ? 2 : 1}
+                contentContainerStyle={listsStyles.listsGrid}
+        renderItem={({ item }) => <ListCard item={item} />}
+              />
             )}
-            {userLists.map((item) => (
-              <Swipeable
-                key={item.id}
-                renderRightActions={() => renderRightActions(item)}
-                renderLeftActions={() => renderLeftActions(item)}
-                friction={2}
-                rightThreshold={32}
-                leftThreshold={32}
-              >
-                <TouchableOpacity
-                  style={listsStyles.itemCard}
-                  onPress={() => router.push({ pathname: '/list-detail', params: { listId: item.id } })}
-                  activeOpacity={0.8}
-                >
-                  <CategoryIcon type={item.category || 'outros'} size={44} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={listsStyles.itemName}>{item.name}</Text>
-                    {item.desc || item.description ? (
-                      <Text style={listsStyles.itemSubPrice}>{item.desc || item.description}</Text>
-                    ) : null}
-                  </View>
-                  <Text style={listsStyles.itemPrice}>{item.items && item.items.length > 0 ? `${item.items.length} itens` : ''}</Text>
-                </TouchableOpacity>
-              </Swipeable>
-            ))}
-      </ScrollView>
-        </View>
-  </View>
-  <PageDots total={4} index={1} style={{ position: 'absolute', top: 8, alignSelf: 'center' }} />
-    </SwipeNavigator>
+          </View>
+    </LinearGradient>
+  
+      </SwipeNavigator>
+
+      {currentUser && (
       <AddListModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         onCreate={(newList) => {
-          updateLists([...shoppingLists, {
-            ...newList,
-            id: `list_${Date.now()}`,
-            familyId: currentUser.familyId,
-            createdAt: new Date().toISOString(),
-            status: 'active',
-            members: [currentUser.id],
-          }]);
+          updateLists([
+            ...shoppingLists,
+            {
+              ...newList,
+              id: `list_${Date.now()}`,
+        familyId: currentUser?.familyId,
+              createdAt: new Date().toISOString(),
+              status: 'active',
+        members: currentUser ? [currentUser.id] : [],
+            },
+          ]);
         }}
-      />
-  <NavBar navigate={handleNavigate} activeScreen={'LISTS'} onAddList={() => setModalVisible(true)} progress={progress} />
+      />)}
+      <TabBar active={'LISTS'} onNavigate={handleNavigate} onAddList={() => setModalVisible(true)} />
     </SafeAreaView>
   );
 }

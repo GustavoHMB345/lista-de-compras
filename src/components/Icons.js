@@ -94,9 +94,9 @@ const glyphFor = (key) => {
 	}
 };
 
-export const CategoryIcon = ({ type = 'outros', size = 44 }) => {
+export const CategoryIcon = ({ type = 'outros', size = 44, neutral = false }) => {
 	const Glyph = glyphFor(type);
-	const colors = categoryGradient(type);
+	const colors = neutral ? ['#737373', '#404040'] : categoryGradient(type);
 	const inner = Math.round(size * 0.55);
 	return (
 		<GradientBadge size={size} colors={colors}>

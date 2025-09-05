@@ -10,9 +10,6 @@ export const DataContext = createContext();
 
 
 export const DataProvider = ({ children }) => {
-    React.useEffect(() => {
-        loadData();
-    }, []);
     const [data, setData] = useState({
         users: [
             {
@@ -36,7 +33,7 @@ export const DataProvider = ({ children }) => {
     });
     const [loading, setLoading] = useState(true);
 
-    const loadData = async () => {
+    const loadData = React.useCallback(async () => {
         try {
             const storedData = await AsyncStorage.getItem('@SuperLista:data');
             let parsed = null;
@@ -66,18 +63,22 @@ export const DataProvider = ({ children }) => {
             if (!families.some(f => f.id === testFamily.id)) {
                 families = [testFamily, ...families];
             }
-            setData({
-                ...data,
+            setData(prev => ({
+                ...prev,
                 ...parsed,
                 users,
                 families,
-            });
+            }));
         } catch (e) {
             console.error("Failed to load data.", e);
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    React.useEffect(() => {
+        loadData();
+    }, [loadData]);
 
     const saveData = async (newData) => {
         try {
@@ -85,7 +86,7 @@ export const DataProvider = ({ children }) => {
             setData(newData);
             const jsonValue = JSON.stringify(newData);
             await AsyncStorage.setItem('@SuperLista:data', jsonValue);
-        } catch (e) {
+    } catch (e) {
             console.error("Failed to save data.", e);
         }
     };
@@ -106,7 +107,7 @@ export const DataProvider = ({ children }) => {
                 return { success: true };
             }
             return { success: false, message: 'Email ou senha inválidos.' };
-        } catch (e) {
+    } catch (_e) {
             return { success: false, message: 'Erro ao acessar dados.' };
         }
     };
@@ -143,7 +144,7 @@ export const DataProvider = ({ children }) => {
             await saveData(newData);
             setData(newData);
             return { success: true };
-        } catch (e) {
+    } catch (_e) {
             return { success: false, message: 'Erro ao registrar usuário.' };
         }
     };

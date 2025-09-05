@@ -13,7 +13,7 @@ export default function SplashScreen() {
     const to = currentUser ? '/dashboard' : '/welcome';
     const t = setTimeout(() => router.replace(to), 650);
     return () => clearTimeout(t);
-  }, [loading, currentUser]);
+  }, [loading, currentUser, router]);
 
   return (
     <LinearGradient colors={["#3B82F6", "#8B5CF6"]} style={styles.container}>
