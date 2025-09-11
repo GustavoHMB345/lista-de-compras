@@ -7,6 +7,7 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import ErrorBoundary from '../src/components/ErrorBoundary';
 import { DataProvider } from '../src/contexts/DataContext';
 
 export default function RootLayout() {
@@ -24,6 +25,7 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <DataProvider>
+          <ErrorBoundary>
           <Stack>
           <Stack.Screen name="splash" options={{ headerShown: false }} />
           <Stack.Screen name="welcome" options={{ headerShown: false }} />
@@ -37,6 +39,7 @@ export default function RootLayout() {
           <Stack.Screen name="list-detail" options={{ headerShown: false }} />
           <Stack.Screen name="+not-found" />
           </Stack>
+          </ErrorBoundary>
           <StatusBar style="auto" />
         </DataProvider>
       </GestureHandlerRootView>

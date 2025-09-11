@@ -1,21 +1,25 @@
+import * as Haptics from 'expo-haptics';
 import React from 'react';
 import {
-  Dimensions,
-  FlatList,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Animated,
+    Dimensions,
+    FlatList,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import useFontScale from '../hooks/useFontScale';
 import { CategoryIcon } from './Icons';
 
-const CATEGORIES = [
+// Categorias da LISTA (mantidas separadas das categorias de itens)
+const LIST_CATEGORIES = [
   { key: 'alimentos', label: 'Alimentos' },
   { key: 'limpeza', label: 'Limpeza' },
   { key: 'tecnologia', label: 'Tecnologia' },
@@ -23,6 +27,19 @@ const CATEGORIES = [
   { key: 'moveis', label: 'Móveis' },
   { key: 'outros', label: 'Outros' },
 ];
+
+// Categorias por ITEM (igual lógica usada na tela de detalhes)
+const ITEM_CATEGORIES = {
+  frutas: { name: 'Frutas', emoji: '🍎' },
+  vegetais: { name: 'Vegetais', emoji: '🥕' },
+  carnes: { name: 'Carnes', emoji: '🥩' },
+  laticinios: { name: 'Laticínios', emoji: '🥛' },
+  paes: { name: 'Pães', emoji: '🍞' },
+  bebidas: { name: 'Bebidas', emoji: '🥤' },
+  limpeza: { name: 'Limpeza', emoji: '🧽' },
+  higiene: { name: 'Higiene', emoji: '🧴' },
+  outros: { name: 'Outros', emoji: '📦' },
+};
 
 export default function AddListModal({ visible, onClose, onCreate }) {
   const fs = useFontScale();
@@ -81,7 +98,7 @@ export default function AddListModal({ visible, onClose, onCreate }) {
       marginBottom: 8,
       flexWrap: 'wrap',
     },
-    categoryButton: {
+  categoryButton: {
       backgroundColor: '#fff',
       borderRadius: 12,
       paddingVertical: 10,
@@ -129,10 +146,15 @@ export default function AddListModal({ visible, onClose, onCreate }) {
     productItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: '#F3F4F6',
-      borderRadius: 8,
-      padding: 8,
-      marginBottom: 4,
+      backgroundColor: '#fff',
+      borderRadius: 14,
+      padding: 10,
+      marginBottom: 8,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.06,
+      shadowRadius: 4,
+      elevation: 1,
     },
     qtyBox: {
       flexDirection: 'row',
@@ -141,6 +163,34 @@ export default function AddListModal({ visible, onClose, onCreate }) {
       borderRadius: 8,
       marginHorizontal: 6,
     },
+    itemCatPill: {
+      backgroundColor: '#EEF2FF',
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 999,
+      marginRight: 6,
+    },
+    swipeDelete: {
+      width: 86,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginVertical: 4,
+      borderRadius: 14,
+      backgroundColor: '#EF4444',
+    },
+    swipeDeleteText: { color: '#fff', fontWeight: '700', fontSize: 13 * fs },
+    swipeEdit: {
+      width: 86,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginVertical: 4,
+      borderRadius: 14,
+      backgroundColor: '#3B82F6',
+    },
+    itemName: { flex: 1, fontWeight: '600', color: '#111827', fontSize: 14 * fs },
+    inlinePriceBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F1F5F9', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, marginLeft: 6 },
+    inlinePriceText: { color: '#1D4ED8', fontWeight: '700', fontSize: 13 * fs },
+    inlinePriceInput: { minWidth: 64, paddingVertical: 0, color: '#111827', fontSize: 14 * fs },
     qtyBtn: {
       paddingHorizontal: 10,
       paddingVertical: 6,
@@ -224,12 +274,16 @@ export default function AddListModal({ visible, onClose, onCreate }) {
 
   const [name, setName] = React.useState('');
   const [desc, setDesc] = React.useState('');
-  const [category, setCategory] = React.useState(CATEGORIES[0].key);
+  const [category, setCategory] = React.useState(LIST_CATEGORIES[0].key); // categoria da lista
+  const [itemCategory, setItemCategory] = React.useState('outros'); // categoria do novo item
   const [products, setProducts] = React.useState([]);
   const [productName, setProductName] = React.useState('');
   const [productQty, setProductQty] = React.useState('1');
   const [productPrice, setProductPrice] = React.useState('');
   const [nameError, setNameError] = React.useState('');
+  const [productError, setProductError] = React.useState('');
+  const [editingItemId, setEditingItemId] = React.useState(null);
+  const [editingItemName, setEditingItemName] = React.useState('');
 
   const normalizeNumber = (val) => {
     if (typeof val === 'number') return val;
@@ -252,6 +306,11 @@ export default function AddListModal({ visible, onClose, onCreate }) {
 
   const handleAddProduct = () => {
     if (!productName.trim()) return;
+    if (productPrice && normalizeNumber(productPrice) <= 0) {
+      setProductError('Preço deve ser maior que zero ou deixe vazio.');
+      return;
+    }
+    setProductError('');
     setProducts((prev) => [
       ...prev,
       {
@@ -259,9 +318,12 @@ export default function AddListModal({ visible, onClose, onCreate }) {
         name: productName.trim(),
         quantity: parseInt(productQty) || 1,
         price: normalizeNumber(productPrice),
-        category,
+        category: itemCategory,
+        isPurchased: false,
+        createdAt: new Date().toISOString(),
       },
     ]);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setProductName('');
     setProductQty('1');
     setProductPrice('');
@@ -269,31 +331,59 @@ export default function AddListModal({ visible, onClose, onCreate }) {
 
   const handleRemoveProduct = (id) => {
     setProducts(products.filter((p) => p.id !== id));
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
   const handleIncQty = (id) => {
     setProducts((p) => p.map((item) => (item.id === id ? { ...item, quantity: (parseInt(item.quantity) || 1) + 1 } : item)));
+    Haptics.selectionAsync();
   };
   const handleDecQty = (id) => {
     setProducts((p) => p.map((item) => (item.id === id ? { ...item, quantity: Math.max(1, (parseInt(item.quantity) || 1) - 1) } : item)));
+    Haptics.selectionAsync();
   };
   const handlePriceChange = (id, val) => {
     setProducts((p) => p.map((item) => (item.id === id ? { ...item, price: normalizeNumber(val) } : item)));
   };
 
-  const canCreate = name.trim().length >= 3;
+  const canCreate = name.trim().length >= 3 && !productError;
 
   const handleCreate = () => {
     if (!validateName(name)) return;
-    onCreate({ name: name.trim(), desc: desc.trim(), category, items: products });
+    // Normaliza itens para mesmo formato usado na tela de detalhes
+    const preparedItems = products.map(p => ({
+      ...p,
+      quantity: String(p.quantity || 1),
+      price: Number(p.price) || 0,
+    }));
+    onCreate({ name: name.trim(), desc: desc.trim(), category, items: preparedItems });
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setName('');
     setDesc('');
-    setCategory(CATEGORIES[0].key);
+  setCategory(LIST_CATEGORIES[0].key);
     setProducts([]);
     setProductName('');
     setProductQty('1');
     setProductPrice('');
+  setItemCategory('outros');
     onClose();
+  };
+
+  const beginEditItemName = (item) => {
+    setEditingItemId(item.id);
+    setEditingItemName(item.name);
+  };
+  const commitEditItemName = () => {
+    if (!editingItemId) return;
+    setProducts(p => p.map(it => it.id === editingItemId ? { ...it, name: editingItemName.trim() || it.name } : it));
+    setEditingItemId(null);
+    setEditingItemName('');
+    Haptics.selectionAsync();
+  };
+  const clearAllItems = () => {
+    if (products.length === 0) return;
+    setProducts([]);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   };
 
   return (
@@ -318,9 +408,9 @@ export default function AddListModal({ visible, onClose, onCreate }) {
               value={desc}
               onChangeText={setDesc}
             />
-            <Text style={styles.label}>Categoria</Text>
+            <Text style={styles.label}>Categoria da Lista</Text>
             <View style={styles.categoryRow}>
-              {CATEGORIES.map((cat) => (
+              {LIST_CATEGORIES.map((cat) => (
                 <TouchableOpacity
                   key={cat.key}
                   style={[styles.categoryButton, category === cat.key && styles.categoryButtonActive]}
@@ -333,7 +423,30 @@ export default function AddListModal({ visible, onClose, onCreate }) {
               ))}
             </View>
 
-            <Text style={styles.label}>Adicionar Produtos</Text>
+            <Text style={styles.label}>Categoria do Item</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 4, paddingRight: 6 }}>
+              {Object.entries(ITEM_CATEGORIES).map(([key, cfg]) => (
+                <TouchableOpacity
+                  key={key}
+                  onPress={() => setItemCategory(key)}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: itemCategory === key ? '#4f46e5' : '#fff',
+                    borderWidth: 1,
+                    borderColor: itemCategory === key ? '#4f46e5' : '#e5e7eb',
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    borderRadius: 12,
+                    marginRight: 8,
+                  }}
+                  activeOpacity={0.85}
+                >
+                  <Text style={{ color: itemCategory === key ? '#fff' : '#111827', fontWeight: '600', fontSize: 13 * fs }}>{cfg.emoji} {cfg.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <Text style={[styles.label, { marginTop: 4 }]}>Adicionar Produtos</Text>
             <View style={styles.productRow}>
               <TextInput
                 style={[styles.input, { flex: 2, marginRight: 4 }]}
@@ -349,7 +462,7 @@ export default function AddListModal({ visible, onClose, onCreate }) {
                 keyboardType="number-pad"
               />
               <TextInput
-                style={[styles.input, { flex: 1 }]}
+                style={[styles.input, { flex: 1, borderColor: productError ? '#ef4444' : '#E5E7EB', borderWidth: 1 }]}
                 placeholder="Preço"
                 value={productPrice}
                 onChangeText={setProductPrice}
@@ -359,6 +472,12 @@ export default function AddListModal({ visible, onClose, onCreate }) {
                 <Text style={styles.addProductText}>+</Text>
               </TouchableOpacity>
             </View>
+            {!!productError && <Text style={{ color: '#ef4444', marginTop: -4, marginBottom: 8, fontSize: 12 * fs, textAlign: 'center' }}>{productError}</Text>}
+            {products.length > 0 && (
+              <TouchableOpacity onPress={clearAllItems} activeOpacity={0.8} style={{ alignSelf: 'flex-end', marginBottom: 6 }}>
+                <Text style={{ color: '#ef4444', fontSize: 12 * fs, fontWeight: '600' }}>Limpar todos</Text>
+              </TouchableOpacity>
+            )}
 
             <View style={styles.totalsRow}>
               <Text style={styles.totalsText}>
@@ -370,34 +489,59 @@ export default function AddListModal({ visible, onClose, onCreate }) {
             <FlatList
               data={products}
               keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <View style={styles.productItem}>
-                  <Text style={{ flex: 2, fontWeight: '600', color: '#111827', fontSize: 14 * fs }}>
-                    {item.name}
-                  </Text>
-                  <View style={styles.qtyBox}>
-                    <TouchableOpacity onPress={() => handleDecQty(item.id)} style={styles.qtyBtn} activeOpacity={0.7}>
-                      <Text style={styles.qtyBtnText}>-</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.qtyValue}>{item.quantity}</Text>
-                    <TouchableOpacity onPress={() => handleIncQty(item.id)} style={styles.qtyBtn} activeOpacity={0.7}>
-                      <Text style={styles.qtyBtnText}>+</Text>
-                    </TouchableOpacity>
-                  </View>
-                  <View style={styles.priceBox}>
-                    <Text style={styles.pricePrefix}>R$</Text>
-                    <TextInput
-                      style={styles.priceInput}
-                      value={String(item.price ?? '')}
-                      onChangeText={(v) => handlePriceChange(item.id, v)}
-                      keyboardType="numeric"
-                    />
-                  </View>
-                  <TouchableOpacity onPress={() => handleRemoveProduct(item.id)}>
-                    <Text style={{ color: '#ef4444', fontWeight: 'bold', marginLeft: 8, fontSize: 13 * fs }}>Remover</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
+              renderItem={({ item }) => {
+                const cat = ITEM_CATEGORIES[item.category] || ITEM_CATEGORIES.outros;
+                const renderRight = (progress, dragX) => {
+                  const scale = dragX.interpolate({ inputRange: [-90, 0], outputRange: [1, 0.7], extrapolate: 'clamp' });
+                  const opacity = progress.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] });
+                  return (
+                    <Animated.View style={[styles.swipeDelete, { transform: [{ scale }], opacity }]}> 
+                      <Text style={styles.swipeDeleteText}>Remover</Text>
+                    </Animated.View>
+                  );
+                };
+                return (
+                  <Swipeable
+                    renderRightActions={renderRight}
+                    rightThreshold={40}
+                    overshootRight={false}
+                    onSwipeableOpen={(dir) => { if (dir === 'right') handleRemoveProduct(item.id); }}
+                  >
+                    <View style={styles.productItem}>
+                      <View style={styles.itemCatPill}><Text style={{ fontSize: 13 * fs }}>{cat.emoji}</Text></View>
+                      {editingItemId === item.id ? (
+                        <TextInput
+                          style={[styles.itemName, { backgroundColor: '#F1F5F9', paddingHorizontal: 6, borderRadius: 8 }]}
+                          value={editingItemName}
+                          onChangeText={setEditingItemName}
+                          onBlur={commitEditItemName}
+                          returnKeyType="done"
+                          onSubmitEditing={commitEditItemName}
+                          autoFocus
+                        />
+                      ) : (
+                        <TouchableOpacity onPress={() => beginEditItemName(item)} activeOpacity={0.7} style={{ flex: 1 }}>
+                          <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
+                        </TouchableOpacity>
+                      )}
+                      <View style={styles.qtyBox}>
+                        <TouchableOpacity onPress={() => handleDecQty(item.id)} style={styles.qtyBtn} activeOpacity={0.7}><Text style={styles.qtyBtnText}>-</Text></TouchableOpacity>
+                        <Text style={styles.qtyValue}>{item.quantity}</Text>
+                        <TouchableOpacity onPress={() => handleIncQty(item.id)} style={styles.qtyBtn} activeOpacity={0.7}><Text style={styles.qtyBtnText}>+</Text></TouchableOpacity>
+                      </View>
+                      <View style={styles.inlinePriceBox}>
+                        <Text style={{ color: '#64748B', marginRight: 4, fontSize: 12 * fs }}>R$</Text>
+                        <TextInput
+                          style={styles.inlinePriceInput}
+                          value={String(item.price || '')}
+                          onChangeText={(v) => handlePriceChange(item.id, v)}
+                          keyboardType="numeric"
+                        />
+                      </View>
+                    </View>
+                  </Swipeable>
+                );
+              }}
               ListEmptyComponent={
                 <Text style={{ color: '#6B7280', textAlign: 'center', marginVertical: 4, fontSize: 13 * fs }}>
                   Nenhum produto adicionado.

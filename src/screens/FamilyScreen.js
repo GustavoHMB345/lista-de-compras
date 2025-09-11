@@ -132,6 +132,7 @@ function FamilyScreen() {
 
     return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f0f5ff' }} edges={['top']}>
+      <TabBar active={'FAMILY'} onNavigate={handleNavigate} />
       <SwipeNavigator onSwipeLeft={() => handleNavigate('LISTS')} isFirst progress={progress}>
         <LinearGradient colors={["#EFF6FF", "#E0E7FF"]} style={familyStyles.root}>
         <ScrollView contentContainerStyle={familyStyles.scroll} showsVerticalScrollIndicator={false}>
@@ -250,7 +251,7 @@ function FamilyScreen() {
                 </View>
             </Modal>
 
-            <TabBar active={'FAMILY'} onNavigate={handleNavigate} />
+            {/* TabBar agora no topo */}
 
             {/* Details Modal */}
             <FamilyDetailsModal

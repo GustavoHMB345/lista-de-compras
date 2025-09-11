@@ -1,20 +1,31 @@
+import { BlurView } from 'expo-blur';
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 // Top subtle tab bar (dashboard-style). Props: active, onNavigate(screen)
-export default function TabBar({ active, onNavigate }) {
+export default function TabBar({ active, onNavigate, onAddList }) {
   return (
     <SafeAreaView edges={['top']} style={styles.safe}> 
-      <View style={styles.topWrap}>
-        <Text style={styles.brand}>🛒 <Text style={{ color: '#2563EB' }}>Super Lista</Text></Text>
-        <View style={styles.tabsRow}>
-          <IconTab active={active === 'FAMILY'} label="Fam" onPress={() => onNavigate('FAMILY')} icon={(c)=> <FamilyIcon color={c} />} />
-          <IconTab active={active === 'LISTS'} label="Listas" onPress={() => onNavigate('LISTS')} icon={(c)=> <ListsIcon color={c} />} />
-          <IconTab active={active === 'DASHBOARD'} label="Dash" onPress={() => onNavigate('DASHBOARD')} icon={(c)=> <HomeIcon color={c} />} />
-          <IconTab active={active === 'PROFILE'} label="Perfil" onPress={() => onNavigate('PROFILE')} icon={(c)=> <ProfileIcon color={c} />} />
-        </View>
+      <View style={styles.wrapper}> 
+        <BlurView intensity={30} tint={Platform.OS === 'ios' ? 'light' : 'default'} style={styles.blur}>
+          <View style={styles.topWrap}>
+            <Text style={styles.brand}>🛒 <Text style={{ color: '#2563EB' }}>Super Lista</Text></Text>
+            <View style={styles.tabsRow}>
+              <IconTab active={active === 'FAMILY'} label="Famílias" onPress={() => onNavigate('FAMILY')} icon={(c)=> <FamilyIcon color={c} />} />
+              <IconTab active={active === 'LISTS'} label="Listas" onPress={() => onNavigate('LISTS')} icon={(c)=> <ListsIcon color={c} />} />
+              <IconTab active={active === 'DASHBOARD'} label="Dashboard" onPress={() => onNavigate('DASHBOARD')} icon={(c)=> <HomeIcon color={c} />} />
+              <IconTab active={active === 'PROFILE'} label="Perfil" onPress={() => onNavigate('PROFILE')} icon={(c)=> <ProfileIcon color={c} />} />
+              {active === 'LISTS' && onAddList && (
+                <TouchableOpacity onPress={onAddList} style={styles.addBtn} activeOpacity={0.8} accessibilityLabel="Criar nova lista">
+                  <Text style={styles.addBtnText}>+ Nova</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+          <View style={styles.divider} />
+        </BlurView>
       </View>
     </SafeAreaView>
   );
@@ -62,6 +73,8 @@ const ProfileIcon = ({ color = '#6B7280' }) => (
 
 const styles = StyleSheet.create({
   safe: { backgroundColor: 'transparent' },
+  wrapper: { width: '100%' },
+  blur: { width: '100%' },
   topWrap: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -76,4 +89,7 @@ const styles = StyleSheet.create({
   iconTabLabel: { fontSize: 11, color: '#6B7280', marginTop: 2, fontWeight: '600' },
   iconTabLabelActive: { color: '#1E3A8A' },
   activeBar: { position: 'absolute', bottom: -2, height: 3, left: 8, right: 8, borderRadius: 2, backgroundColor: '#2563EB' },
+  divider: { height: 1, backgroundColor: 'rgba(0,0,0,0.07)', marginTop: 4 },
+  addBtn: { backgroundColor: '#2563EB', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, marginLeft: 4 },
+  addBtnText: { color: '#fff', fontWeight: '700', fontSize: 11 },
 });

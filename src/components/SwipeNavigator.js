@@ -20,6 +20,11 @@ export default function SwipeNavigator({
   allowSwipeLeft = true,
   allowSwipeRight = true,
   edgeFrom = 'both', // 'both' | 'left' | 'right'
+  verticalTolerance = 18, // delta vertical máximo para considerar gesto horizontal
+  multiTouchCancel = true, // cancela se mais de um toque estiver ativo
+  onSwipeStart, // callback ao começar um swipe válido
+  onSwipeProgress, // callback contínuo com valor normalizado (-1..1)
+  onSwipeCancel, // callback quando gesto é cancelado/terminado sem navegação
 }) {
   const translateX = useRef(new Animated.Value(0)).current;
   const [winWidth, setWinWidth] = useState(Dimensions.get('window').width);
@@ -63,7 +68,8 @@ export default function SwipeNavigator({
           return false; // não captura imediatamente
         },
         onMoveShouldSetPanResponder: (_, gesture) => {
-          const { dx, dy } = gesture;
+          const { dx, dy, numberActiveTouches } = gesture;
+          if (multiTouchCancel && numberActiveTouches > 1) return false;
           const leftEdge = startXRef.current <= effectiveEdge;
           const rightEdge = startXRef.current >= winWidth - effectiveEdge;
           const edgeOk =
@@ -72,7 +78,8 @@ export default function SwipeNavigator({
               : edgeFrom === 'left'
               ? leftEdge
               : rightEdge;
-          const horizontalIntent = Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy);
+          // Requer deslocamento horizontal suficiente, dentro da tolerância vertical.
+          const horizontalIntent = Math.abs(dx) > 14 && Math.abs(dx) > Math.abs(dy) * 1.15 && Math.abs(dy) <= verticalTolerance;
           const dirOk = (dx < 0 && allowSwipeLeft) || (dx > 0 && allowSwipeRight);
           return edgeOk && horizontalIntent && dirOk;
         },
@@ -88,6 +95,7 @@ export default function SwipeNavigator({
           if (progress) {
             const normalized = Math.max(-1, Math.min(1, dx / winWidth));
             progress.setValue(normalized);
+            onSwipeProgress && onSwipeProgress(normalized);
           }
         },
         onPanResponderRelease: async (_, gesture) => {
@@ -97,6 +105,10 @@ export default function SwipeNavigator({
           const farEnoughRight = dx > threshold;
           const goLeft = (farEnoughLeft || (fastEnough && dx < 0)) && !isLast && !!onSwipeLeft && allowSwipeLeft;
           const goRight = (farEnoughRight || (fastEnough && dx > 0)) && !isFirst && !!onSwipeRight && allowSwipeRight;
+
+          if (!navigatingRef.current && (goLeft || goRight)) {
+            onSwipeStart && onSwipeStart();
+          }
 
           if (goLeft && !navigatingRef.current) {
             navigatingRef.current = true;
@@ -127,6 +139,7 @@ export default function SwipeNavigator({
               friction: 7,
               tension: 80,
             }).start();
+          onSwipeCancel && onSwipeCancel();
         },
         onPanResponderTerminate: () => {
           animateTo(0);
@@ -137,9 +150,10 @@ export default function SwipeNavigator({
               friction: 7,
               tension: 80,
             }).start();
+          onSwipeCancel && onSwipeCancel();
         },
       }),
-  [effectiveEdge, winWidth, isFirst, isLast, threshold, onSwipeLeft, onSwipeRight, velocityThreshold, dragFactor, progress, allowSwipeLeft, allowSwipeRight, edgeFrom, animateTo, translateX]
+  [effectiveEdge, winWidth, isFirst, isLast, threshold, onSwipeLeft, onSwipeRight, velocityThreshold, dragFactor, progress, allowSwipeLeft, allowSwipeRight, edgeFrom, animateTo, translateX, verticalTolerance, multiTouchCancel, onSwipeCancel, onSwipeProgress, onSwipeStart]
   );
 
   // Parallax: escala e opacidade variam levemente conforme o arraste

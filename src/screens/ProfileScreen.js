@@ -92,6 +92,7 @@ function ProfileScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f0f5ff' }} edges={['top']}>
+      <TabBar active={'PROFILE'} onNavigate={handleNavigate} />
       <SwipeNavigator onSwipeRight={() => handleNavigate('DASHBOARD')} isLast progress={progress}>
         <LinearGradient colors={["#EFF6FF", "#E0E7FF"]} style={profileStyles.root}>
           <ScrollView contentContainerStyle={profileStyles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -152,7 +153,7 @@ function ProfileScreen() {
           ]);
         }}
       />
-  <TabBar active={'PROFILE'} onNavigate={handleNavigate} onAddList={() => setModalVisible(true)} />
+  {/* TabBar movida para o topo */}
     </SafeAreaView>
   );
 }

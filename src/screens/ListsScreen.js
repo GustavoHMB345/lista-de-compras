@@ -16,8 +16,9 @@ import { DataContext } from '../contexts/DataContext';
 const { width } = Dimensions.get('window');
 const __fs = Math.min(1.2, Math.max(0.9, width / 390));
 const MAX_CARD_WIDTH = Math.min(820, width * 0.98);
+const TAB_BAR_OFFSET = 78; // altura aproximada da TabBar (SafeArea + conteúdo)
 const listsStyles = StyleSheet.create({
-  bg: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 0, paddingVertical: 0 },
+  bg: { flex: 1, alignItems: 'center', justifyContent: 'flex-start', paddingHorizontal: 0, paddingVertical: 0, paddingTop: TAB_BAR_OFFSET },
   container: {
     width: MAX_CARD_WIDTH,
     maxWidth: '98%',
@@ -135,7 +136,7 @@ function ListsScreen() {
   // Filtros
   const [search, setSearch] = useState('');
   const [dateFilter, setDateFilter] = useState(''); // AAAA-MM-DD
-  const [statusFilter, setStatusFilter] = useState('all'); // all | active | archived
+  const [statusFilter, setStatusFilter] = useState('all'); // all | active | archived | completed
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dateObj, setDateObj] = useState(null);
 
@@ -149,7 +150,7 @@ function ListsScreen() {
           if (typeof parsed.search === 'string') setSearch(parsed.search);
           if (typeof parsed.dateFilter === 'string') setDateFilter(parsed.dateFilter);
           if (parsed.dateFilter) setDateObj(new Date(parsed.dateFilter));
-          if (['all', 'active', 'archived'].includes(parsed.statusFilter)) setStatusFilter(parsed.statusFilter);
+          if (['all', 'active', 'archived', 'completed'].includes(parsed.statusFilter)) setStatusFilter(parsed.statusFilter);
         }
       } catch {}
     })();
@@ -170,12 +171,27 @@ function ListsScreen() {
 
   const filteredLists = useMemo(() => {
     const s = search.trim().toLowerCase();
+    const CATEGORY_ORDER = ['alimentos','frutas','vegetais','carnes','laticinios','paes','bebidas','limpeza','higiene','moveis','tecnologia','vestuario','outros'];
+    const orderMap = CATEGORY_ORDER.reduce((acc, c, i) => { acc[c] = i; return acc; }, {});
     return userLists.filter((l) => {
+      const items = l.items || [];
+      const total = items.length;
+      const purchased = items.filter(it => it.isPurchased || it.done || it.completed || it.checked).length;
+      const isCompleted = total > 0 && purchased === total;
       const matchesSearch = !s || (l.name || '').toLowerCase().includes(s) || (l.desc || l.description || '').toLowerCase().includes(s);
       const createdAt = l.createdAt ? String(l.createdAt).slice(0, 10) : '';
       const matchesDate = !dateFilter || createdAt === dateFilter;
-      const matchesStatus = statusFilter === 'all' || (statusFilter === 'active' ? l.status !== 'archived' : l.status === 'archived');
+      let matchesStatus = true;
+      if (statusFilter === 'active') matchesStatus = l.status !== 'archived';
+      else if (statusFilter === 'archived') matchesStatus = l.status === 'archived';
+      else if (statusFilter === 'completed') matchesStatus = isCompleted && l.status !== 'archived';
       return matchesSearch && matchesDate && matchesStatus;
+    }).sort((a,b)=>{
+      const oa = orderMap[a.category] ?? 999;
+      const ob = orderMap[b.category] ?? 999;
+      if (oa !== ob) return oa - ob;
+      // fallback: most recently updated (createdAt desc)
+      return (new Date(b.createdAt || 0)) - (new Date(a.createdAt || 0));
     });
   }, [userLists, search, dateFilter, statusFilter]);
 
@@ -191,7 +207,7 @@ function ListsScreen() {
 
   const getCounts = React.useCallback((list) => {
     const total = (list.items || []).length;
-    const completed = (list.items || []).filter((it) => it.done || it.completed || it.checked).length;
+    const completed = (list.items || []).filter((it) => it.isPurchased || it.done || it.completed || it.checked).length;
     return { total, completed };
   }, []);
 
@@ -270,7 +286,7 @@ function ListsScreen() {
       >
         <TouchableOpacity
           style={listsStyles.listCard}
-          onPress={() => router.push({ pathname: '/list-detail', params: { listId: item.id } })}
+          onPress={() => router.push({ pathname: '/list-detail', params: { id: item.id } })}
           activeOpacity={0.92}
         >
           <View style={listsStyles.listHeaderRow}>
@@ -312,6 +328,9 @@ function ListsScreen() {
 
   return (
   <SafeAreaView style={{ flex: 1, backgroundColor: '#f0f5ff' }} edges={['top']}>
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 50 }}>
+        <TabBar active={'LISTS'} onNavigate={handleNavigate} onAddList={() => setModalVisible(true)} />
+      </View>
       <SwipeNavigator onSwipeLeft={() => handleNavigate('DASHBOARD')} onSwipeRight={() => handleNavigate('FAMILY')} progress={progress}>
     <LinearGradient colors={["#EFF6FF", "#E0E7FF"]} style={listsStyles.bg}>
           <View style={listsStyles.container}>
@@ -362,6 +381,7 @@ function ListsScreen() {
                 {[
                   { key: 'all', label: 'Todas' },
                   { key: 'active', label: 'Ativas' },
+                  { key: 'completed', label: 'Concluídas' },
                   { key: 'archived', label: 'Arquivadas' },
                 ].map(({ key, label }) => {
                   const active = statusFilter === key;
@@ -417,24 +437,26 @@ function ListsScreen() {
       </SwipeNavigator>
 
       {currentUser && (
-      <AddListModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        onCreate={(newList) => {
-          updateLists([
-            ...shoppingLists,
-            {
-              ...newList,
-              id: `list_${Date.now()}`,
-        familyId: currentUser?.familyId,
-              createdAt: new Date().toISOString(),
-              status: 'active',
-        members: currentUser ? [currentUser.id] : [],
-            },
-          ]);
-        }}
-      />)}
-      <TabBar active={'LISTS'} onNavigate={handleNavigate} onAddList={() => setModalVisible(true)} />
+        <AddListModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          onCreate={(newList) => {
+            updateLists([
+              ...shoppingLists,
+              {
+                ...newList,
+                id: `list_${Date.now()}`,
+                familyId: currentUser?.familyId,
+                createdAt: new Date().toISOString(),
+                status: 'active',
+                members: currentUser ? [currentUser.id] : [],
+              },
+            ]);
+            setModalVisible(false);
+          }}
+        />
+      )}
+  {/* TabBar movida para o topo */}
     </SafeAreaView>
   );
 }
