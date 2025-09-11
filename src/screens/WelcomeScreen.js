@@ -41,6 +41,6 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: '800', color: '#111827', textAlign: 'center' },
   subtitle: { fontSize: 14, color: '#4B5563', marginTop: 8, textAlign: 'center' },
   image: { width: '80%', height: 140, marginVertical: 16, opacity: 0.85 },
-  button: { width: '100%', paddingVertical: 14, borderRadius: 10, alignItems: 'center', marginTop: 10 },
+  button: { width: '100%', paddingVertical: 12, paddingHorizontal: 14, borderRadius: 10, alignItems: 'center', marginTop: 10, minHeight: 44 },
   buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
 });

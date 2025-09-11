@@ -2,6 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useContext, useState } from 'react';
 import { Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import Button from '../components/Button';
 import { DataContext } from '../contexts/DataContext';
 
 
@@ -93,11 +94,14 @@ export default function AuthScreen() {
                                 <Text style={stylesAuth.errorText}>{error}</Text>
                             </View>
                         )}
-                        <TouchableOpacity style={stylesAuth.button} onPress={handleAuth} activeOpacity={0.8}>
-                            <Text style={stylesAuth.buttonText}>{isLogin ? 'Entrar' : 'Cadastrar'}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[stylesAuth.button, { backgroundColor: '#6366F1', marginTop: 0 }]}
+                        <Button
+                            title={isLogin ? 'Entrar' : 'Cadastrar'}
+                            onPress={handleAuth}
+                            style={{ width: '100%' }}
+                        />
+                        <Button
+                            variant="secondary"
+                            title="Usuário de teste"
                             onPress={async () => {
                                 setError('');
                                 setEmail('teste@teste.com');
@@ -109,10 +113,8 @@ export default function AuthScreen() {
                                     setError('Usuário de teste não encontrado.');
                                 }
                             }}
-                            activeOpacity={0.85}
-                        >
-                            <Text style={stylesAuth.buttonText}>Usuário de teste</Text>
-                        </TouchableOpacity>
+                            style={{ width: '100%', marginTop: 0 }}
+                        />
                         <TouchableOpacity onPress={() => { setIsLogin(!isLogin); setError(''); }} activeOpacity={0.7}>
                             <Text style={stylesAuth.toggleText}>
                                 {isLogin ? 'Não tem uma conta? Cadastre-se.' : 'Já tem uma conta? Faça login.'}
@@ -212,11 +214,13 @@ const stylesAuth = StyleSheet.create({
     button: {
         width: '100%',
         backgroundColor: '#3B82F6',
-        paddingVertical: 14,
+        paddingVertical: 12,
+        paddingHorizontal: 14,
         borderRadius: 10,
         alignItems: 'center',
         marginTop: 10,
         marginBottom: 4,
+        minHeight: 44,
     },
     buttonText: {
         color: '#fff',

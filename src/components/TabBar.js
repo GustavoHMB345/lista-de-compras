@@ -1,8 +1,9 @@
 import { BlurView } from 'expo-blur';
 import React from 'react';
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
+import { getRipple } from '../styles/theme';
 
 // Top subtle tab bar (dashboard-style). Props: active, onNavigate(screen)
 export default function TabBar({ active, onNavigate, onAddList }) {
@@ -18,9 +19,14 @@ export default function TabBar({ active, onNavigate, onAddList }) {
               <IconTab active={active === 'DASHBOARD'} label="Dashboard" onPress={() => onNavigate('DASHBOARD')} icon={(c)=> <HomeIcon color={c} />} />
               <IconTab active={active === 'PROFILE'} label="Perfil" onPress={() => onNavigate('PROFILE')} icon={(c)=> <ProfileIcon color={c} />} />
               {active === 'LISTS' && onAddList && (
-                <TouchableOpacity onPress={onAddList} style={styles.addBtn} activeOpacity={0.8} accessibilityLabel="Criar nova lista">
+                <Pressable
+                  onPress={onAddList}
+                  android_ripple={getRipple('rgba(255,255,255,0.18)')}
+                  style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.96 }]}
+                  accessibilityLabel="Criar nova lista"
+                >
                   <Text style={styles.addBtnText}>+ Nova</Text>
-                </TouchableOpacity>
+                </Pressable>
               )}
             </View>
           </View>
@@ -90,6 +96,6 @@ const styles = StyleSheet.create({
   iconTabLabelActive: { color: '#1E3A8A' },
   activeBar: { position: 'absolute', bottom: -2, height: 3, left: 8, right: 8, borderRadius: 2, backgroundColor: '#2563EB' },
   divider: { height: 1, backgroundColor: 'rgba(0,0,0,0.07)', marginTop: 4 },
-  addBtn: { backgroundColor: '#2563EB', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, marginLeft: 4 },
-  addBtnText: { color: '#fff', fontWeight: '700', fontSize: 11 },
+  addBtn: { backgroundColor: '#2563EB', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, marginLeft: 4, minHeight: 40, alignSelf: 'flex-start' },
+  addBtnText: { color: '#fff', fontWeight: '700', fontSize: 12 },
 });

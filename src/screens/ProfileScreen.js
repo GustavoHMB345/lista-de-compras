@@ -4,6 +4,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Animated, Dimensions, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AddListModal from '../components/AddListModal';
+import Button from '../components/Button';
 import { CheckIcon, EditIcon } from '../components/Icons';
 import SwipeNavigator from '../components/SwipeNavigator';
 import TabBar from '../components/TabBar';
@@ -27,13 +28,12 @@ const profileStyles = StyleSheet.create({
   label: { fontSize: 13 * __fs, color: '#374151', marginBottom: 6, fontWeight: '600' },
   inputRow: { flexDirection: 'row', gap: 10, alignItems: 'center', marginBottom: 8 },
   input: { backgroundColor: '#F1F5F9', paddingVertical: 12, paddingHorizontal: 14, borderRadius: 12, flex: 1, borderWidth: 1, borderColor: '#E2E8F0', color: '#111827' },
-  saveButton: { backgroundColor: '#16A34A', padding: 12, borderRadius: 12 },
-  editButton: { backgroundColor: '#2563EB', padding: 12, borderRadius: 12 },
+  saveButton: { backgroundColor: '#16A34A', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, minHeight: 40, alignSelf: 'flex-start', alignItems: 'center', justifyContent: 'center' },
+  editButton: { backgroundColor: '#2563EB', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, minHeight: 40, alignSelf: 'flex-start', alignItems: 'center', justifyContent: 'center' },
   displayName: { fontWeight: '700', fontSize: 18 * __fs, color: '#111827', flex: 1 },
   actionRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
   sectionTitle: { fontSize: 16 * __fs, fontWeight: '700', color: '#111827', marginBottom: 10 },
-  logoutButton: { backgroundColor: '#DC2626', paddingVertical: 14, borderRadius: 16, alignItems: 'center', marginTop: 8 },
-  logoutButtonText: { color: '#fff', fontWeight: '700', fontSize: 15 * __fs },
+  logoutButton: { marginTop: 8 },
   infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },
   infoLabel: { color: '#6B7280', fontSize: 12 * __fs },
   infoValue: { color: '#111827', fontWeight: '600', fontSize: 12 * __fs },
@@ -125,14 +125,26 @@ function ProfileScreen() {
 
             <View style={profileStyles.card}>
               <Text style={profileStyles.sectionTitle}>Resumo</Text>
-              <View style={profileStyles.infoRow}><Text style={profileStyles.infoLabel}>Listas Totais</Text><Text style={profileStyles.infoValue}>{shoppingLists.filter(l => l.familyId === currentUser.familyId).length}</Text></View>
-              <View style={profileStyles.infoRow}><Text style={profileStyles.infoLabel}>Listas Ativas</Text><Text style={profileStyles.infoValue}>{shoppingLists.filter(l => l.familyId === currentUser.familyId && l.status !== 'archived').length}</Text></View>
-              <View style={profileStyles.infoRow}><Text style={profileStyles.infoLabel}>Listas Arquivadas</Text><Text style={profileStyles.infoValue}>{shoppingLists.filter(l => l.familyId === currentUser.familyId && l.status === 'archived').length}</Text></View>
+              {(() => {
+                const familyLists = shoppingLists.filter(l => l.familyId === currentUser.familyId);
+                const isCompleted = (list) => {
+                  const items = list.items || [];
+                  return items.length > 0 && items.every(it => it.isPurchased || it.done || it.completed || it.checked);
+                };
+                const total = familyLists.length;
+                const completed = familyLists.filter(isCompleted).length;
+                const active = total - completed;
+                return (
+                  <>
+                    <View style={profileStyles.infoRow}><Text style={profileStyles.infoLabel}>Listas Totais</Text><Text style={profileStyles.infoValue}>{total}</Text></View>
+                    <View style={profileStyles.infoRow}><Text style={profileStyles.infoLabel}>Listas Ativas</Text><Text style={profileStyles.infoValue}>{active}</Text></View>
+                    <View style={profileStyles.infoRow}><Text style={profileStyles.infoLabel}>Listas Concluídas</Text><Text style={profileStyles.infoValue}>{completed}</Text></View>
+                  </>
+                );
+              })()}
             </View>
 
-            <TouchableOpacity style={profileStyles.logoutButton} onPress={logout} activeOpacity={0.9}>
-              <Text style={profileStyles.logoutButtonText}>Sair da Conta</Text>
-            </TouchableOpacity>
+            <Button variant="danger" title="Sair da Conta" onPress={logout} style={profileStyles.logoutButton} />
           </ScrollView>
         </LinearGradient>
       </SwipeNavigator>

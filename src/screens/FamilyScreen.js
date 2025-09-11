@@ -1,8 +1,9 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useContext, useMemo, useState } from 'react';
-import { Alert, Animated, Dimensions, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Animated, Dimensions, Modal, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Button from '../components/Button';
 import SwipeNavigator from '../components/SwipeNavigator';
 import TabBar from '../components/TabBar';
 import { DataContext } from '../contexts/DataContext';
@@ -32,8 +33,8 @@ const familyStyles = StyleSheet.create({
     miniStat: { flex: 1, alignItems: 'center', padding: 10, borderRadius: 12 },
     miniVal: { fontSize: 16 * __fs, fontWeight: '700' },
     miniLab: { fontSize: 11 * __fs, color: '#6B7280' },
-    actionsRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
-    btn: { flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center' },
+  actionsRow: { flexDirection: 'row', gap: 8, marginTop: 10, flexWrap: 'wrap', justifyContent: 'center' },
+  btn: { paddingVertical: 12, paddingHorizontal: 14, borderRadius: 12, alignItems: 'center', alignSelf: 'flex-start', minHeight: 44 },
     btnPrimary: { backgroundColor: '#2563EB' },
     btnGray: { backgroundColor: '#E5E7EB' },
     btnText: { color: '#fff', fontWeight: '600' },
@@ -52,20 +53,27 @@ function FamilyScreen() {
     const [showNewFamily, setShowNewFamily] = useState(false);
     const [famName, setFamName] = useState('');
     const [famDesc, setFamDesc] = useState('');
-    const [detailsFamily, setDetailsFamily] = useState(null);
+  const [detailsFamily, setDetailsFamily] = useState(null);
     const [manageFamily, setManageFamily] = useState(null);
+  const [famSearch, setFamSearch] = useState('');
+  // Join by ID moved to dedicated screen
 
   const myFamilies = useMemo(
     () => !currentUser ? [] : families.filter(f => (f.members || []).includes(currentUser.id)),
     [families, currentUser]
   );
 
-    const stats = useMemo(() => {
+  const stats = useMemo(() => {
         const totalFamilies = myFamilies.length;
         const adminFamilies = myFamilies.filter(f => f.owner === currentUser?.id).length;
         const totalMembers = myFamilies.reduce((sum, f) => sum + (f.members?.length || 0), 0);
     const activeLists = currentUser ? shoppingLists.filter(
-      (l) => l.status !== 'archived' && myFamilies.some((f) => f.id === l.familyId)
+      (l) => {
+        if (!myFamilies.some((f) => f.id === l.familyId)) return false;
+        const items = l.items || [];
+        const completed = items.length > 0 && items.every(it => it.isPurchased || it.done || it.completed || it.checked);
+        return !completed;
+      }
     ).length : 0;
         return { totalFamilies, adminFamilies, totalMembers, activeLists };
     }, [myFamilies, currentUser, shoppingLists]);
@@ -91,6 +99,21 @@ function FamilyScreen() {
 
     const familyMembers = (f) => (f.members || []).map((id) => users.find((u) => u.id === id)).filter(Boolean);
 
+    const filteredFamilies = useMemo(() => {
+      const q = famSearch.trim().toLowerCase();
+      const arr = myFamilies.filter((f) => {
+        if (!q) return true;
+        return (f.name || '').toLowerCase().includes(q) || (f.description || '').toLowerCase().includes(q);
+      });
+      // owner first, then name
+      return arr.sort((a, b) => {
+        const ao = a.owner === currentUser?.id ? 0 : 1;
+        const bo = b.owner === currentUser?.id ? 0 : 1;
+        if (ao !== bo) return ao - bo;
+        return (a.name || '').localeCompare(b.name || '');
+      });
+    }, [myFamilies, famSearch, currentUser?.id]);
+
     const leaveFamily = (f) => {
         if (!f) return;
         const isOwner = f.owner === currentUser?.id;
@@ -99,18 +122,36 @@ function FamilyScreen() {
         const idx = familiesCopy.findIndex((fam) => fam.id === f.id);
         if (idx < 0) return;
 
+        const performLeave = () => {
+          if (isOwner) {
+              if (otherMembers.length === 0) {
+                  // remove family entirely if no members left
+                  const updated = familiesCopy.filter((fam) => fam.id !== f.id);
+                  updateFamilies(updated);
+                  return;
+              }
+              // transfer ownership to first remaining member
+              familiesCopy[idx].owner = otherMembers[0];
+          }
+          familiesCopy[idx].members = otherMembers;
+          updateFamilies(familiesCopy);
+        };
+
         if (isOwner) {
-            if (otherMembers.length === 0) {
-                // remove family entirely if no members left
-                const updated = familiesCopy.filter((fam) => fam.id !== f.id);
-                updateFamilies(updated);
-                return;
-            }
-            // transfer ownership to first remaining member
-            familiesCopy[idx].owner = otherMembers[0];
+          // extra confirmation explaining auto-transfer
+          Alert.alert(
+            'Sair da família',
+            otherMembers.length === 0
+              ? 'Você é o único membro. Ao sair, a família será removida. Deseja continuar?'
+              : 'Você é o admin. Ao sair, a administração será transferida automaticamente para outro membro. Deseja continuar?',
+            [
+              { text: 'Cancelar', style: 'cancel' },
+              { text: 'Sair', style: 'destructive', onPress: performLeave },
+            ]
+          );
+          return;
         }
-        familiesCopy[idx].members = otherMembers;
-        updateFamilies(familiesCopy);
+        performLeave();
     };
 
     const toggleMember = (f, memberId) => {
@@ -143,7 +184,7 @@ function FamilyScreen() {
                             <Text style={familyStyles.title}>Minhas Famílias</Text>
                             <Text style={familyStyles.subtitle}>Gerencie as listas de compras das suas famílias</Text>
                         </View>
-                        <View style={familyStyles.statsGrid}>
+            <View style={familyStyles.statsGrid}>
                             <View style={[familyStyles.statBox, { backgroundColor: '#EFF6FF' }]}>
                                 <Text style={[familyStyles.statValue, { color: '#2563EB' }]}>{stats.totalFamilies}</Text>
                                 <Text style={familyStyles.statLabel}>Famílias</Text>
@@ -161,12 +202,28 @@ function FamilyScreen() {
                                 <Text style={familyStyles.statLabel}>Listas Ativas</Text>
                             </View>
                         </View>
+            <View style={{ marginTop: 12 }}>
+              <Text style={{ color: '#374151', fontSize: 12 * __fs, marginBottom: 6, fontWeight: '600' }}>Pesquisar famílias</Text>
+              <TextInput
+              placeholder="Digite um nome ou descrição"
+              style={familyStyles.input}
+              value={famSearch}
+              onChangeText={setFamSearch}
+              />
+                          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                            <Button title="Entrar por ID" variant="light" onPress={() => router.push('/join-family')} />
+                          </View>
+            </View>
                     </View>
 
                     {/* Families Grid */}
             <View style={[familyStyles.card, { backgroundColor: 'transparent', shadowOpacity: 0, elevation: 0, padding: 0 }]}> 
                         <View style={{ gap: 12 }}>
-                {myFamilies.map((f) => {
+                          {/* Quick access create pinned at top */}
+                          <View style={[familyStyles.familyCard, { alignItems: 'center' }]}> 
+                            <Button title="Criar Nova Família" onPress={() => setShowNewFamily(true)} />
+                          </View>
+        {filteredFamilies.map((f) => {
                                 const isOwner = f.owner === currentUser?.id;
                                 const mems = familyMembers(f);
                                 return (
@@ -176,34 +233,36 @@ function FamilyScreen() {
                                         )}
                                         <Text style={familyStyles.famTitle}>{f.name}</Text>
                                         <Text style={familyStyles.famDesc}>{f.description || 'Sem descrição'}</Text>
+                                        {isOwner && (
+                                          <Text style={{ color: '#6B7280', marginTop: 4, fontSize: 11 * __fs }}>Você é admin</Text>
+                                        )}
                                         <View style={[familyStyles.row, { marginTop: 12 }]}>
                                             <View style={[familyStyles.miniStat, { backgroundColor: '#EFF6FF' }]}>
                                                 <Text style={[familyStyles.miniVal, { color: '#2563EB' }]}>{mems.length}</Text>
                                                 <Text style={familyStyles.miniLab}>Membros</Text>
                                             </View>
                                             <View style={[familyStyles.miniStat, { backgroundColor: '#ECFDF5' }]}>
-                                                <Text style={[familyStyles.miniVal, { color: '#16A34A' }]}>{shoppingLists.filter(l => l.familyId === f.id && l.status !== 'archived').length}</Text>
+                                                <Text style={[familyStyles.miniVal, { color: '#16A34A' }]}>{shoppingLists.filter(l => {
+                                                  if (l.familyId !== f.id) return false;
+                                                  const items = l.items || [];
+                                                  const completed = items.length > 0 && items.every(it => it.isPurchased || it.done || it.completed || it.checked);
+                                                  return !completed;
+                                                }).length}</Text>
                                                 <Text style={familyStyles.miniLab}>Listas Ativas</Text>
                                             </View>
                                         </View>
                                         <View style={familyStyles.actionsRow}>
-                                            <TouchableOpacity style={[familyStyles.btn, familyStyles.btnPrimary]} activeOpacity={0.9} onPress={() => setDetailsFamily(f)}>
-                                                <Text style={familyStyles.btnText}>Ver Detalhes</Text>
-                                            </TouchableOpacity>
-                                            {isOwner ? (
-                                                <TouchableOpacity style={[familyStyles.btn, familyStyles.btnGray]} activeOpacity={0.9} onPress={() => setManageFamily(f) }>
-                                                    <Text style={familyStyles.btnTextGray}>Gerenciar</Text>
-                                                </TouchableOpacity>
-                                            ) : (
-                                                <TouchableOpacity style={[familyStyles.btn, familyStyles.btnGray]} activeOpacity={0.9} onPress={() => {
-                                                    Alert.alert('Sair da família', `Deseja sair de ${f.name}?`, [
-                                                        { text: 'Cancelar', style: 'cancel' },
-                                                        { text: 'Sair', style: 'destructive', onPress: () => leaveFamily(f) },
-                                                    ]);
-                                                } }>
-                                                    <Text style={familyStyles.btnTextGray}>Sair</Text>
-                                                </TouchableOpacity>
-                                            )}
+                      <Button title="Ver Detalhes" onPress={() => setDetailsFamily(f)} />
+                      {isOwner ? (
+            <Button variant="light" title="Gerenciar" onPress={() => setManageFamily(f)} />
+                      ) : (
+            <Button variant="light" title="Sair" onPress={() => {
+                          Alert.alert('Sair da família', `Deseja sair de ${f.name}?`, [
+                            { text: 'Cancelar', style: 'cancel' },
+                            { text: 'Sair', style: 'destructive', onPress: () => leaveFamily(f) },
+                          ]);
+            }} />
+                      )}
                                         </View>
                                     </View>
                                 );
@@ -212,11 +271,9 @@ function FamilyScreen() {
                     </View>
 
                     {/* Add Family Button */}
-                    <View style={[familyStyles.card, { alignItems: 'center' }]}> 
-                        <TouchableOpacity style={[familyStyles.btn, familyStyles.btnPrimary, { maxWidth: 320 }]} onPress={() => setShowNewFamily(true)} activeOpacity={0.95}>
-                            <Text style={familyStyles.btnText}>Criar Nova Família</Text>
-                        </TouchableOpacity>
-                    </View>
+          <View style={[familyStyles.card, { alignItems: 'center' }]}> 
+            <Button title="Criar Nova Família" onPress={() => setShowNewFamily(true)} />
+          </View>
                 </ScrollView>
                 </LinearGradient>
             </SwipeNavigator>
@@ -229,27 +286,25 @@ function FamilyScreen() {
                         <Text style={{ fontSize: 12 * __fs, color: '#6B7280', marginTop: 2 }}>Dê um nome para sua família</Text>
                         <TextInput placeholder="Nome da família" style={familyStyles.input} value={famName} onChangeText={setFamName} />
                         <TextInput placeholder="Descrição (opcional)" style={familyStyles.input} value={famDesc} onChangeText={setFamDesc} />
-                        <View style={familyStyles.rowEnd}>
-                            <TouchableOpacity onPress={() => setShowNewFamily(false)} style={[familyStyles.btn, familyStyles.btnGray, { flex: 0 }]}>
-                                <Text style={familyStyles.btnTextGray}>Cancelar</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                onPress={() => {
+            <View style={[familyStyles.rowEnd, { justifyContent: 'center' }]}>
+              <Button variant="light" title="Cancelar" onPress={() => setShowNewFamily(false)} />
+              <Button
+                title="Criar"
+                onPress={() => {
                                     if (!famName.trim()) return;
                                     if (currentUser) {
                                       const newFamily = { id: `family_${Date.now()}`, name: famName.trim(), description: famDesc.trim(), owner: currentUser.id, members: [currentUser.id] };
                                       updateFamilies([ ...families, newFamily ]);
                                     }
                                     setFamName(''); setFamDesc(''); setShowNewFamily(false);
-                                }}
-                                style={[familyStyles.btn, familyStyles.btnPrimary, { flex: 0 }]}
-                            >
-                                <Text style={familyStyles.btnText}>Criar</Text>
-                            </TouchableOpacity>
+                }}
+              />
                         </View>
                     </View>
                 </View>
             </Modal>
+
+            {/* Join by Code modal removed; use dedicated screen */}
 
             {/* TabBar agora no topo */}
 
@@ -260,6 +315,7 @@ function FamilyScreen() {
               onClose={() => setDetailsFamily(null)}
               shoppingLists={shoppingLists}
               users={users}
+              currentUserId={currentUser?.id}
             />
 
             {/* Manage Members Modal */}
@@ -281,6 +337,7 @@ function FamilyScreen() {
                 next[idx].owner = uid;
                 updateFamilies(next);
               }}
+              onOwnerLeave={(f) => leaveFamily(f)}
             />
         </SafeAreaView>
     );
@@ -290,16 +347,23 @@ export default FamilyScreen;
 
 // Details & Manage Modals appended above to keep single-file implementation concise.
 
-function FamilyDetailsModal({ visible, family, onClose, shoppingLists, users }) {
+function FamilyDetailsModal({ visible, family, onClose, shoppingLists, users, currentUserId }) {
   if (!family) return null;
   const mems = (family.members || []).map((id) => users.find((u) => u.id === id)).filter(Boolean);
-  const active = shoppingLists.filter((l) => l.familyId === family.id && l.status !== 'archived');
-  const archived = shoppingLists.filter((l) => l.familyId === family.id && l.status === 'archived');
+  const active = shoppingLists.filter((l) => {
+    if (l.familyId !== family.id) return false;
+    const items = l.items || [];
+    const completed = items.length > 0 && items.every(it => it.isPurchased || it.done || it.completed || it.checked);
+    return !completed;
+  });
   return (
     <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
       <View style={familyStyles.modalWrap}>
         <View style={familyStyles.modalCard}>
           <Text style={{ fontSize: 18 * __fs, fontWeight: '700', color: '#111827' }}>{family.name}</Text>
+          {currentUserId === family.owner && (
+            <Text style={{ color: '#6B7280', marginTop: 2, fontSize: 11 * __fs }}>Você é admin</Text>
+          )}
           {family.description ? (
             <Text style={{ color: '#6B7280', marginTop: 4 }}>{family.description}</Text>
           ) : null}
@@ -313,12 +377,18 @@ function FamilyDetailsModal({ visible, family, onClose, shoppingLists, users }) 
           </View>
           <View style={{ marginTop: 12 }}>
             <Text style={{ fontWeight: '700', color: '#111827' }}>Listas</Text>
-            <Text style={{ color: '#6B7280', marginTop: 4 }}>Ativas: {active.length} • Arquivadas: {archived.length}</Text>
+            <Text style={{ color: '#6B7280', marginTop: 4 }}>Ativas: {active.length}</Text>
           </View>
-          <View style={familyStyles.rowEnd}>
-            <TouchableOpacity onPress={onClose} style={[familyStyles.btn, familyStyles.btnGray, { flex: 0 }]}>
-              <Text style={familyStyles.btnTextGray}>Fechar</Text>
-            </TouchableOpacity>
+          <View style={[familyStyles.rowEnd, { justifyContent: 'center' }]}>
+            <Button
+              variant="light"
+              title="Compartilhar código"
+              onPress={() => {
+                const msg = `Família: ${family.name}\nID: ${family.id}`;
+                Share.share({ message: msg }).catch(() => {});
+              }}
+            />
+            <Button variant="light" title="Fechar" onPress={onClose} />
           </View>
         </View>
       </View>
@@ -326,7 +396,7 @@ function FamilyDetailsModal({ visible, family, onClose, shoppingLists, users }) 
   );
 }
 
-function ManageMembersModal({ visible, family, onClose, users, onToggleMember, onTransferOwner, currentUserId }) {
+function ManageMembersModal({ visible, family, onClose, users, onToggleMember, onTransferOwner, currentUserId, onOwnerLeave }) {
   if (!family) return null;
   const sortedUsers = users.slice().sort((a,b) => a.displayName.localeCompare(b.displayName));
   return (
@@ -335,6 +405,9 @@ function ManageMembersModal({ visible, family, onClose, users, onToggleMember, o
         <View style={familyStyles.modalCard}>
           <Text style={{ fontSize: 18 * __fs, fontWeight: '700', color: '#111827' }}>Gerenciar Membros</Text>
           <Text style={{ color: '#6B7280', marginTop: 2 }}>{family.name}</Text>
+          {currentUserId === family.owner && (
+            <Text style={{ color: '#6B7280', marginTop: 4, fontSize: 11 * __fs }}>Você é admin</Text>
+          )}
           <ScrollView style={{ maxHeight: 300, marginTop: 8 }}>
             {sortedUsers.map((u) => {
               const isMember = (family.members || []).includes(u.id);
@@ -344,24 +417,34 @@ function ManageMembersModal({ visible, family, onClose, users, onToggleMember, o
                   <Text style={{ color: '#111827' }}>{u.displayName} {isOwner ? '(Admin)' : ''}</Text>
                   <View style={{ flexDirection: 'row', gap: 8 }}>
                     {!isOwner && (
-                      <TouchableOpacity onPress={() => onToggleMember(family, u.id)} style={[familyStyles.btn, isMember ? familyStyles.btnGray : familyStyles.btnPrimary, { flex: 0, paddingVertical: 6 }]}>
-                        <Text style={isMember ? familyStyles.btnTextGray : familyStyles.btnText}>{isMember ? 'Remover' : 'Adicionar'}</Text>
-                      </TouchableOpacity>
+                      <Button
+                        title={isMember ? 'Remover' : 'Adicionar'}
+                        variant={isMember ? 'light' : 'primary'}
+                        onPress={() => onToggleMember(family, u.id)}
+                      />
                     )}
                     {currentUserId !== u.id && !isOwner && (
-                      <TouchableOpacity onPress={() => onTransferOwner(family, u.id)} style={[familyStyles.btn, familyStyles.btnPrimary, { flex: 0, paddingVertical: 6 }]}>
-                        <Text style={familyStyles.btnText}>Tornar Admin</Text>
-                      </TouchableOpacity>
+                      <Button
+                        title="Tornar Admin"
+                        onPress={() => onTransferOwner(family, u.id)}
+                      />
                     )}
                   </View>
                 </View>
               );
             })}
           </ScrollView>
-          <View style={familyStyles.rowEnd}>
-            <TouchableOpacity onPress={onClose} style={[familyStyles.btn, familyStyles.btnGray, { flex: 0 }]}>
-              <Text style={familyStyles.btnTextGray}>Fechar</Text>
-            </TouchableOpacity>
+          {currentUserId === family.owner && (
+            <View style={{ marginTop: 8, alignItems: 'center' }}>
+              <Text style={{ color: '#6B7280', fontSize: 11 * __fs, textAlign: 'center', marginBottom: 6 }}>
+                Para sair, você pode transferir a administração para outra pessoa ou sair agora.
+                Caso seja o único membro, a família será removida.
+              </Text>
+              <Button variant="danger" title="Sair da família" onPress={() => onOwnerLeave?.(family)} />
+            </View>
+          )}
+          <View style={[familyStyles.rowEnd, { justifyContent: 'center' }]}>
+            <Button variant="light" title="Fechar" onPress={onClose} />
           </View>
         </View>
       </View>

@@ -27,17 +27,21 @@ export default function DashboardScreen() {
     }, [loading, currentUser, rootNavigation?.key, router]);
 
     const allItems = useMemo(() => (shoppingLists || []).flatMap((l) => l.items || []), [shoppingLists]);
-    const archived = useMemo(() => (shoppingLists || []).filter(l => l.status === 'archived'), [shoppingLists]);
+    // Completed lists: all items purchased
+    const completedLists = useMemo(() => (shoppingLists || []).filter(l => {
+        const items = l.items || [];
+        return items.length > 0 && items.every(it => it.isPurchased || it.done || it.completed || it.checked);
+    }), [shoppingLists]);
 
     // Filtra listas conforme escopo
-    const scopedArchived = useMemo(() => {
+    const scopedCompleted = useMemo(() => {
         if (!currentUser) return [];
         if (scope === 'user') {
-            return archived.filter(l => (l.items || []).some(it => it.isPurchased && it.addedBy === currentUser.id));
+            return completedLists.filter(l => (l.items || []).some(it => it.isPurchased && it.addedBy === currentUser.id));
         }
         // família
-        return archived.filter(l => l.familyId === currentUser.familyId);
-    }, [archived, scope, currentUser]);
+        return completedLists.filter(l => l.familyId === currentUser.familyId);
+    }, [completedLists, scope, currentUser]);
 
     // Geração de série temporal baseada na experiência real (purchasedAt ou createdAt quando arquivada)
     // Cache simples em memória para séries (evita recomputar em grandes bases)
@@ -47,7 +51,7 @@ export default function DashboardScreen() {
         if (!currentUser) return [];
         // Cria chave de cache baseada em escopo, período e shape básico das listas
         const cacheKey = (() => {
-            const ids = scopedArchived.map(l => `${l.id}:${(l.items||[]).length}`).join('|');
+            const ids = scopedCompleted.map(l => `${l.id}:${(l.items||[]).length}`).join('|');
             return `${scope}::${period}::${monthRange}::${currentUser.id}::${ids}`;
         })();
 
@@ -57,10 +61,10 @@ export default function DashboardScreen() {
         const now = new Date();
         const points = [];
         // Agrega por bucket conforme período
-        if (period === 'weekly') {
+    if (period === 'weekly') {
             // Últimas 8 semanas (mais granular que o gráfico de barras anterior)
             const weeks = Array.from({ length: 8 }, (_, i) => ({ i, total: 0 }));
-        scopedArchived.forEach(l => {
+        scopedCompleted.forEach(l => {
                 (l.items || []).forEach(it => {
                     if (!it.isPurchased) return;
             if (scope === 'user' && it.addedBy !== currentUser.id) return;
@@ -77,10 +81,10 @@ export default function DashboardScreen() {
                 const label = `S${idx + 1}`;
                 points.push({ value: Number(w.total.toFixed(2)), label });
             });
-        } else if (period === 'monthly') {
+    } else if (period === 'monthly') {
             // Últimos monthRange meses
             const months = Array.from({ length: monthRange }, (_, i) => ({ i, total: 0 }));
-        scopedArchived.forEach(l => {
+        scopedCompleted.forEach(l => {
                 (l.items || []).forEach(it => {
                     if (!it.isPurchased) return;
             if (scope === 'user' && it.addedBy !== currentUser.id) return;
@@ -98,12 +102,12 @@ export default function DashboardScreen() {
                 date.setMonth(date.getMonth() - (monthRange - 1 - idx));
                 points.push({ value: Number(m.total.toFixed(2)), label: monthNames[date.getMonth()] });
             });
-        } else {
+    } else {
             // yearly: últimos 3 anos
             const yearsCount = 3;
             const baseYear = now.getFullYear() - (yearsCount - 1);
             const years = Array.from({ length: yearsCount }, (_, i) => ({ year: baseYear + i, total: 0 }));
-        scopedArchived.forEach(l => {
+        scopedCompleted.forEach(l => {
                 (l.items || []).forEach(it => {
                     if (!it.isPurchased) return;
             if (scope === 'user' && it.addedBy !== currentUser.id) return;
@@ -124,7 +128,7 @@ export default function DashboardScreen() {
             keys.slice(0, Math.floor(keys.length / 2)).forEach(k => { delete seriesCacheRef.current[k]; });
         }
         return points;
-    }, [scopedArchived, period, monthRange, scope, currentUser]);
+    }, [scopedCompleted, period, monthRange, scope, currentUser]);
 
     const hasLineData = lineData.some(p => p.value > 0);
 
@@ -307,8 +311,8 @@ export default function DashboardScreen() {
                                 <View style={{ alignItems: 'center', paddingVertical: 24 }}>
                                     <Text style={{ fontSize: 42 }}>🛒</Text>
                                     <Text style={{ color: '#6B7280', marginTop: 8, textAlign: 'center' }}>
-                                        Registre preços nas suas listas e arquive para ver a evolução.
-                                    </Text>
+                                            Registre preços e conclua listas para ver a evolução.
+                                        </Text>
                                 </View>
                             )}
                         </View>
@@ -345,70 +349,7 @@ export default function DashboardScreen() {
     );
 }
 
-function normalize(val, min, max) {
-    if (!Number.isFinite(val)) return 0;
-    if (max === min) return 0.5; // avoid zero range
-    return Math.max(0, Math.min(1, (val - min) / (max - min)));
-}
-
-function generateSeriesFromData(period, monthRange, archived) {
-    const now = new Date();
-    if (period === 'weekly') {
-        // 4 buckets: last 4 weeks (0 = oldest, 3 = current week)
-        const buckets = [0,0,0,0];
-        archived.forEach((l) => {
-            const d = new Date(l.createdAt || l.updatedAt || l.archivedAt || l.date || 0);
-            const diffDays = Math.floor((now - d) / (1000*60*60*24));
-            const weekIdxFromNow = Math.floor(diffDays / 7);
-            const idx = 3 - weekIdxFromNow; // map to 0..3
-            if (idx >= 0 && idx < 4) {
-                const sum = (l.items || []).reduce((s, it) => s + (Number(it.price) || 0), 0);
-                buckets[idx] += sum;
-            }
-        });
-        const min = Math.min(...buckets);
-        const max = Math.max(...buckets);
-        return buckets.map((v) => normalize(v, min, max));
-    }
-    if (period === 'monthly') {
-        const months = Array.from({ length: monthRange }, () => 0);
-        archived.forEach((l) => {
-            const d = new Date(l.createdAt || 0);
-            const diffMonths = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
-            const idx = monthRange - 1 - diffMonths;
-            if (idx >= 0 && idx < monthRange) {
-                const sum = (l.items || []).reduce((s, it) => s + (Number(it.price) || 0), 0);
-                months[idx] += sum;
-            }
-        });
-        const min = Math.min(...months);
-        const max = Math.max(...months);
-        return months.map((v) => normalize(v, min, max));
-    }
-    // yearly: last 3 years
-    const years = [0,0,0];
-    const baseYear = now.getFullYear() - 2;
-    archived.forEach((l) => {
-        const d = new Date(l.createdAt || 0);
-        const idx = d.getFullYear() - baseYear;
-        if (idx >= 0 && idx < 3) {
-            const sum = (l.items || []).reduce((s, it) => s + (Number(it.price) || 0), 0);
-            years[idx] += sum;
-        }
-    });
-    const min = Math.min(...years);
-    const max = Math.max(...years);
-    return years.map((v) => normalize(v, min, max));
-}
-
-function getLabels(period, monthRange) {
-    if (period === 'weekly') return ['S1', 'S2', 'S3', 'S4'];
-    if (period === 'monthly') {
-        const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-        return months.slice(12 - monthRange);
-    }
-    return ['2023', '2024', '2025'];
-}
+// legacy helpers removed during archived->completed migration
 
 const styles = StyleSheet.create({
     root: { flex: 1, backgroundColor: '#e6f0fa' },

@@ -3,14 +3,17 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { Animated, Dimensions, FlatList, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Animated, Dimensions, FlatList, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AddListModal from '../components/AddListModal';
+import Button from '../components/Button';
+import Chip from '../components/Chip';
 import { CategoryIcon } from '../components/Icons';
 import SwipeNavigator from '../components/SwipeNavigator';
 import TabBar from '../components/TabBar';
 import { DataContext } from '../contexts/DataContext';
+import { getRipple } from '../styles/theme';
 
 
 const { width } = Dimensions.get('window');
@@ -53,10 +56,11 @@ const listsStyles = StyleSheet.create({
   },
   clearBtn: {
     backgroundColor: '#6B7280',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     borderRadius: 12,
     alignSelf: 'flex-end',
+    minHeight: 44,
   },
   clearBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 * __fs },
   listsGrid: { marginTop: 8 },
@@ -89,20 +93,7 @@ const listsStyles = StyleSheet.create({
   noResultsSubtitle: { color: '#6B7280', marginTop: 4, fontSize: 13 * __fs },
   // FAB removido (uso substituído pelo botão central da TabBar)
   chipsRow: { flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' },
-  chipFilter: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#F9FAFB',
-  },
-  chipFilterActive: {
-    backgroundColor: '#2563EB',
-    borderColor: '#2563EB',
-  },
-  chipFilterText: { fontSize: 12 * __fs, color: '#374151', fontWeight: '600' },
-  chipFilterTextActive: { color: '#fff' },
+  chipFilterText: { fontSize: 12 * __fs, fontWeight: '600' },
   dateButton: {
     backgroundColor: '#fff',
     borderWidth: 1,
@@ -111,6 +102,8 @@ const listsStyles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 12,
     justifyContent: 'center',
+    minHeight: 44,
+    alignSelf: 'flex-start',
   },
   dateButtonText: { fontSize: 14 * __fs, color: '#111827' },
   listHeaderLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
@@ -136,7 +129,7 @@ function ListsScreen() {
   // Filtros
   const [search, setSearch] = useState('');
   const [dateFilter, setDateFilter] = useState(''); // AAAA-MM-DD
-  const [statusFilter, setStatusFilter] = useState('all'); // all | active | archived | completed
+  const [statusFilter, setStatusFilter] = useState('all'); // all | active | completed
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dateObj, setDateObj] = useState(null);
 
@@ -150,7 +143,7 @@ function ListsScreen() {
           if (typeof parsed.search === 'string') setSearch(parsed.search);
           if (typeof parsed.dateFilter === 'string') setDateFilter(parsed.dateFilter);
           if (parsed.dateFilter) setDateObj(new Date(parsed.dateFilter));
-          if (['all', 'active', 'archived', 'completed'].includes(parsed.statusFilter)) setStatusFilter(parsed.statusFilter);
+          if (['all', 'active', 'completed'].includes(parsed.statusFilter)) setStatusFilter(parsed.statusFilter);
         }
       } catch {}
     })();
@@ -182,9 +175,8 @@ function ListsScreen() {
       const createdAt = l.createdAt ? String(l.createdAt).slice(0, 10) : '';
       const matchesDate = !dateFilter || createdAt === dateFilter;
       let matchesStatus = true;
-      if (statusFilter === 'active') matchesStatus = l.status !== 'archived';
-      else if (statusFilter === 'archived') matchesStatus = l.status === 'archived';
-      else if (statusFilter === 'completed') matchesStatus = isCompleted && l.status !== 'archived';
+  if (statusFilter === 'active') matchesStatus = !isCompleted;
+  else if (statusFilter === 'completed') matchesStatus = isCompleted;
       return matchesSearch && matchesDate && matchesStatus;
     }).sort((a,b)=>{
       const oa = orderMap[a.category] ?? 999;
@@ -258,12 +250,21 @@ function ListsScreen() {
       <TouchableOpacity
         style={{ backgroundColor: '#111827', justifyContent: 'center', paddingHorizontal: 16, borderTopLeftRadius: 14, borderBottomLeftRadius: 14 }}
         onPress={() => {
-          const updated = shoppingLists.map(l => l.id === list.id ? { ...l, status: l.status === 'archived' ? 'active' : 'archived' } : l);
+          // Toggle completed by marking all items purchased or clearing purchases
+          const items = list.items || [];
+          const total = items.length;
+          const purchased = items.filter(it => it.isPurchased || it.done || it.completed || it.checked).length;
+          const willComplete = !(total > 0 && purchased === total);
+          const now = new Date().toISOString();
+          const updated = shoppingLists.map(l => l.id === list.id ? {
+            ...l,
+            items: (l.items || []).map(it => willComplete ? { ...it, isPurchased: true, purchasedAt: it.purchasedAt || now } : { ...it, isPurchased: false })
+          } : l);
           updateLists(updated);
         }}
         activeOpacity={0.85}
       >
-        <Text style={{ color: '#fff', fontWeight: 'bold' }}>{/* toggle */}Arquivar</Text>
+        <Text style={{ color: '#fff', fontWeight: 'bold' }}>{/* toggle */}Concluir</Text>
       </TouchableOpacity>
     </View>
   ), [shoppingLists, updateLists]);
@@ -360,21 +361,19 @@ function ListsScreen() {
                       onChangeText={setDateFilter}
                     />
                   ) : (
-                    <TouchableOpacity
+                    <Pressable
                       style={listsStyles.dateButton}
                       onPress={() => setShowDatePicker(true)}
-                      activeOpacity={0.85}
+                      android_ripple={getRipple('rgba(0,0,0,0.08)')}
                     >
                       <Text style={listsStyles.dateButtonText}>
                         {dateFilter ? `${dateFilter}` : 'Escolher data'}
                       </Text>
-                    </TouchableOpacity>
+                    </Pressable>
                   )}
                 </View>
                 <View style={[listsStyles.formCol, { maxWidth: 140, alignSelf: 'flex-end' }]}>
-                  <TouchableOpacity style={listsStyles.clearBtn} onPress={clearFilters} activeOpacity={0.85}>
-                    <Text style={listsStyles.clearBtnText}>Limpar</Text>
-                  </TouchableOpacity>
+                  <Button variant="gray" title="Limpar" onPress={clearFilters} />
                 </View>
               </View>
               <View style={listsStyles.chipsRow}>
@@ -382,20 +381,9 @@ function ListsScreen() {
                   { key: 'all', label: 'Todas' },
                   { key: 'active', label: 'Ativas' },
                   { key: 'completed', label: 'Concluídas' },
-                  { key: 'archived', label: 'Arquivadas' },
-                ].map(({ key, label }) => {
-                  const active = statusFilter === key;
-                  return (
-                    <TouchableOpacity
-                      key={key}
-                      onPress={() => setStatusFilter(key)}
-                      style={[listsStyles.chipFilter, active && listsStyles.chipFilterActive]}
-                      activeOpacity={0.9}
-                    >
-                      <Text style={[listsStyles.chipFilterText, active && listsStyles.chipFilterTextActive]}>{label}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
+                ].map(({ key, label }) => (
+                  <Chip key={key} label={label} active={statusFilter === key} onPress={() => setStatusFilter(key)} />
+                ))}
               </View>
               {showDatePicker && Platform.OS !== 'web' && (
                 <DateTimePicker

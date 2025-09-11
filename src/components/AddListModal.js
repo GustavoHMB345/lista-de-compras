@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import useFontScale from '../hooks/useFontScale';
+import Button from './Button';
 import { CategoryIcon } from './Icons';
 
 // Categorias da LISTA (mantidas separadas das categorias de itens)
@@ -98,16 +99,17 @@ export default function AddListModal({ visible, onClose, onCreate }) {
       marginBottom: 8,
       flexWrap: 'wrap',
     },
-  categoryButton: {
+    categoryButton: {
       backgroundColor: '#fff',
       borderRadius: 12,
       paddingVertical: 10,
-      paddingHorizontal: 10,
+      paddingHorizontal: 12,
       alignItems: 'center',
       flexDirection: 'column',
       marginRight: 6,
       marginBottom: 6,
-      minWidth: 84,
+      minHeight: 44,
+      alignSelf: 'flex-start',
     },
     categoryButtonActive: {
       backgroundColor: '#EEF2FF',
@@ -136,6 +138,9 @@ export default function AddListModal({ visible, onClose, onCreate }) {
       marginLeft: 4,
       alignItems: 'center',
       justifyContent: 'center',
+      minWidth: 44,
+      minHeight: 44,
+      alignSelf: 'flex-start',
     },
     addProductText: {
       color: 'white',
@@ -194,6 +199,10 @@ export default function AddListModal({ visible, onClose, onCreate }) {
     qtyBtn: {
       paddingHorizontal: 10,
       paddingVertical: 6,
+      minWidth: 34,
+      minHeight: 34,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     qtyBtnText: {
       fontSize: 18 * fs,
@@ -228,37 +237,9 @@ export default function AddListModal({ visible, onClose, onCreate }) {
     },
     buttonRow: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginTop: 8,
-    },
-    cancelButton: {
-      backgroundColor: '#ef4444',
-      padding: 12,
-      borderRadius: 8,
-      flex: 1,
-      marginRight: 8,
-      alignItems: 'center',
-    },
-    createButton: {
-      backgroundColor: '#4f46e5',
-      padding: 12,
-      borderRadius: 8,
-      flex: 1,
-      marginLeft: 8,
-      alignItems: 'center',
-    },
-    createButtonDisabled: {
-      backgroundColor: '#9ca3af',
-    },
-    cancelText: {
-      color: 'white',
-      fontWeight: 'bold',
-      fontSize: 16 * fs,
-    },
-    createText: {
-      color: 'white',
-      fontWeight: 'bold',
-      fontSize: 16 * fs,
+      justifyContent: 'center',
+      gap: 12,
+      marginTop: 12,
     },
     totalsRow: {
       flexDirection: 'row',
@@ -468,9 +449,7 @@ export default function AddListModal({ visible, onClose, onCreate }) {
                 onChangeText={setProductPrice}
                 keyboardType="numeric"
               />
-              <TouchableOpacity style={styles.addProductButton} onPress={handleAddProduct} activeOpacity={0.85}>
-                <Text style={styles.addProductText}>+</Text>
-              </TouchableOpacity>
+              <Button title="+" onPress={handleAddProduct} style={[styles.addProductButton, { minHeight: 44, minWidth: 44, paddingVertical: 10, paddingHorizontal: 10 }]} textStyle={{ fontSize: 18 * fs }} />
             </View>
             {!!productError && <Text style={{ color: '#ef4444', marginTop: -4, marginBottom: 8, fontSize: 12 * fs, textAlign: 'center' }}>{productError}</Text>}
             {products.length > 0 && (
@@ -551,17 +530,8 @@ export default function AddListModal({ visible, onClose, onCreate }) {
             />
 
             <View style={styles.buttonRow}>
-              <TouchableOpacity style={styles.cancelButton} onPress={onClose} activeOpacity={0.8}>
-                <Text style={styles.cancelText}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.createButton, !canCreate && styles.createButtonDisabled]}
-                onPress={handleCreate}
-                activeOpacity={0.8}
-                disabled={!canCreate}
-              >
-                <Text style={styles.createText}>Criar</Text>
-              </TouchableOpacity>
+              <Button variant="danger" title="Cancelar" onPress={onClose} />
+              <Button variant={canCreate ? 'primary' : 'gray'} title="Criar" onPress={handleCreate} disabled={!canCreate} />
             </View>
           </ScrollView>
         </View>

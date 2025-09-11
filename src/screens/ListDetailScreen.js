@@ -8,6 +8,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Context & components
 import AddListModal from '../components/AddListModal';
+import Button from '../components/Button';
+import Chip from '../components/Chip';
 import { CategoryIcon, CheckIcon } from '../components/Icons';
 import SwipeNavigator from '../components/SwipeNavigator';
 import TabBar, { TAB_BAR_OFFSET } from '../components/TabBar';
@@ -29,8 +31,7 @@ function ListDetailScreen(props) {
   // Aceita 'id' (padrão) ou legado 'listId'
   const fallbackId = props?.route?.params?.id || props?.route?.params?.listId;
   const listId = params.id || params.listId || fallbackId;
-  const { shoppingLists, updateLists, currentUser, families, archivedLists, loading, users } = useContext(DataContext);
-  const archivedCollection = Array.isArray(archivedLists) ? archivedLists : shoppingLists.filter(l => l.status === 'archived');
+  const { shoppingLists, updateLists, currentUser, families, loading, users } = useContext(DataContext);
 
   const list = shoppingLists.find(l => l.id === listId);
   const family = families.find(f => f.id === currentUser?.familyId);
@@ -103,7 +104,7 @@ function ListDetailScreen(props) {
     return { total: _total, purchasedCount: _purchased, totalCount: arr.length };
   }, [list?.items]);
 
-  // Available item names (lowercase unique) across current + archived + snapshots
+  // Available item names (lowercase unique) based on current list and its snapshots
   const availablePriceItems = useMemo(() => {
     const set = new Set();
     const collect = (arr=[]) => {
@@ -114,9 +115,8 @@ function ListDetailScreen(props) {
       });
     };
     collect(list?.items || []);
-    archivedCollection.forEach(l => collect(l.items || []));
     return Array.from(set).filter(Boolean).sort();
-  }, [list?.items, archivedCollection]);
+  }, [list?.items]);
 
   const effectiveSelectedItem = selectedPriceItem || availablePriceItems[0] || '';
 
@@ -143,7 +143,6 @@ function ListDetailScreen(props) {
         if (Array.isArray(it.priceHistory)) it.priceHistory.forEach(ph => addSnapshot(ph.ts, Number(ph.price), ph.quantity));
       });
     };
-    archivedCollection.forEach(l => processItems(l.items||[]));
     processItems(list?.items||[]);
     return Array.from(bucket.entries())
       .sort((a,b)=> new Date(a[0]) - new Date(b[0]))
@@ -154,7 +153,7 @@ function ListDetailScreen(props) {
         const label = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
         return { value: Number(unitAvg.toFixed(2)), unitAvg: Number(unitAvg.toFixed(2)), totalAvg: Number(totalAvg.toFixed(2)), label, date: d.toISOString() };
       });
-  }, [archivedCollection, list?.items, effectiveSelectedItem]);
+  }, [list?.items, effectiveSelectedItem]);
 
   const applyRangeFilter = useCallback((rows, range) => {
     if (!rows || range === 'all' || !range) return rows;
@@ -288,8 +287,6 @@ function ListDetailScreen(props) {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     updateLists(shoppingLists.map(l=> l.id===list.id ? {
       ...l,
-      status:'archived',
-      archivedAt: now,
       items:(l.items||[]).map(it=> ({...it, isPurchased:true, purchasedAt: it.purchasedAt || now}))
     }: l));
     // Navega imediatamente para a tela de listas
@@ -325,12 +322,7 @@ function ListDetailScreen(props) {
     (list?.items||[]).forEach(it => {
       const nameKey = String(it.name||'').trim().toLowerCase();
       const snapshots = [];
-      archivedCollection.forEach(al => (al.items||[]).forEach(ai => {
-        if (String(ai.name||'').trim().toLowerCase()===nameKey){
-          if (Number(ai.price)>0) snapshots.push({ ts: ai.purchasedAt||ai.updatedAt||ai.createdAt, price:Number(ai.price) });
-          if (Array.isArray(ai.priceHistory)) ai.priceHistory.forEach(ph=> snapshots.push({ ts: ph.ts, price:Number(ph.price) }));
-        }
-      }));
+      // snapshots only from this list's item history
       if (Array.isArray(it.priceHistory)) it.priceHistory.forEach(ph=> snapshots.push({ ts: ph.ts, price:Number(ph.price) }));
       snapshots.sort((a,b)=> new Date(a.ts) - new Date(b.ts));
       const last = snapshots[snapshots.length-1];
@@ -344,7 +336,7 @@ function ListDetailScreen(props) {
       }
     });
     return map;
-  },[list?.items, archivedCollection]);
+  },[list?.items]);
 
   return (
     <SafeAreaView style={detailStyles.root} edges={['top']}>
@@ -387,14 +379,14 @@ function ListDetailScreen(props) {
                     <Text style={detailStyles.progressText}>Progresso</Text>
                   </View>
                   <View style={detailStyles.actionsRow}>
-                    <TouchableOpacity onPress={handleShare} style={detailStyles.actionChip} activeOpacity={0.85}><Text style={detailStyles.actionChipText}>Compartilhar</Text></TouchableOpacity>
+                    <Button variant="light" title="Compartilhar" onPress={handleShare} />
                     {isEditingHeader ? (
-                      <TouchableOpacity onPress={saveEditHeader} style={[detailStyles.actionChip, { backgroundColor: '#10b981' }]} activeOpacity={0.85}><Text style={[detailStyles.actionChipText, { color: '#fff' }]}>Salvar</Text></TouchableOpacity>
+                      <Button variant="success" title="Salvar" onPress={saveEditHeader} />
                     ) : (
-                      <TouchableOpacity onPress={beginEditHeader} style={detailStyles.actionChip} activeOpacity={0.85}><Text style={detailStyles.actionChipText}>Editar</Text></TouchableOpacity>
+                      <Button variant="gray" title="Editar" onPress={beginEditHeader} />
                     )}
-                    <TouchableOpacity onPress={markAllPurchased} style={detailStyles.actionChip} activeOpacity={0.85}><Text style={detailStyles.actionChipText}>Marcar todos</Text></TouchableOpacity>
-                    <TouchableOpacity onPress={clearCompleted} style={detailStyles.actionChip} activeOpacity={0.85}><Text style={detailStyles.actionChipText}>Limpar concluídos</Text></TouchableOpacity>
+                    <Button variant="gray" title="Marcar todos" onPress={markAllPurchased} />
+                    <Button variant="gray" title="Limpar concluídos" onPress={clearCompleted} />
                   </View>
                 </View>
                 {canEdit && (
@@ -402,31 +394,31 @@ function ListDetailScreen(props) {
                     <Text style={detailStyles.cardTitle}>Adicionar Item</Text>
                     <TextInput style={detailStyles.input} placeholder="Nome do item" value={newItemName} onChangeText={setNewItemName} />
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 2, paddingHorizontal: 2, gap: 8, marginBottom: 10 }}>
-                      <CategoryChip label="Todas" emoji="📋" active={newItemCategory === 'all'} onPress={() => setNewItemCategory('all')} isFilter />
+                      <Chip label="Todas" emoji="📋" active={newItemCategory === 'all'} onPress={() => setNewItemCategory('all')} />
                       {Object.entries(itemCategories).map(([key, cfg]) => (
-                        <CategoryChip key={key} label={cfg.name} emoji={cfg.emoji} active={newItemCategory === key} onPress={() => setNewItemCategory(key)} />
+                        <Chip key={key} label={cfg.name} emoji={cfg.emoji} active={newItemCategory === key} onPress={() => setNewItemCategory(key)} />
                       ))}
                     </ScrollView>
                     <View style={[detailStyles.inputRow]}>
                       <TextInput style={[detailStyles.input, { flex: 1 }]} placeholder="Qtd." value={newItemQty} onChangeText={setNewItemQty} keyboardType="number-pad" />
                       <TextInput style={[detailStyles.input, { flex: 2 }]} placeholder="Preço (opcional)" value={newItemPrice} onChangeText={setNewItemPrice} keyboardType="numeric" />
                     </View>
-                    <TouchableOpacity style={detailStyles.addButton} onPress={handleAddItem} activeOpacity={0.8}><Text style={detailStyles.addButtonText}>Adicionar</Text></TouchableOpacity>
+                    <Button title="Adicionar" onPress={handleAddItem} style={{ alignSelf: 'flex-start' }} />
                   </View>
                 )}
                 <View style={[detailStyles.card, { paddingBottom: 8 }]}>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <TextInput style={[detailStyles.input, { flex: 1, marginRight: 8 }]} placeholder="Buscar item..." value={query} onChangeText={setQuery} />
                     <View style={{ flexDirection: 'row', gap: 8 }}>
-                      <TouchableOpacity onPress={() => { setShowOnlyPending(false); setShowOnlyCompleted(false); }} style={[detailStyles.filterChip, !showOnlyPending && !showOnlyCompleted && detailStyles.filterChipActive]} activeOpacity={0.8}><Text style={[detailStyles.filterChipText, !showOnlyPending && !showOnlyCompleted && { color: '#fff' }]}>Todos</Text></TouchableOpacity>
-                      <TouchableOpacity onPress={() => { setShowOnlyPending(true); setShowOnlyCompleted(false); }} style={[detailStyles.filterChip, showOnlyPending && detailStyles.filterChipActive]} activeOpacity={0.8}><Text style={[detailStyles.filterChipText, showOnlyPending && { color: '#fff' }]}>Pendentes</Text></TouchableOpacity>
-                      <TouchableOpacity onPress={() => { setShowOnlyPending(false); setShowOnlyCompleted(true); }} style={[detailStyles.filterChip, showOnlyCompleted && detailStyles.filterChipActive]} activeOpacity={0.8}><Text style={[detailStyles.filterChipText, showOnlyCompleted && { color: '#fff' }]}>Concluídos</Text></TouchableOpacity>
+                      <Chip label="Todos" active={!showOnlyPending && !showOnlyCompleted} onPress={() => { setShowOnlyPending(false); setShowOnlyCompleted(false); }} />
+                      <Chip label="Pendentes" active={showOnlyPending} onPress={() => { setShowOnlyPending(true); setShowOnlyCompleted(false); }} />
+                      <Chip label="Concluídos" active={showOnlyCompleted} onPress={() => { setShowOnlyPending(false); setShowOnlyCompleted(true); }} />
                     </View>
                   </View>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 8 }}>
-                    <TouchableOpacity onPress={() => setCategoryFilter('all')} style={[detailStyles.chip, categoryFilter === 'all' && detailStyles.chipActive]} activeOpacity={0.8}><Text style={[detailStyles.chipText, categoryFilter === 'all' && { color: '#fff' }]}>📋 Todas</Text></TouchableOpacity>
+                    <Chip label="Todas" emoji="📋" active={categoryFilter === 'all'} onPress={() => setCategoryFilter('all')} />
                     {Object.entries(itemCategories).map(([key, cfg]) => (
-                      <TouchableOpacity key={key} onPress={() => setCategoryFilter(key)} style={[detailStyles.chip, categoryFilter === key && detailStyles.chipActive]} activeOpacity={0.8}><Text style={[detailStyles.chipText, categoryFilter === key && { color: '#fff' }]}>{cfg.emoji} {cfg.name}</Text></TouchableOpacity>
+                      <Chip key={key} label={cfg.name} emoji={cfg.emoji} active={categoryFilter === key} onPress={() => setCategoryFilter(key)} />
                     ))}
                   </ScrollView>
                 </View>
@@ -529,9 +521,7 @@ function ListDetailScreen(props) {
                   {availablePriceItems.length > 0 ? (
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 4 }}>
                       {availablePriceItems.map(name => (
-                        <TouchableOpacity key={name} onPress={() => setSelectedPriceItem(name)} style={[detailStyles.chip, (effectiveSelectedItem === name) && detailStyles.chipActive]} activeOpacity={0.8}>
-                          <Text style={[detailStyles.chipText, (effectiveSelectedItem === name) && { color: '#fff' }]}>{name}</Text>
-                        </TouchableOpacity>
+                        <Chip key={name} label={name} active={effectiveSelectedItem === name} onPress={() => setSelectedPriceItem(name)} />
                       ))}
                     </ScrollView>
                   ) : (
@@ -623,8 +613,9 @@ function ListDetailScreen(props) {
                     })}
                   </View>
                 </View>
-                <TouchableOpacity style={detailStyles.archiveButton} onPress={handleArchiveList} activeOpacity={0.85}><Text style={detailStyles.archiveButtonText}>Concluir Lista</Text></TouchableOpacity>
-                <TouchableOpacity style={[detailStyles.archiveButton, { backgroundColor: '#ef4444' }]} onPress={deleteList} activeOpacity={0.85}><Text style={detailStyles.archiveButtonText}>Excluir Lista</Text></TouchableOpacity>
+                <Button variant="dark" title="Concluir Lista" onPress={handleArchiveList} />
+                <View style={{ height: 8 }} />
+                <Button variant="danger" title="Excluir Lista" onPress={deleteList} />
               </>
             )}
             showsVerticalScrollIndicator={false}
@@ -727,27 +718,13 @@ const detailStyles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: 'center',
+    alignSelf: 'flex-start',
+    minHeight: 44,
+    paddingHorizontal: 14,
   },
   addButtonText: {
     color: '#fff',
     fontWeight: 'bold',
-  },
-  filterChip: {
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    backgroundColor: '#fff',
-  },
-  filterChipActive: {
-    backgroundColor: '#4f46e5',
-    borderColor: '#4f46e5',
-  },
-  filterChipText: {
-    color: '#111827',
-    fontWeight: '600',
-  fontSize: 14 * __fs,
   },
   sectionTitle: {
     width: '96%',
@@ -784,10 +761,12 @@ const detailStyles = StyleSheet.create({
   actionChip: {
     borderWidth: 1,
     borderColor: '#e5e7eb',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     borderRadius: 12,
     backgroundColor: '#fff',
+    minHeight: 44,
+    alignSelf: 'flex-start',
   },
   actionChipText: {
     color: '#111827',
@@ -844,7 +823,7 @@ const detailStyles = StyleSheet.create({
     borderRadius: 10,
     overflow: 'hidden',
   },
-  qtyBtn: { paddingHorizontal: 12, paddingVertical: 8 },
+  qtyBtn: { paddingHorizontal: 12, paddingVertical: 8, minWidth: 36, minHeight: 36, alignItems: 'center', justifyContent: 'center' },
   qtyBtnText: {
     fontSize: 18 * __fs,
     color: '#111827',
@@ -917,10 +896,11 @@ const detailStyles = StyleSheet.create({
   archiveButton: {
     backgroundColor: '#111827',
     borderRadius: 14,
-    paddingVertical: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     alignItems: 'center',
-  width: '96%',
-  maxWidth: MAX_CARD_WIDTH,
+    alignSelf: 'flex-start',
+    minHeight: 46,
     marginBottom: 24,
   },
   archiveButtonText: {
@@ -952,23 +932,7 @@ const detailStyles = StyleSheet.create({
   },
   statLabel: { color: '#6B7280' },
   statValue: { color: '#111827', fontWeight: '700', marginTop: 2 },
-  chip: {
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    marginRight: 8,
-  },
-  chipActive: {
-    backgroundColor: '#4f46e5',
-    borderColor: '#4f46e5',
-  },
-  chipText: {
-    color: '#111827',
-    fontWeight: '600',
-  },
+  // chip styles now centralized via Chip component
   snackbar: { position:'absolute', left:16, right:16, bottom:24, backgroundColor:'#111827', paddingVertical:12, paddingHorizontal:18, borderRadius:14, flexDirection:'row', alignItems:'center', shadowColor:'#000', shadowOpacity:0.2, shadowRadius:8, elevation:6 },
   snackbarText: { color:'#fff', fontSize:14 * __fs, fontWeight:'500' },
   snackbarUndo: { color:'#60A5FA', fontSize:14 * __fs, fontWeight:'700' },
