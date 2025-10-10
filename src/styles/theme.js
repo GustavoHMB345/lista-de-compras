@@ -16,11 +16,38 @@ export const colors = {
   chipBorder: '#E5E7EB',
 };
 
+// Extended tokens
+export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24 };
+export const radius = { sm: 8, md: 10, lg: 12, xl: 16, xxl: 22 };
+export const shadows = {
+  card: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.13,
+    shadowRadius: 10,
+    elevation: 7,
+  },
+  soft: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+};
+export const zIndex = { tabBar: 60, modal: 100, snackbar: 120 };
+export const typography = {
+  h1: { fontSize: 22, fontWeight: '700', color: '#111827' },
+  h2: { fontSize: 18, fontWeight: '700', color: '#111827' },
+  body: { fontSize: 16, color: '#374151' },
+  caption: { fontSize: 12, color: '#6B7280' },
+};
+
 // Base button container and label
 export const BUTTON_BASE = {
   paddingVertical: 12,
   paddingHorizontal: 14,
-  borderRadius: 12,
+  borderRadius: radius.md,
   minHeight: 44,
   alignItems: 'center',
   justifyContent: 'center',
@@ -77,3 +104,5 @@ export const CHIP_TEXT_ACTIVE = {
 // Android ripple helper
 export const getRipple = (color = 'rgba(0,0,0,0.12)', borderless = false) =>
   Platform.OS === 'android' ? { color, borderless } : undefined;
+
+export const breakpoints = { sm: 380, md: 720, lg: 1100 };

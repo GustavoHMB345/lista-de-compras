@@ -2,7 +2,16 @@ import React from 'react';
 import { Pressable, Text } from 'react-native';
 import { CHIP_ACTIVE, CHIP_BASE, CHIP_TEXT, CHIP_TEXT_ACTIVE, getRipple } from '../styles/theme';
 
-export default function Chip({ label, emoji, active, onPress, style, textStyle, children }) {
+export default function Chip({
+  label,
+  emoji,
+  active,
+  onPress,
+  style,
+  textStyle,
+  children,
+  ...rest
+}) {
   return (
     <Pressable
       onPress={onPress}
@@ -13,6 +22,7 @@ export default function Chip({ label, emoji, active, onPress, style, textStyle, 
         pressed && { opacity: 0.9 },
         style,
       ]}
+      {...rest}
     >
       {emoji ? <Text style={[{ fontSize: 12 }, active && CHIP_TEXT_ACTIVE]}>{emoji}</Text> : null}
       {children ? (
