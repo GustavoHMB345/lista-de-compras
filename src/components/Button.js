@@ -9,6 +9,9 @@ export default function Button({
   children,
   loading,
   disabled,
+  accessibilityLabel,
+  accessibilityRole,
+  testID,
   ...props
 }) {
   const variantStyle = BUTTON_VARIANTS[variant] || BUTTON_VARIANTS.primary;
@@ -23,6 +26,9 @@ export default function Button({
         style,
       ]}
       disabled={disabled || loading}
+      accessibilityRole={accessibilityRole || 'button'}
+      accessibilityLabel={accessibilityLabel || title}
+      testID={testID}
       {...props}
     >
       {loading ? (

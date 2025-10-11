@@ -1,5 +1,3 @@
-
-
 import { useRef, useState } from 'react';
 import { Dimensions, FlatList, View } from 'react-native';
 import DashboardScreen from '../screens/DashboardScreen';
@@ -35,7 +33,7 @@ export default function SwipeNavigator() {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        keyExtractor={item => item.key}
+        keyExtractor={(item) => item.key}
         renderItem={({ item }) => (
           <View style={{ flex: 1, width }}>
             <item.component />
@@ -46,7 +44,7 @@ export default function SwipeNavigator() {
         initialScrollIndex={0}
         extraData={activeIndex}
       />
-  {/* NavBar removida */}
+      {/* NavBar removida */}
     </View>
   );
 }

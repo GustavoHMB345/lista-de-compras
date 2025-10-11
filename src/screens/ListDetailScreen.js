@@ -28,6 +28,7 @@ import ItemRow from '../components/list/ItemRow';
 import SwipeNavigator from '../components/SwipeNavigator';
 import TabBar, { TAB_BAR_OFFSET } from '../components/TabBar';
 import { DataContext } from '../contexts/DataContext';
+import { aggregatePriceHistory, filterByRange } from '../utils/prices';
 
 // --- Fallback globals (in case __w / __fs not injected) ---
 const { width: __DEVICE_WIDTH } = Dimensions.get('window');
@@ -142,78 +143,16 @@ function ListDetailScreen(props) {
   // Aggregate price history with snapshots (unit & total daily averages) + range filter
   const basePriceRows = useMemo(() => {
     if (!effectiveSelectedItem) return [];
-    const selected = effectiveSelectedItem;
-    const bucket = new Map();
-    const addSnapshot = (isoDate, unitPrice, qty) => {
-      if (!Number.isFinite(unitPrice) || unitPrice <= 0) return;
-      const d = new Date(isoDate);
-      if (isNaN(d)) return;
-      const key = isoDate.slice(0, 10);
-      const entry = bucket.get(key) || {
-        unitSum: 0,
-        unitCount: 0,
-        totalSum: 0,
-        totalCount: 0,
-        date: d,
-      };
-      entry.unitSum += unitPrice;
-      entry.unitCount += 1;
-      const q = qty || 1;
-      entry.totalSum += unitPrice * q;
-      entry.totalCount += 1;
-      bucket.set(key, entry);
-    };
-    const processItems = (items = []) => {
-      items.forEach((it) => {
-        const n = String(it.name || '')
-          .trim()
-          .toLowerCase();
-        if (n !== selected) return;
-        if (Number(it.price) > 0)
-          addSnapshot(
-            it.purchasedAt || it.updatedAt || it.createdAt || new Date().toISOString(),
-            Number(it.price),
-            parseInt(it.quantity) || 1,
-          );
-        if (Array.isArray(it.priceHistory))
-          it.priceHistory.forEach((ph) => addSnapshot(ph.ts, Number(ph.price), ph.quantity));
-      });
-    };
-    processItems(list?.items || []);
-    return Array.from(bucket.entries())
-      .sort((a, b) => new Date(a[0]) - new Date(b[0]))
-      .map(([, v]) => {
-        const unitAvg = v.unitCount ? v.unitSum / v.unitCount : 0;
-        const totalAvg = v.totalCount ? v.totalSum / v.totalCount : 0;
-        const d = v.date;
-        const label = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
-        return {
-          value: Number(unitAvg.toFixed(2)),
-          unitAvg: Number(unitAvg.toFixed(2)),
-          totalAvg: Number(totalAvg.toFixed(2)),
-          label,
-          date: d.toISOString(),
-        };
-      });
+    return aggregatePriceHistory(list?.items || [], effectiveSelectedItem);
   }, [list?.items, effectiveSelectedItem]);
 
-  const applyRangeFilter = useCallback((rows, range) => {
-    if (!rows || range === 'all' || !range) return rows;
-    const now = Date.now();
-    const ranges = { '7d': 7, '30d': 30, '6m': 30 * 6 };
-    const days = ranges[range];
-    if (!days) return rows;
-    const cutoff = now - days * 24 * 60 * 60 * 1000;
-    return rows.filter((r) => new Date(r.date).getTime() >= cutoff);
-  }, []);
-
   const priceData = useMemo(
-    () => applyRangeFilter(basePriceRows, historyRange),
-    [basePriceRows, historyRange, applyRangeFilter],
+    () => filterByRange(basePriceRows, historyRange),
+    [basePriceRows, historyRange],
   );
   const compareData = useMemo(
-    () => (compareRange ? applyRangeFilter(basePriceRows, compareRange) : []),
-    [basePriceRows, compareRange, applyRangeFilter],
+    () => (compareRange ? filterByRange(basePriceRows, compareRange) : []),
+    [basePriceRows, compareRange],
   );
 
   const compareSummary = useMemo(() => {
@@ -238,19 +177,19 @@ function ListDetailScreen(props) {
   }, [priceData]);
 
   // Actions
-  const handleShare = () => {
+  const handleShare = useCallback(() => {
     Share.share({ message: `Lista: ${list?.name} (Total R$ ${total.toFixed(2)})` });
-  };
-  const beginEditHeader = () => setIsEditingHeader(true);
-  const saveEditHeader = () => {
+  }, [list?.name, total]);
+  const beginEditHeader = useCallback(() => setIsEditingHeader(true), []);
+  const saveEditHeader = useCallback(() => {
     setIsEditingHeader(false);
     if (!list) return;
     const updatedLists = shoppingLists.map((l) =>
       l.id === list.id ? { ...l, name: editedName || l.name, desc: editedDesc } : l,
     );
     updateLists(updatedLists);
-  };
-  const markAllPurchased = () => {
+  }, [list, shoppingLists, editedName, editedDesc, updateLists]);
+  const markAllPurchased = useCallback(() => {
     if (!list) return;
     const now = new Date().toISOString();
     const updatedLists = shoppingLists.map((l) =>
@@ -262,16 +201,16 @@ function ListDetailScreen(props) {
         : l,
     );
     updateLists(updatedLists);
-  };
-  const clearCompleted = () => {
+  }, [list, shoppingLists, updateLists]);
+  const clearCompleted = useCallback(() => {
     if (!list) return;
     const updatedLists = shoppingLists.map((l) =>
       l.id === list.id ? { ...l, items: (l.items || []).filter((it) => !it.isPurchased) } : l,
     );
     updateLists(updatedLists);
-  };
+  }, [list, shoppingLists, updateLists]);
   // UPDATED: snapshot initial price if provided
-  const handleAddItem = () => {
+  const handleAddItem = useCallback(() => {
     if (!list || !newItemName.trim()) return;
     const priceNum = Number(newItemPrice) || 0;
     const now = new Date().toISOString();
@@ -302,48 +241,51 @@ function ListDetailScreen(props) {
     setNewItemName('');
     setNewItemQty('1');
     setNewItemPrice('');
-  };
-  const startEditPrice = (id, price) => {
+  }, [list, newItemName, newItemPrice, newItemQty, newItemCategory, shoppingLists, updateLists]);
+  const startEditPrice = useCallback((id, price) => {
     setEditingPriceId(id);
     setEditingPriceText(price ? String(price) : '');
-  };
+  }, []);
   // UPDATED: add snapshot when price changes
-  const saveEditPrice = (id) => {
-    if (!list) return;
-    const newPrice = Number(editingPriceText) || 0;
-    const now = new Date().toISOString();
-    const updatedLists = shoppingLists.map((l) =>
-      l.id === list.id
-        ? {
-            ...l,
-            items: (l.items || []).map((it) => {
-              if (it.id !== id) return it;
-              const current = Number(it.price) || 0;
-              if (current !== newPrice && newPrice > 0) {
-                const historyArr = Array.isArray(it.priceHistory) ? it.priceHistory : [];
-                return {
-                  ...it,
-                  price: newPrice,
-                  priceHistory: [
-                    ...historyArr,
-                    {
-                      id: `ph_${Date.now()}`,
-                      ts: now,
-                      price: newPrice,
-                      quantity: parseInt(it.quantity) || 1,
-                    },
-                  ],
-                };
-              }
-              return { ...it, price: newPrice };
-            }),
-          }
-        : l,
-    );
-    updateLists(updatedLists);
-    setEditingPriceId(null);
-    setEditingPriceText('');
-  };
+  const saveEditPrice = useCallback(
+    (id) => {
+      if (!list) return;
+      const newPrice = Number(editingPriceText) || 0;
+      const now = new Date().toISOString();
+      const updatedLists = shoppingLists.map((l) =>
+        l.id === list.id
+          ? {
+              ...l,
+              items: (l.items || []).map((it) => {
+                if (it.id !== id) return it;
+                const current = Number(it.price) || 0;
+                if (current !== newPrice && newPrice > 0) {
+                  const historyArr = Array.isArray(it.priceHistory) ? it.priceHistory : [];
+                  return {
+                    ...it,
+                    price: newPrice,
+                    priceHistory: [
+                      ...historyArr,
+                      {
+                        id: `ph_${Date.now()}`,
+                        ts: now,
+                        price: newPrice,
+                        quantity: parseInt(it.quantity) || 1,
+                      },
+                    ],
+                  };
+                }
+                return { ...it, price: newPrice };
+              }),
+            }
+          : l,
+      );
+      updateLists(updatedLists);
+      setEditingPriceId(null);
+      setEditingPriceText('');
+    },
+    [list, editingPriceText, shoppingLists, updateLists],
+  );
   const incQty = useCallback(
     (id) => {
       if (!list) return;

@@ -78,6 +78,7 @@ export default function AuthScreen() {
               accessibilityRole="tab"
               accessibilityState={{ selected: isLogin }}
               style={stylesAuth.tab}
+              testID="tab-login"
             />
             <Chip
               label={t('auth.register')}
@@ -89,6 +90,7 @@ export default function AuthScreen() {
               accessibilityRole="tab"
               accessibilityState={{ selected: !isLogin }}
               style={stylesAuth.tab}
+              testID="tab-register"
             />
           </View>
           <View style={stylesAuth.formArea}>
@@ -107,6 +109,7 @@ export default function AuthScreen() {
                       onBlur={onBlur}
                       autoCapitalize="words"
                       returnKeyType="next"
+                      testID="auth-name"
                     />
                   )}
                 />
@@ -130,6 +133,7 @@ export default function AuthScreen() {
                     keyboardType="email-address"
                     textContentType="emailAddress"
                     returnKeyType="next"
+                    testID="auth-email"
                   />
                 )}
               />
@@ -151,6 +155,7 @@ export default function AuthScreen() {
                     textContentType="password"
                     returnKeyType={isLogin ? 'go' : 'next'}
                     onSubmitEditing={handleSubmit(onSubmit)}
+                    testID="auth-password"
                   />
                 )}
               />
@@ -169,6 +174,7 @@ export default function AuthScreen() {
               style={{ width: '100%' }}
               loading={isSubmitting}
               disabled={isSubmitting}
+              testID="auth-submit"
             />
             <Button
               variant="secondary"
@@ -185,6 +191,7 @@ export default function AuthScreen() {
                 }
               }}
               style={{ width: '100%', marginTop: 0 }}
+              testID="auth-testuser"
             />
             <TouchableOpacity
               onPress={() => {

@@ -3,7 +3,18 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { Animated, Dimensions, FlatList, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  Animated,
+  Dimensions,
+  FlatList,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AddListModal from '../components/AddListModal';
@@ -15,13 +26,19 @@ import TabBar from '../components/TabBar';
 import { DataContext } from '../contexts/DataContext';
 import { getRipple } from '../styles/theme';
 
-
 const { width } = Dimensions.get('window');
 const __fs = Math.min(1.2, Math.max(0.9, width / 390));
 const MAX_CARD_WIDTH = Math.min(820, width * 0.98);
 const TAB_BAR_OFFSET = 78; // altura aproximada da TabBar (SafeArea + conteúdo)
 const listsStyles = StyleSheet.create({
-  bg: { flex: 1, alignItems: 'center', justifyContent: 'flex-start', paddingHorizontal: 0, paddingVertical: 0, paddingTop: TAB_BAR_OFFSET },
+  bg: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    paddingTop: TAB_BAR_OFFSET,
+  },
   container: {
     width: MAX_CARD_WIDTH,
     maxWidth: '98%',
@@ -64,8 +81,26 @@ const listsStyles = StyleSheet.create({
   },
   clearBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 * __fs },
   listsGrid: { marginTop: 8 },
-  listCard: { flex: 1, backgroundColor: '#fff', borderRadius: 22, padding: 16, borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 3, margin: 8 },
-  listHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
+  listCard: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 22,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
+    margin: 8,
+  },
+  listHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
   listTitle: { fontSize: 16 * __fs, fontWeight: '700', color: '#111827', flex: 1, paddingRight: 8 },
   chip: {
     paddingHorizontal: 8,
@@ -124,7 +159,9 @@ function ListsScreen() {
   const progress = useState(new Animated.Value(0))[0];
 
   // Filtra listas do usuário logado
-  const userLists = shoppingLists.filter(l => !currentUser || l.familyId === currentUser.familyId);
+  const userLists = shoppingLists.filter(
+    (l) => !currentUser || l.familyId === currentUser.familyId,
+  );
 
   // Filtros
   const [search, setSearch] = useState('');
@@ -143,7 +180,8 @@ function ListsScreen() {
           if (typeof parsed.search === 'string') setSearch(parsed.search);
           if (typeof parsed.dateFilter === 'string') setDateFilter(parsed.dateFilter);
           if (parsed.dateFilter) setDateObj(new Date(parsed.dateFilter));
-          if (['all', 'active', 'completed'].includes(parsed.statusFilter)) setStatusFilter(parsed.statusFilter);
+          if (['all', 'active', 'completed'].includes(parsed.statusFilter))
+            setStatusFilter(parsed.statusFilter);
         }
       } catch {}
     })();
@@ -158,33 +196,57 @@ function ListsScreen() {
   const clearFilters = () => {
     setSearch('');
     setDateFilter('');
-  setStatusFilter('all');
-  setDateObj(null);
+    setStatusFilter('all');
+    setDateObj(null);
   };
 
   const filteredLists = useMemo(() => {
     const s = search.trim().toLowerCase();
-    const CATEGORY_ORDER = ['alimentos','frutas','vegetais','carnes','laticinios','paes','bebidas','limpeza','higiene','moveis','tecnologia','vestuario','outros'];
-    const orderMap = CATEGORY_ORDER.reduce((acc, c, i) => { acc[c] = i; return acc; }, {});
-    return userLists.filter((l) => {
-      const items = l.items || [];
-      const total = items.length;
-      const purchased = items.filter(it => it.isPurchased || it.done || it.completed || it.checked).length;
-      const isCompleted = total > 0 && purchased === total;
-      const matchesSearch = !s || (l.name || '').toLowerCase().includes(s) || (l.desc || l.description || '').toLowerCase().includes(s);
-      const createdAt = l.createdAt ? String(l.createdAt).slice(0, 10) : '';
-      const matchesDate = !dateFilter || createdAt === dateFilter;
-      let matchesStatus = true;
-  if (statusFilter === 'active') matchesStatus = !isCompleted;
-  else if (statusFilter === 'completed') matchesStatus = isCompleted;
-      return matchesSearch && matchesDate && matchesStatus;
-    }).sort((a,b)=>{
-      const oa = orderMap[a.category] ?? 999;
-      const ob = orderMap[b.category] ?? 999;
-      if (oa !== ob) return oa - ob;
-      // fallback: most recently updated (createdAt desc)
-      return (new Date(b.createdAt || 0)) - (new Date(a.createdAt || 0));
-    });
+    const CATEGORY_ORDER = [
+      'alimentos',
+      'frutas',
+      'vegetais',
+      'carnes',
+      'laticinios',
+      'paes',
+      'bebidas',
+      'limpeza',
+      'higiene',
+      'moveis',
+      'tecnologia',
+      'vestuario',
+      'outros',
+    ];
+    const orderMap = CATEGORY_ORDER.reduce((acc, c, i) => {
+      acc[c] = i;
+      return acc;
+    }, {});
+    return userLists
+      .filter((l) => {
+        const items = l.items || [];
+        const total = items.length;
+        const purchased = items.filter(
+          (it) => it.isPurchased || it.done || it.completed || it.checked,
+        ).length;
+        const isCompleted = total > 0 && purchased === total;
+        const matchesSearch =
+          !s ||
+          (l.name || '').toLowerCase().includes(s) ||
+          (l.desc || l.description || '').toLowerCase().includes(s);
+        const createdAt = l.createdAt ? String(l.createdAt).slice(0, 10) : '';
+        const matchesDate = !dateFilter || createdAt === dateFilter;
+        let matchesStatus = true;
+        if (statusFilter === 'active') matchesStatus = !isCompleted;
+        else if (statusFilter === 'completed') matchesStatus = isCompleted;
+        return matchesSearch && matchesDate && matchesStatus;
+      })
+      .sort((a, b) => {
+        const oa = orderMap[a.category] ?? 999;
+        const ob = orderMap[b.category] ?? 999;
+        if (oa !== ob) return oa - ob;
+        // fallback: most recently updated (createdAt desc)
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+      });
   }, [userLists, search, dateFilter, statusFilter]);
 
   // Helpers
@@ -199,16 +261,21 @@ function ListsScreen() {
 
   const getCounts = React.useCallback((list) => {
     const total = (list.items || []).length;
-    const completed = (list.items || []).filter((it) => it.isPurchased || it.done || it.completed || it.checked).length;
+    const completed = (list.items || []).filter(
+      (it) => it.isPurchased || it.done || it.completed || it.checked,
+    ).length;
     return { total, completed };
   }, []);
 
-  const getPriority = React.useCallback((list) => {
-    const { total } = getCounts(list);
-    if (total >= 8) return 'high';
-    if (total >= 4) return 'medium';
-    return 'low';
-  }, [getCounts]);
+  const getPriority = React.useCallback(
+    (list) => {
+      const { total } = getCounts(list);
+      if (total >= 8) return 'high';
+      if (total >= 4) return 'medium';
+      return 'low';
+    },
+    [getCounts],
+  );
 
   // Navegação entre listas
   const handleNavigate = (screen) => {
@@ -230,114 +297,163 @@ function ListsScreen() {
     }
   };
 
-  const renderRightActions = useCallback((list) => (
-    <View style={{ flexDirection: 'row', height: '100%' }}>
-      <TouchableOpacity
-        style={{ backgroundColor: '#F87171', justifyContent: 'center', paddingHorizontal: 16, borderTopRightRadius: 14, borderBottomRightRadius: 14 }}
-        onPress={() => {
-          const filtered = shoppingLists.filter(l => l.id !== list.id);
-          updateLists(filtered);
-        }}
-        activeOpacity={0.85}
-      >
-        <Text style={{ color: '#fff', fontWeight: 'bold' }}>Apagar</Text>
-      </TouchableOpacity>
-    </View>
-  ), [shoppingLists, updateLists]);
+  const renderRightActions = useCallback(
+    (list) => (
+      <View style={{ flexDirection: 'row', height: '100%' }}>
+        <TouchableOpacity
+          style={{
+            backgroundColor: '#F87171',
+            justifyContent: 'center',
+            paddingHorizontal: 16,
+            borderTopRightRadius: 14,
+            borderBottomRightRadius: 14,
+          }}
+          onPress={() => {
+            const filtered = shoppingLists.filter((l) => l.id !== list.id);
+            updateLists(filtered);
+          }}
+          activeOpacity={0.85}
+        >
+          <Text style={{ color: '#fff', fontWeight: 'bold' }}>Apagar</Text>
+        </TouchableOpacity>
+      </View>
+    ),
+    [shoppingLists, updateLists],
+  );
 
-  const renderLeftActions = useCallback((list) => (
-    <View style={{ flexDirection: 'row', height: '100%' }}>
-      <TouchableOpacity
-        style={{ backgroundColor: '#111827', justifyContent: 'center', paddingHorizontal: 16, borderTopLeftRadius: 14, borderBottomLeftRadius: 14 }}
-        onPress={() => {
-          // Toggle completed by marking all items purchased or clearing purchases
-          const items = list.items || [];
-          const total = items.length;
-          const purchased = items.filter(it => it.isPurchased || it.done || it.completed || it.checked).length;
-          const willComplete = !(total > 0 && purchased === total);
-          const now = new Date().toISOString();
-          const updated = shoppingLists.map(l => l.id === list.id ? {
-            ...l,
-            items: (l.items || []).map(it => willComplete ? { ...it, isPurchased: true, purchasedAt: it.purchasedAt || now } : { ...it, isPurchased: false })
-          } : l);
-          updateLists(updated);
-        }}
-        activeOpacity={0.85}
-      >
-        <Text style={{ color: '#fff', fontWeight: 'bold' }}>{/* toggle */}Concluir</Text>
-      </TouchableOpacity>
-    </View>
-  ), [shoppingLists, updateLists]);
+  const renderLeftActions = useCallback(
+    (list) => (
+      <View style={{ flexDirection: 'row', height: '100%' }}>
+        <TouchableOpacity
+          style={{
+            backgroundColor: '#111827',
+            justifyContent: 'center',
+            paddingHorizontal: 16,
+            borderTopLeftRadius: 14,
+            borderBottomLeftRadius: 14,
+          }}
+          onPress={() => {
+            // Toggle completed by marking all items purchased or clearing purchases
+            const items = list.items || [];
+            const total = items.length;
+            const purchased = items.filter(
+              (it) => it.isPurchased || it.done || it.completed || it.checked,
+            ).length;
+            const willComplete = !(total > 0 && purchased === total);
+            const now = new Date().toISOString();
+            const updated = shoppingLists.map((l) =>
+              l.id === list.id
+                ? {
+                    ...l,
+                    items: (l.items || []).map((it) =>
+                      willComplete
+                        ? { ...it, isPurchased: true, purchasedAt: it.purchasedAt || now }
+                        : { ...it, isPurchased: false },
+                    ),
+                  }
+                : l,
+            );
+            updateLists(updated);
+          }}
+          activeOpacity={0.85}
+        >
+          <Text style={{ color: '#fff', fontWeight: 'bold' }}>{/* toggle */}Concluir</Text>
+        </TouchableOpacity>
+      </View>
+    ),
+    [shoppingLists, updateLists],
+  );
 
   // Memoized item renderer component to reduce closures & improve perf.
-  const ListCard = useCallback(({ item }) => {
-    const { total, completed } = getCounts(item);
-    const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
-    const isCompleted = total > 0 && completed === total;
-    const priority = getPriority(item);
-    const pc = PRIORITY_COLORS[priority] || PRIORITY_COLORS.medium;
-    const barColor = isCompleted ? '#22C55E' : '#3B82F6';
-    return (
-      <Swipeable
-        renderRightActions={() => renderRightActions(item)}
-        renderLeftActions={() => renderLeftActions(item)}
-        friction={2}
-        rightThreshold={32}
-        leftThreshold={32}
-      >
-        <TouchableOpacity
-          style={listsStyles.listCard}
-          onPress={() => router.push({ pathname: '/list-detail', params: { id: item.id } })}
-          activeOpacity={0.92}
+  const ListCard = useCallback(
+    ({ item }) => {
+      const { total, completed } = getCounts(item);
+      const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+      const isCompleted = total > 0 && completed === total;
+      const priority = getPriority(item);
+      const pc = PRIORITY_COLORS[priority] || PRIORITY_COLORS.medium;
+      const barColor = isCompleted ? '#22C55E' : '#3B82F6';
+      return (
+        <Swipeable
+          renderRightActions={() => renderRightActions(item)}
+          renderLeftActions={() => renderLeftActions(item)}
+          friction={2}
+          rightThreshold={32}
+          leftThreshold={32}
         >
-          <View style={listsStyles.listHeaderRow}>
-            <View style={listsStyles.listHeaderLeft}>
-              <CategoryIcon type={item.category || 'outros'} size={42} neutral />
-              <View style={listsStyles.listHeaderLeftTextWrap}>
-                <Text style={listsStyles.listTitle} numberOfLines={2}>{item.name || 'Sem nome'}</Text>
+          <TouchableOpacity
+            style={listsStyles.listCard}
+            onPress={() => router.push({ pathname: '/list-detail', params: { id: item.id } })}
+            activeOpacity={0.92}
+          >
+            <View style={listsStyles.listHeaderRow}>
+              <View style={listsStyles.listHeaderLeft}>
+                <CategoryIcon type={item.category || 'outros'} size={42} neutral />
+                <View style={listsStyles.listHeaderLeftTextWrap}>
+                  <Text style={listsStyles.listTitle} numberOfLines={2}>
+                    {item.name || 'Sem nome'}
+                  </Text>
+                </View>
+              </View>
+              <View style={[listsStyles.chip, { backgroundColor: pc.bg, borderColor: pc.border }]}>
+                <Text style={[listsStyles.chipText, { color: pc.text }]}>{pc.label}</Text>
               </View>
             </View>
-            <View style={[listsStyles.chip, { backgroundColor: pc.bg, borderColor: pc.border }]}>
-              <Text style={[listsStyles.chipText, { color: pc.text }]}>{pc.label}</Text>
+            <View style={listsStyles.dateRow}>
+              <View style={listsStyles.dateDot} />
+              <Text style={listsStyles.dateText}>{formatDate(item.createdAt)}</Text>
             </View>
-          </View>
-          <View style={listsStyles.dateRow}>
-            <View style={listsStyles.dateDot} />
-            <Text style={listsStyles.dateText}>{formatDate(item.createdAt)}</Text>
-          </View>
-          <View style={listsStyles.progressWrap}>
-            <View style={listsStyles.progressMeta}>
-              <Text style={listsStyles.progressMetaLabel}>Progresso</Text>
-              <Text style={[listsStyles.progressMetaValue, { color: barColor }]}>{completed}/{total} itens</Text>
+            <View style={listsStyles.progressWrap}>
+              <View style={listsStyles.progressMeta}>
+                <Text style={listsStyles.progressMetaLabel}>Progresso</Text>
+                <Text style={[listsStyles.progressMetaValue, { color: barColor }]}>
+                  {completed}/{total} itens
+                </Text>
+              </View>
+              <View style={listsStyles.progressTrack}>
+                <View
+                  style={[listsStyles.progressBar, { width: `${pct}%`, backgroundColor: barColor }]}
+                />
+              </View>
             </View>
-            <View style={listsStyles.progressTrack}>
-              <View style={[listsStyles.progressBar, { width: `${pct}%`, backgroundColor: barColor }]} />
+            <View style={listsStyles.footerRow}>
+              <View style={listsStyles.footerLeft}>
+                <Text style={listsStyles.footerLeftText}>{total} itens</Text>
+              </View>
+              <Text
+                style={[listsStyles.statusText, { color: isCompleted ? '#16A34A' : '#2563EB' }]}
+              >
+                {isCompleted ? '✓ Concluída' : 'Em andamento'}
+              </Text>
             </View>
-          </View>
-          <View style={listsStyles.footerRow}>
-            <View style={listsStyles.footerLeft}>
-              <Text style={listsStyles.footerLeftText}>{total} itens</Text>
-            </View>
-            <Text style={[listsStyles.statusText, { color: isCompleted ? '#16A34A' : '#2563EB' }]}>
-              {isCompleted ? '✓ Concluída' : 'Em andamento'}
-            </Text>
-          </View>
-        </TouchableOpacity>
-      </Swipeable>
-    );
-  }, [renderLeftActions, renderRightActions, router, getCounts, getPriority]);
+          </TouchableOpacity>
+        </Swipeable>
+      );
+    },
+    [renderLeftActions, renderRightActions, router, getCounts, getPriority],
+  );
 
   return (
-  <SafeAreaView style={{ flex: 1, backgroundColor: '#f0f5ff' }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f0f5ff' }} edges={['top']}>
       <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 50 }}>
-        <TabBar active={'LISTS'} onNavigate={handleNavigate} onAddList={() => setModalVisible(true)} />
+        <TabBar
+          active={'LISTS'}
+          onNavigate={handleNavigate}
+          onAddList={() => setModalVisible(true)}
+        />
       </View>
-      <SwipeNavigator onSwipeLeft={() => handleNavigate('DASHBOARD')} onSwipeRight={() => handleNavigate('FAMILY')} progress={progress}>
-    <LinearGradient colors={["#EFF6FF", "#E0E7FF"]} style={listsStyles.bg}>
+      <SwipeNavigator
+        onSwipeLeft={() => handleNavigate('DASHBOARD')}
+        onSwipeRight={() => handleNavigate('FAMILY')}
+        progress={progress}
+      >
+        <LinearGradient colors={['#EFF6FF', '#E0E7FF']} style={listsStyles.bg}>
           <View style={listsStyles.container}>
             <View style={listsStyles.headerWrap}>
               <Text style={listsStyles.headerTitle}>🛒 Minhas Listas</Text>
-              <Text style={listsStyles.headerSubtitle}>Organize suas compras de forma inteligente</Text>
+              <Text style={listsStyles.headerSubtitle}>
+                Organize suas compras de forma inteligente
+              </Text>
             </View>
 
             <View style={listsStyles.filtersCard}>
@@ -382,7 +498,12 @@ function ListsScreen() {
                   { key: 'active', label: 'Ativas' },
                   { key: 'completed', label: 'Concluídas' },
                 ].map(({ key, label }) => (
-                  <Chip key={key} label={label} active={statusFilter === key} onPress={() => setStatusFilter(key)} />
+                  <Chip
+                    key={key}
+                    label={label}
+                    active={statusFilter === key}
+                    onPress={() => setStatusFilter(key)}
+                  />
                 ))}
               </View>
               {showDatePicker && Platform.OS !== 'web' && (
@@ -404,11 +525,13 @@ function ListsScreen() {
               )}
             </View>
 
-      {filteredLists.length === 0 ? (
+            {filteredLists.length === 0 ? (
               <View style={listsStyles.noResultsWrap}>
                 <Text style={listsStyles.noResultsEmoji}>🔍</Text>
                 <Text style={listsStyles.noResultsTitle}>Nenhuma lista encontrada</Text>
-                <Text style={listsStyles.noResultsSubtitle}>Tente ajustar os filtros de pesquisa</Text>
+                <Text style={listsStyles.noResultsSubtitle}>
+                  Tente ajustar os filtros de pesquisa
+                </Text>
               </View>
             ) : (
               <FlatList
@@ -416,12 +539,11 @@ function ListsScreen() {
                 keyExtractor={(item) => item.id}
                 numColumns={width >= 720 ? 3 : width >= 520 ? 2 : 1}
                 contentContainerStyle={listsStyles.listsGrid}
-        renderItem={({ item }) => <ListCard item={item} />}
+                renderItem={({ item }) => <ListCard item={item} />}
               />
             )}
           </View>
-    </LinearGradient>
-  
+        </LinearGradient>
       </SwipeNavigator>
 
       {currentUser && (
@@ -444,7 +566,7 @@ function ListsScreen() {
           }}
         />
       )}
-  {/* TabBar movida para o topo */}
+      {/* TabBar movida para o topo */}
     </SafeAreaView>
   );
 }

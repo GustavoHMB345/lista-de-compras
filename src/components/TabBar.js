@@ -8,16 +8,42 @@ import { getRipple } from '../styles/theme';
 // Top subtle tab bar (dashboard-style). Props: active, onNavigate(screen)
 export default function TabBar({ active, onNavigate, onAddList }) {
   return (
-    <SafeAreaView edges={['top']} style={styles.safe}> 
-      <View style={styles.wrapper}> 
-        <BlurView intensity={30} tint={Platform.OS === 'ios' ? 'light' : 'default'} style={styles.blur}>
+    <SafeAreaView edges={['top']} style={styles.safe}>
+      <View style={styles.wrapper}>
+        <BlurView
+          intensity={30}
+          tint={Platform.OS === 'ios' ? 'light' : 'default'}
+          style={styles.blur}
+        >
           <View style={styles.topWrap}>
-            <Text style={styles.brand}>🛒 <Text style={{ color: '#2563EB' }}>Super Lista</Text></Text>
+            <Text style={styles.brand}>
+              🛒 <Text style={{ color: '#2563EB' }}>Super Lista</Text>
+            </Text>
             <View style={styles.tabsRow}>
-              <IconTab active={active === 'FAMILY'} label="Famílias" onPress={() => onNavigate('FAMILY')} icon={(c)=> <FamilyIcon color={c} />} />
-              <IconTab active={active === 'LISTS'} label="Listas" onPress={() => onNavigate('LISTS')} icon={(c)=> <ListsIcon color={c} />} />
-              <IconTab active={active === 'DASHBOARD'} label="Dashboard" onPress={() => onNavigate('DASHBOARD')} icon={(c)=> <HomeIcon color={c} />} />
-              <IconTab active={active === 'PROFILE'} label="Perfil" onPress={() => onNavigate('PROFILE')} icon={(c)=> <ProfileIcon color={c} />} />
+              <IconTab
+                active={active === 'FAMILY'}
+                label="Famílias"
+                onPress={() => onNavigate('FAMILY')}
+                icon={(c) => <FamilyIcon color={c} />}
+              />
+              <IconTab
+                active={active === 'LISTS'}
+                label="Listas"
+                onPress={() => onNavigate('LISTS')}
+                icon={(c) => <ListsIcon color={c} />}
+              />
+              <IconTab
+                active={active === 'DASHBOARD'}
+                label="Dashboard"
+                onPress={() => onNavigate('DASHBOARD')}
+                icon={(c) => <HomeIcon color={c} />}
+              />
+              <IconTab
+                active={active === 'PROFILE'}
+                label="Perfil"
+                onPress={() => onNavigate('PROFILE')}
+                icon={(c) => <ProfileIcon color={c} />}
+              />
               {active === 'LISTS' && onAddList && (
                 <Pressable
                   onPress={onAddList}
@@ -50,8 +76,20 @@ function IconTab({ active, label, icon, onPress }) {
 
 const HomeIcon = ({ color = '#6B7280' }) => (
   <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-    <Path d="M3 11.5L12 4l9 7.5" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    <Path d="M5 10.5V20a1 1 0 0 0 1 1h3.5a1 1 0 0 0 1-1v-4h2v4a1 1 0 0 0 1 1H18a1 1 0 0 0 1-1v-9.5" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Path
+      d="M3 11.5L12 4l9 7.5"
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M5 10.5V20a1 1 0 0 0 1 1h3.5a1 1 0 0 0 1-1v-4h2v4a1 1 0 0 0 1 1H18a1 1 0 0 0 1-1v-9.5"
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </Svg>
 );
 const ListsIcon = ({ color = '#6B7280' }) => (
@@ -94,8 +132,24 @@ const styles = StyleSheet.create({
   iconTab: { paddingHorizontal: 10, paddingVertical: 4, alignItems: 'center' },
   iconTabLabel: { fontSize: 11, color: '#6B7280', marginTop: 2, fontWeight: '600' },
   iconTabLabelActive: { color: '#1E3A8A' },
-  activeBar: { position: 'absolute', bottom: -2, height: 3, left: 8, right: 8, borderRadius: 2, backgroundColor: '#2563EB' },
+  activeBar: {
+    position: 'absolute',
+    bottom: -2,
+    height: 3,
+    left: 8,
+    right: 8,
+    borderRadius: 2,
+    backgroundColor: '#2563EB',
+  },
   divider: { height: 1, backgroundColor: 'rgba(0,0,0,0.07)', marginTop: 4 },
-  addBtn: { backgroundColor: '#2563EB', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, marginLeft: 4, minHeight: 40, alignSelf: 'flex-start' },
+  addBtn: {
+    backgroundColor: '#2563EB',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    marginLeft: 4,
+    minHeight: 40,
+    alignSelf: 'flex-start',
+  },
   addBtnText: { color: '#fff', fontWeight: '700', fontSize: 12 },
 });

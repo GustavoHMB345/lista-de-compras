@@ -16,7 +16,7 @@ export default function SplashScreen() {
   }, [loading, currentUser, router]);
 
   return (
-    <LinearGradient colors={["#3B82F6", "#8B5CF6"]} style={styles.container}>
+    <LinearGradient colors={['#3B82F6', '#8B5CF6']} style={styles.container}>
       <View style={styles.center}>
         <Text style={styles.title}>SuperLista</Text>
         <ActivityIndicator size="large" color="#fff" style={{ marginTop: 16 }} />

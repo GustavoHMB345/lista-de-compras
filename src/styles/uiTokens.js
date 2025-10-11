@@ -1,5 +1,5 @@
 // Shared UI design tokens for consistent styling across screens
-export const GRADIENT_BG = ["#EFF6FF", "#E0E7FF"]; // light blue -> indigo hint
+export const GRADIENT_BG = ['#EFF6FF', '#E0E7FF']; // light blue -> indigo hint
 export const CARD_RADIUS = 22;
 export const CARD_BORDER = '#F1F5F9';
 export const CARD_SHADOW = {

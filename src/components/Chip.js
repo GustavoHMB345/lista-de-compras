@@ -10,6 +10,9 @@ export default function Chip({
   style,
   textStyle,
   children,
+  accessibilityLabel,
+  accessibilityRole,
+  testID,
   ...rest
 }) {
   return (
@@ -22,6 +25,9 @@ export default function Chip({
         pressed && { opacity: 0.9 },
         style,
       ]}
+      accessibilityRole={accessibilityRole || 'button'}
+      accessibilityLabel={accessibilityLabel || label}
+      testID={testID}
       {...rest}
     >
       {emoji ? <Text style={[{ fontSize: 12 }, active && CHIP_TEXT_ACTIVE]}>{emoji}</Text> : null}

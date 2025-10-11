@@ -1,18 +1,18 @@
 import * as Haptics from 'expo-haptics';
 import React from 'react';
 import {
-    Animated,
-    Dimensions,
-    FlatList,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Animated,
+  Dimensions,
+  FlatList,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import useFontScale from '../hooks/useFontScale';
@@ -193,7 +193,15 @@ export default function AddListModal({ visible, onClose, onCreate }) {
       backgroundColor: '#3B82F6',
     },
     itemName: { flex: 1, fontWeight: '600', color: '#111827', fontSize: 14 * fs },
-    inlinePriceBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F1F5F9', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, marginLeft: 6 },
+    inlinePriceBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#F1F5F9',
+      borderRadius: 999,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      marginLeft: 6,
+    },
     inlinePriceText: { color: '#1D4ED8', fontWeight: '700', fontSize: 13 * fs },
     inlinePriceInput: { minWidth: 64, paddingVertical: 0, color: '#111827', fontSize: 14 * fs },
     qtyBtn: {
@@ -274,7 +282,10 @@ export default function AddListModal({ visible, onClose, onCreate }) {
   };
 
   const productsCount = products.length;
-  const estimatedTotal = products.reduce((sum, p) => sum + normalizeNumber(p.price) * (parseInt(p.quantity) || 1), 0);
+  const estimatedTotal = products.reduce(
+    (sum, p) => sum + normalizeNumber(p.price) * (parseInt(p.quantity) || 1),
+    0,
+  );
 
   const validateName = (v) => {
     if (!v || v.trim().length < 3) {
@@ -316,15 +327,27 @@ export default function AddListModal({ visible, onClose, onCreate }) {
   };
 
   const handleIncQty = (id) => {
-    setProducts((p) => p.map((item) => (item.id === id ? { ...item, quantity: (parseInt(item.quantity) || 1) + 1 } : item)));
+    setProducts((p) =>
+      p.map((item) =>
+        item.id === id ? { ...item, quantity: (parseInt(item.quantity) || 1) + 1 } : item,
+      ),
+    );
     Haptics.selectionAsync();
   };
   const handleDecQty = (id) => {
-    setProducts((p) => p.map((item) => (item.id === id ? { ...item, quantity: Math.max(1, (parseInt(item.quantity) || 1) - 1) } : item)));
+    setProducts((p) =>
+      p.map((item) =>
+        item.id === id
+          ? { ...item, quantity: Math.max(1, (parseInt(item.quantity) || 1) - 1) }
+          : item,
+      ),
+    );
     Haptics.selectionAsync();
   };
   const handlePriceChange = (id, val) => {
-    setProducts((p) => p.map((item) => (item.id === id ? { ...item, price: normalizeNumber(val) } : item)));
+    setProducts((p) =>
+      p.map((item) => (item.id === id ? { ...item, price: normalizeNumber(val) } : item)),
+    );
   };
 
   const canCreate = name.trim().length >= 3 && !productError;
@@ -332,7 +355,7 @@ export default function AddListModal({ visible, onClose, onCreate }) {
   const handleCreate = () => {
     if (!validateName(name)) return;
     // Normaliza itens para mesmo formato usado na tela de detalhes
-    const preparedItems = products.map(p => ({
+    const preparedItems = products.map((p) => ({
       ...p,
       quantity: String(p.quantity || 1),
       price: Number(p.price) || 0,
@@ -341,12 +364,12 @@ export default function AddListModal({ visible, onClose, onCreate }) {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setName('');
     setDesc('');
-  setCategory(LIST_CATEGORIES[0].key);
+    setCategory(LIST_CATEGORIES[0].key);
     setProducts([]);
     setProductName('');
     setProductQty('1');
     setProductPrice('');
-  setItemCategory('outros');
+    setItemCategory('outros');
     onClose();
   };
 
@@ -356,7 +379,11 @@ export default function AddListModal({ visible, onClose, onCreate }) {
   };
   const commitEditItemName = () => {
     if (!editingItemId) return;
-    setProducts(p => p.map(it => it.id === editingItemId ? { ...it, name: editingItemName.trim() || it.name } : it));
+    setProducts((p) =>
+      p.map((it) =>
+        it.id === editingItemId ? { ...it, name: editingItemName.trim() || it.name } : it,
+      ),
+    );
     setEditingItemId(null);
     setEditingItemName('');
     Haptics.selectionAsync();
@@ -369,7 +396,10 @@ export default function AddListModal({ visible, onClose, onCreate }) {
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
-      <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView
+        style={styles.overlay}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
         <View style={styles.card}>
           <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             <Text style={styles.title}>Nova Lista de Compras</Text>
@@ -394,18 +424,32 @@ export default function AddListModal({ visible, onClose, onCreate }) {
               {LIST_CATEGORIES.map((cat) => (
                 <TouchableOpacity
                   key={cat.key}
-                  style={[styles.categoryButton, category === cat.key && styles.categoryButtonActive]}
+                  style={[
+                    styles.categoryButton,
+                    category === cat.key && styles.categoryButtonActive,
+                  ]}
                   onPress={() => setCategory(cat.key)}
                   activeOpacity={0.85}
                 >
                   <CategoryIcon type={cat.key} size={40} neutral />
-                  <Text style={[styles.categoryLabel, category === cat.key && styles.categoryLabelActive]}>{cat.label}</Text>
+                  <Text
+                    style={[
+                      styles.categoryLabel,
+                      category === cat.key && styles.categoryLabelActive,
+                    ]}
+                  >
+                    {cat.label}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
 
             <Text style={styles.label}>Categoria do Item</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 4, paddingRight: 6 }}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingVertical: 4, paddingRight: 6 }}
+            >
               {Object.entries(ITEM_CATEGORIES).map(([key, cfg]) => (
                 <TouchableOpacity
                   key={key}
@@ -423,7 +467,15 @@ export default function AddListModal({ visible, onClose, onCreate }) {
                   }}
                   activeOpacity={0.85}
                 >
-                  <Text style={{ color: itemCategory === key ? '#fff' : '#111827', fontWeight: '600', fontSize: 13 * fs }}>{cfg.emoji} {cfg.name}</Text>
+                  <Text
+                    style={{
+                      color: itemCategory === key ? '#fff' : '#111827',
+                      fontWeight: '600',
+                      fontSize: 13 * fs,
+                    }}
+                  >
+                    {cfg.emoji} {cfg.name}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -443,18 +495,47 @@ export default function AddListModal({ visible, onClose, onCreate }) {
                 keyboardType="number-pad"
               />
               <TextInput
-                style={[styles.input, { flex: 1, borderColor: productError ? '#ef4444' : '#E5E7EB', borderWidth: 1 }]}
+                style={[
+                  styles.input,
+                  { flex: 1, borderColor: productError ? '#ef4444' : '#E5E7EB', borderWidth: 1 },
+                ]}
                 placeholder="Preço"
                 value={productPrice}
                 onChangeText={setProductPrice}
                 keyboardType="numeric"
               />
-              <Button title="+" onPress={handleAddProduct} style={[styles.addProductButton, { minHeight: 44, minWidth: 44, paddingVertical: 10, paddingHorizontal: 10 }]} textStyle={{ fontSize: 18 * fs }} />
+              <Button
+                title="+"
+                onPress={handleAddProduct}
+                style={[
+                  styles.addProductButton,
+                  { minHeight: 44, minWidth: 44, paddingVertical: 10, paddingHorizontal: 10 },
+                ]}
+                textStyle={{ fontSize: 18 * fs }}
+              />
             </View>
-            {!!productError && <Text style={{ color: '#ef4444', marginTop: -4, marginBottom: 8, fontSize: 12 * fs, textAlign: 'center' }}>{productError}</Text>}
+            {!!productError && (
+              <Text
+                style={{
+                  color: '#ef4444',
+                  marginTop: -4,
+                  marginBottom: 8,
+                  fontSize: 12 * fs,
+                  textAlign: 'center',
+                }}
+              >
+                {productError}
+              </Text>
+            )}
             {products.length > 0 && (
-              <TouchableOpacity onPress={clearAllItems} activeOpacity={0.8} style={{ alignSelf: 'flex-end', marginBottom: 6 }}>
-                <Text style={{ color: '#ef4444', fontSize: 12 * fs, fontWeight: '600' }}>Limpar todos</Text>
+              <TouchableOpacity
+                onPress={clearAllItems}
+                activeOpacity={0.8}
+                style={{ alignSelf: 'flex-end', marginBottom: 6 }}
+              >
+                <Text style={{ color: '#ef4444', fontSize: 12 * fs, fontWeight: '600' }}>
+                  Limpar todos
+                </Text>
               </TouchableOpacity>
             )}
 
@@ -471,10 +552,19 @@ export default function AddListModal({ visible, onClose, onCreate }) {
               renderItem={({ item }) => {
                 const cat = ITEM_CATEGORIES[item.category] || ITEM_CATEGORIES.outros;
                 const renderRight = (progress, dragX) => {
-                  const scale = dragX.interpolate({ inputRange: [-90, 0], outputRange: [1, 0.7], extrapolate: 'clamp' });
-                  const opacity = progress.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] });
+                  const scale = dragX.interpolate({
+                    inputRange: [-90, 0],
+                    outputRange: [1, 0.7],
+                    extrapolate: 'clamp',
+                  });
+                  const opacity = progress.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.4, 1],
+                  });
                   return (
-                    <Animated.View style={[styles.swipeDelete, { transform: [{ scale }], opacity }]}> 
+                    <Animated.View
+                      style={[styles.swipeDelete, { transform: [{ scale }], opacity }]}
+                    >
                       <Text style={styles.swipeDeleteText}>Remover</Text>
                     </Animated.View>
                   );
@@ -484,13 +574,20 @@ export default function AddListModal({ visible, onClose, onCreate }) {
                     renderRightActions={renderRight}
                     rightThreshold={40}
                     overshootRight={false}
-                    onSwipeableOpen={(dir) => { if (dir === 'right') handleRemoveProduct(item.id); }}
+                    onSwipeableOpen={(dir) => {
+                      if (dir === 'right') handleRemoveProduct(item.id);
+                    }}
                   >
                     <View style={styles.productItem}>
-                      <View style={styles.itemCatPill}><Text style={{ fontSize: 13 * fs }}>{cat.emoji}</Text></View>
+                      <View style={styles.itemCatPill}>
+                        <Text style={{ fontSize: 13 * fs }}>{cat.emoji}</Text>
+                      </View>
                       {editingItemId === item.id ? (
                         <TextInput
-                          style={[styles.itemName, { backgroundColor: '#F1F5F9', paddingHorizontal: 6, borderRadius: 8 }]}
+                          style={[
+                            styles.itemName,
+                            { backgroundColor: '#F1F5F9', paddingHorizontal: 6, borderRadius: 8 },
+                          ]}
                           value={editingItemName}
                           onChangeText={setEditingItemName}
                           onBlur={commitEditItemName}
@@ -499,17 +596,37 @@ export default function AddListModal({ visible, onClose, onCreate }) {
                           autoFocus
                         />
                       ) : (
-                        <TouchableOpacity onPress={() => beginEditItemName(item)} activeOpacity={0.7} style={{ flex: 1 }}>
-                          <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
+                        <TouchableOpacity
+                          onPress={() => beginEditItemName(item)}
+                          activeOpacity={0.7}
+                          style={{ flex: 1 }}
+                        >
+                          <Text style={styles.itemName} numberOfLines={2}>
+                            {item.name}
+                          </Text>
                         </TouchableOpacity>
                       )}
                       <View style={styles.qtyBox}>
-                        <TouchableOpacity onPress={() => handleDecQty(item.id)} style={styles.qtyBtn} activeOpacity={0.7}><Text style={styles.qtyBtnText}>-</Text></TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => handleDecQty(item.id)}
+                          style={styles.qtyBtn}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={styles.qtyBtnText}>-</Text>
+                        </TouchableOpacity>
                         <Text style={styles.qtyValue}>{item.quantity}</Text>
-                        <TouchableOpacity onPress={() => handleIncQty(item.id)} style={styles.qtyBtn} activeOpacity={0.7}><Text style={styles.qtyBtnText}>+</Text></TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => handleIncQty(item.id)}
+                          style={styles.qtyBtn}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={styles.qtyBtnText}>+</Text>
+                        </TouchableOpacity>
                       </View>
                       <View style={styles.inlinePriceBox}>
-                        <Text style={{ color: '#64748B', marginRight: 4, fontSize: 12 * fs }}>R$</Text>
+                        <Text style={{ color: '#64748B', marginRight: 4, fontSize: 12 * fs }}>
+                          R$
+                        </Text>
                         <TextInput
                           style={styles.inlinePriceInput}
                           value={String(item.price || '')}
@@ -522,7 +639,14 @@ export default function AddListModal({ visible, onClose, onCreate }) {
                 );
               }}
               ListEmptyComponent={
-                <Text style={{ color: '#6B7280', textAlign: 'center', marginVertical: 4, fontSize: 13 * fs }}>
+                <Text
+                  style={{
+                    color: '#6B7280',
+                    textAlign: 'center',
+                    marginVertical: 4,
+                    fontSize: 13 * fs,
+                  }}
+                >
                   Nenhum produto adicionado.
                 </Text>
               }
@@ -531,7 +655,12 @@ export default function AddListModal({ visible, onClose, onCreate }) {
 
             <View style={styles.buttonRow}>
               <Button variant="danger" title="Cancelar" onPress={onClose} />
-              <Button variant={canCreate ? 'primary' : 'gray'} title="Criar" onPress={handleCreate} disabled={!canCreate} />
+              <Button
+                variant={canCreate ? 'primary' : 'gray'}
+                title="Criar"
+                onPress={handleCreate}
+                disabled={!canCreate}
+              />
             </View>
           </ScrollView>
         </View>

@@ -15,228 +15,274 @@ const GRAY_ACTIVE = ['#A3A3A3', '#737373']; // neutral-400 -> neutral-500
 const GRAY_INACTIVE = ['#525252', '#262626']; // neutral-600 -> neutral-800
 
 const GradientIcon = ({ children, active }) => (
-    <LinearGradient
-        colors={active ? GRAY_ACTIVE : GRAY_INACTIVE}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.iconWrap, active && styles.iconActiveWrap]}
-    >
-        {children}
-    </LinearGradient>
+  <LinearGradient
+    colors={active ? GRAY_ACTIVE : GRAY_INACTIVE}
+    start={{ x: 0, y: 0 }}
+    end={{ x: 1, y: 1 }}
+    style={[styles.iconWrap, active && styles.iconActiveWrap]}
+  >
+    {children}
+  </LinearGradient>
 );
 
 const HomeIcon = ({ active }) => (
-    <GradientIcon active={active}>
-        <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-            <Path d="M3 11.5L12 4l9 7.5" stroke={'#fff'} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-            <Path d="M5 10.5V20a1 1 0 001 1h3.5a1 1 0 001-1v-4h2v4a1 1 0 001 1H18a1 1 0 001-1v-9.5" stroke={'#fff'} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-        </Svg>
-    </GradientIcon>
+  <GradientIcon active={active}>
+    <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M3 11.5L12 4l9 7.5"
+        stroke={'#fff'}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M5 10.5V20a1 1 0 001 1h3.5a1 1 0 001-1v-4h2v4a1 1 0 001 1H18a1 1 0 001-1v-9.5"
+        stroke={'#fff'}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  </GradientIcon>
 );
 const FamilyIcon = ({ active }) => (
-    <GradientIcon active={active}>
-        <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-            <Circle cx={8} cy={8} r={3} stroke={'#fff'} strokeWidth={2} />
-            <Circle cx={16} cy={8} r={3} stroke={'#fff'} strokeWidth={2} />
-            <Path d="M2 20c0-3.3137 3.134-6 7-6s7 2.6863 7 6" stroke={'#fff'} strokeWidth={2} />
-            <Path d="M14 20c0-2.2091 2.239-4 5-4s5 1.7909 5 4" stroke={'#fff'} strokeWidth={2} />
-        </Svg>
-    </GradientIcon>
+  <GradientIcon active={active}>
+    <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+      <Circle cx={8} cy={8} r={3} stroke={'#fff'} strokeWidth={2} />
+      <Circle cx={16} cy={8} r={3} stroke={'#fff'} strokeWidth={2} />
+      <Path d="M2 20c0-3.3137 3.134-6 7-6s7 2.6863 7 6" stroke={'#fff'} strokeWidth={2} />
+      <Path d="M14 20c0-2.2091 2.239-4 5-4s5 1.7909 5 4" stroke={'#fff'} strokeWidth={2} />
+    </Svg>
+  </GradientIcon>
 );
 const ListIcon = ({ active }) => (
-    <GradientIcon active={active}>
-        <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-            <Path d="M6 6h13M6 12h13M6 18h13" stroke={'#fff'} strokeWidth={2} strokeLinecap="round" />
-            <Circle cx={3} cy={6} r={1} fill={'#fff'} />
-            <Circle cx={3} cy={12} r={1} fill={'#fff'} />
-            <Circle cx={3} cy={18} r={1} fill={'#fff'} />
-        </Svg>
-    </GradientIcon>
+  <GradientIcon active={active}>
+    <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+      <Path d="M6 6h13M6 12h13M6 18h13" stroke={'#fff'} strokeWidth={2} strokeLinecap="round" />
+      <Circle cx={3} cy={6} r={1} fill={'#fff'} />
+      <Circle cx={3} cy={12} r={1} fill={'#fff'} />
+      <Circle cx={3} cy={18} r={1} fill={'#fff'} />
+    </Svg>
+  </GradientIcon>
 );
 const ProfileIcon = ({ active }) => (
-    <GradientIcon active={active}>
-        <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-            <Circle cx={12} cy={8} r={4} stroke={'#fff'} strokeWidth={2} />
-            <Path d="M4 20c0-3.3137 3.582-6 8-6s8 2.6863 8 6" stroke={'#fff'} strokeWidth={2} />
-        </Svg>
-    </GradientIcon>
+  <GradientIcon active={active}>
+    <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+      <Circle cx={12} cy={8} r={4} stroke={'#fff'} strokeWidth={2} />
+      <Path d="M4 20c0-3.3137 3.582-6 8-6s8 2.6863 8 6" stroke={'#fff'} strokeWidth={2} />
+    </Svg>
+  </GradientIcon>
 );
 
 export default function NavBar({ navigate, activeScreen, onAddList, progress }) {
-    const animatedOpacity = progress
-        ? progress.interpolate({ inputRange: [-1, 0, 1], outputRange: [0.95, 1, 0.95], extrapolate: 'clamp' })
-        : 1;
-    const animatedScale = progress
-        ? progress.interpolate({ inputRange: [-1, 0, 1], outputRange: [0.98, 1, 0.98], extrapolate: 'clamp' })
-        : 1;
-    // Animações específicas do botão central "+"
-    const centerScale = progress
-        ? progress.interpolate({ inputRange: [-1, -0.3, 0, 0.3, 1], outputRange: [1.06, 1.03, 1, 1.03, 1.06], extrapolate: 'clamp' })
-        : 1;
-    const haloOpacity = progress
-        ? progress.interpolate({ inputRange: [-1, 0, 1], outputRange: [0.18, 0, 0.18], extrapolate: 'clamp' })
-        : 0;
-    const haloScale = progress
-        ? progress.interpolate({ inputRange: [-1, 0, 1], outputRange: [1.2, 1, 1.2], extrapolate: 'clamp' })
-        : 1;
-    return (
-        <SafeAreaView edges={['bottom']} style={styles.navBarSafeAreaCustom}>
-            <Animated.View style={[styles.navBarContainerCustom, { opacity: animatedOpacity, transform: [{ scale: animatedScale }] }] }>
-                {/* Left side: Family (1), Lists (2) */}
-                <TouchableOpacity
-                    accessibilityLabel="Família"
-                    testID="tab-family"
-                    style={styles.navBarItemCustom}
-                    onPress={() => navigate('FAMILY')}
-                    activeOpacity={0.7}
-                >
-                    <FamilyIcon active={activeScreen === 'FAMILY'} />
-                    {activeScreen === 'FAMILY' && <View style={styles.activeDot} />}
-                </TouchableOpacity>
-                <TouchableOpacity
-                    accessibilityLabel="Listas"
-                    testID="tab-lists"
-                    style={styles.navBarItemCustom}
-                    onPress={() => navigate('LISTS')}
-                    activeOpacity={0.7}
-                >
-                    <ListIcon active={activeScreen === 'LISTS'} />
-                    {activeScreen === 'LISTS' && <View style={styles.activeDot} />}
-                </TouchableOpacity>
-                <View style={[styles.centerWrapper, { width: CENTER_WRAPPER, height: CENTER_WRAPPER }] }>
-                    <Animated.View pointerEvents="none" style={[styles.navBarCenterHalo, { opacity: haloOpacity, transform: [{ scale: haloScale }] }]} />
-                    <Animated.View style={{ transform: [{ scale: centerScale }] }}>
-                        <LinearGradient
-                            colors={GRAY_ACTIVE}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={[styles.navBarCenterBtnCustom, { width: CENTER_BTN, height: CENTER_BTN, borderRadius: CENTER_BTN / 2 }]}
-                        >
-                            <TouchableOpacity
-                                style={styles.centerInnerTouchable}
-                                onPress={onAddList}
-                                activeOpacity={0.85}
-                                accessibilityLabel="Adicionar lista"
-                                testID="tab-add"
-                            >
-                                <PlusIcon />
-                            </TouchableOpacity>
-                        </LinearGradient>
-                    </Animated.View>
-                </View>
-                {/* Right side: Dashboard (3), Profile (4) */}
-                <TouchableOpacity
-                    accessibilityLabel="Dashboard"
-                    testID="tab-dashboard"
-                    style={styles.navBarItemCustom}
-                    onPress={() => navigate('DASHBOARD')}
-                    activeOpacity={0.7}
-                >
-                    <HomeIcon active={activeScreen === 'DASHBOARD'} />
-                    {activeScreen === 'DASHBOARD' && <View style={styles.activeDot} />}
-                </TouchableOpacity>
-                <TouchableOpacity
-                    accessibilityLabel="Perfil"
-                    testID="tab-profile"
-                    style={styles.navBarItemCustom}
-                    onPress={() => navigate('PROFILE')}
-                    activeOpacity={0.7}
-                >
-                    <ProfileIcon active={activeScreen === 'PROFILE'} />
-                    {activeScreen === 'PROFILE' && <View style={styles.activeDot} />}
-                </TouchableOpacity>
-            </Animated.View>
-        </SafeAreaView>
-    );
+  const animatedOpacity = progress
+    ? progress.interpolate({
+        inputRange: [-1, 0, 1],
+        outputRange: [0.95, 1, 0.95],
+        extrapolate: 'clamp',
+      })
+    : 1;
+  const animatedScale = progress
+    ? progress.interpolate({
+        inputRange: [-1, 0, 1],
+        outputRange: [0.98, 1, 0.98],
+        extrapolate: 'clamp',
+      })
+    : 1;
+  // Animações específicas do botão central "+"
+  const centerScale = progress
+    ? progress.interpolate({
+        inputRange: [-1, -0.3, 0, 0.3, 1],
+        outputRange: [1.06, 1.03, 1, 1.03, 1.06],
+        extrapolate: 'clamp',
+      })
+    : 1;
+  const haloOpacity = progress
+    ? progress.interpolate({
+        inputRange: [-1, 0, 1],
+        outputRange: [0.18, 0, 0.18],
+        extrapolate: 'clamp',
+      })
+    : 0;
+  const haloScale = progress
+    ? progress.interpolate({
+        inputRange: [-1, 0, 1],
+        outputRange: [1.2, 1, 1.2],
+        extrapolate: 'clamp',
+      })
+    : 1;
+  return (
+    <SafeAreaView edges={['bottom']} style={styles.navBarSafeAreaCustom}>
+      <Animated.View
+        style={[
+          styles.navBarContainerCustom,
+          { opacity: animatedOpacity, transform: [{ scale: animatedScale }] },
+        ]}
+      >
+        {/* Left side: Family (1), Lists (2) */}
+        <TouchableOpacity
+          accessibilityLabel="Família"
+          testID="tab-family"
+          style={styles.navBarItemCustom}
+          onPress={() => navigate('FAMILY')}
+          activeOpacity={0.7}
+        >
+          <FamilyIcon active={activeScreen === 'FAMILY'} />
+          {activeScreen === 'FAMILY' && <View style={styles.activeDot} />}
+        </TouchableOpacity>
+        <TouchableOpacity
+          accessibilityLabel="Listas"
+          testID="tab-lists"
+          style={styles.navBarItemCustom}
+          onPress={() => navigate('LISTS')}
+          activeOpacity={0.7}
+        >
+          <ListIcon active={activeScreen === 'LISTS'} />
+          {activeScreen === 'LISTS' && <View style={styles.activeDot} />}
+        </TouchableOpacity>
+        <View style={[styles.centerWrapper, { width: CENTER_WRAPPER, height: CENTER_WRAPPER }]}>
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.navBarCenterHalo,
+              { opacity: haloOpacity, transform: [{ scale: haloScale }] },
+            ]}
+          />
+          <Animated.View style={{ transform: [{ scale: centerScale }] }}>
+            <LinearGradient
+              colors={GRAY_ACTIVE}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[
+                styles.navBarCenterBtnCustom,
+                { width: CENTER_BTN, height: CENTER_BTN, borderRadius: CENTER_BTN / 2 },
+              ]}
+            >
+              <TouchableOpacity
+                style={styles.centerInnerTouchable}
+                onPress={onAddList}
+                activeOpacity={0.85}
+                accessibilityLabel="Adicionar lista"
+                testID="tab-add"
+              >
+                <PlusIcon />
+              </TouchableOpacity>
+            </LinearGradient>
+          </Animated.View>
+        </View>
+        {/* Right side: Dashboard (3), Profile (4) */}
+        <TouchableOpacity
+          accessibilityLabel="Dashboard"
+          testID="tab-dashboard"
+          style={styles.navBarItemCustom}
+          onPress={() => navigate('DASHBOARD')}
+          activeOpacity={0.7}
+        >
+          <HomeIcon active={activeScreen === 'DASHBOARD'} />
+          {activeScreen === 'DASHBOARD' && <View style={styles.activeDot} />}
+        </TouchableOpacity>
+        <TouchableOpacity
+          accessibilityLabel="Perfil"
+          testID="tab-profile"
+          style={styles.navBarItemCustom}
+          onPress={() => navigate('PROFILE')}
+          activeOpacity={0.7}
+        >
+          <ProfileIcon active={activeScreen === 'PROFILE'} />
+          {activeScreen === 'PROFILE' && <View style={styles.activeDot} />}
+        </TouchableOpacity>
+      </Animated.View>
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
-    navBarSafeAreaCustom: {
-        backgroundColor: 'transparent',
-    },
-    navBarContainerCustom: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: '#23232B',
-        borderRadius: 28,
-        marginHorizontal: isTablet ? 28 : 18,
-        marginBottom: Platform.OS === 'ios' ? 18 : 12,
-        paddingHorizontal: isTablet ? 22 : 18,
-        paddingTop: isTablet ? 10 : 8,
-        paddingBottom: isTablet ? 10 : 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.18,
-        shadowRadius: 12,
-        elevation: 10,
-    },
-    navBarItemCustom: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: isTablet ? 64 : 56,
-        position: 'relative',
-    },
-    navBarCenterBtnCustom: {
-        width: CENTER_BTN,
-        height: CENTER_BTN,
-        borderRadius: CENTER_BTN / 2,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#9CA3AF',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.25,
-        shadowRadius: 12,
-        elevation: 12,
-        alignSelf: 'center',
-    },
-    centerWrapper: {
-        width: CENTER_WRAPPER,
-        height: CENTER_WRAPPER,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    navBarCenterHalo: {
-        position: 'absolute',
-        width: CENTER_WRAPPER,
-        height: CENTER_WRAPPER,
-        borderRadius: CENTER_WRAPPER / 2,
-        backgroundColor: '#9CA3AF',
-        opacity: 0,
-        shadowColor: '#9CA3AF',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.6,
-        shadowRadius: 20,
-    },
-    iconWrap: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: ICON_SIZE,
-        height: ICON_SIZE,
-        borderRadius: ICON_SIZE / 2,
-    },
-    iconActiveWrap: {
-        shadowColor: '#9CA3AF',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.7,
-        shadowRadius: 8,
-        elevation: 8,
-        backgroundColor: 'rgba(156,163,175,0.08)',
-    },
-    centerInnerTouchable: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: CENTER_BTN / 2,
-    },
-    activeDot: {
-        position: 'absolute',
-        bottom: 6,
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-        backgroundColor: '#E5E7EB',
-        opacity: 0.9,
-    },
+  navBarSafeAreaCustom: {
+    backgroundColor: 'transparent',
+  },
+  navBarContainerCustom: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#23232B',
+    borderRadius: 28,
+    marginHorizontal: isTablet ? 28 : 18,
+    marginBottom: Platform.OS === 'ios' ? 18 : 12,
+    paddingHorizontal: isTablet ? 22 : 18,
+    paddingTop: isTablet ? 10 : 8,
+    paddingBottom: isTablet ? 10 : 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  navBarItemCustom: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: isTablet ? 64 : 56,
+    position: 'relative',
+  },
+  navBarCenterBtnCustom: {
+    width: CENTER_BTN,
+    height: CENTER_BTN,
+    borderRadius: CENTER_BTN / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#9CA3AF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 12,
+    alignSelf: 'center',
+  },
+  centerWrapper: {
+    width: CENTER_WRAPPER,
+    height: CENTER_WRAPPER,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navBarCenterHalo: {
+    position: 'absolute',
+    width: CENTER_WRAPPER,
+    height: CENTER_WRAPPER,
+    borderRadius: CENTER_WRAPPER / 2,
+    backgroundColor: '#9CA3AF',
+    opacity: 0,
+    shadowColor: '#9CA3AF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 20,
+  },
+  iconWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: ICON_SIZE,
+    height: ICON_SIZE,
+    borderRadius: ICON_SIZE / 2,
+  },
+  iconActiveWrap: {
+    shadowColor: '#9CA3AF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.7,
+    shadowRadius: 8,
+    elevation: 8,
+    backgroundColor: 'rgba(156,163,175,0.08)',
+  },
+  centerInnerTouchable: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: CENTER_BTN / 2,
+  },
+  activeDot: {
+    position: 'absolute',
+    bottom: 6,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#E5E7EB',
+    opacity: 0.9,
+  },
 });

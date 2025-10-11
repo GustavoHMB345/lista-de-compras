@@ -26,4 +26,22 @@ module.exports = defineConfig([
       },
     },
   },
+  // Detox e2e tests
+  {
+    files: ['e2e/**/*.e2e.*', 'e2e/**/*.test.*', 'e2e/**'],
+    languageOptions: {
+      globals: {
+        device: 'readonly',
+        element: 'readonly',
+        by: 'readonly',
+        expect: 'readonly',
+        describe: 'readonly',
+        it: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+      },
+    },
+  },
 ]);

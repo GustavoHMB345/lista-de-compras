@@ -48,16 +48,19 @@ export default function SwipeNavigator({
       ? edgeActivationWidth
       : Math.round(Math.min(40, Math.max(16, winWidth * 0.04)));
 
-  const animateTo = useCallback((toValue, config = {}) =>
-    new Promise((resolve) => {
-      Animated.spring(translateX, {
-        toValue,
-        useNativeDriver: true,
-        friction: 8,
-        tension: 90,
-        ...config,
-      }).start(() => resolve());
-    }), [translateX]);
+  const animateTo = useCallback(
+    (toValue, config = {}) =>
+      new Promise((resolve) => {
+        Animated.spring(translateX, {
+          toValue,
+          useNativeDriver: true,
+          friction: 8,
+          tension: 90,
+          ...config,
+        }).start(() => resolve());
+      }),
+    [translateX],
+  );
 
   const responder = useMemo(
     () =>
@@ -74,12 +77,15 @@ export default function SwipeNavigator({
           const rightEdge = startXRef.current >= winWidth - effectiveEdge;
           const edgeOk =
             edgeFrom === 'both'
-              ? (leftEdge || rightEdge)
+              ? leftEdge || rightEdge
               : edgeFrom === 'left'
-              ? leftEdge
-              : rightEdge;
+                ? leftEdge
+                : rightEdge;
           // Requer deslocamento horizontal suficiente, dentro da tolerância vertical.
-          const horizontalIntent = Math.abs(dx) > 14 && Math.abs(dx) > Math.abs(dy) * 1.15 && Math.abs(dy) <= verticalTolerance;
+          const horizontalIntent =
+            Math.abs(dx) > 14 &&
+            Math.abs(dx) > Math.abs(dy) * 1.15 &&
+            Math.abs(dy) <= verticalTolerance;
           const dirOk = (dx < 0 && allowSwipeLeft) || (dx > 0 && allowSwipeRight);
           return edgeOk && horizontalIntent && dirOk;
         },
@@ -103,8 +109,13 @@ export default function SwipeNavigator({
           const fastEnough = Math.abs(vx) > velocityThreshold;
           const farEnoughLeft = dx < -threshold;
           const farEnoughRight = dx > threshold;
-          const goLeft = (farEnoughLeft || (fastEnough && dx < 0)) && !isLast && !!onSwipeLeft && allowSwipeLeft;
-          const goRight = (farEnoughRight || (fastEnough && dx > 0)) && !isFirst && !!onSwipeRight && allowSwipeRight;
+          const goLeft =
+            (farEnoughLeft || (fastEnough && dx < 0)) && !isLast && !!onSwipeLeft && allowSwipeLeft;
+          const goRight =
+            (farEnoughRight || (fastEnough && dx > 0)) &&
+            !isFirst &&
+            !!onSwipeRight &&
+            allowSwipeRight;
 
           if (!navigatingRef.current && (goLeft || goRight)) {
             onSwipeStart && onSwipeStart();
@@ -153,13 +164,34 @@ export default function SwipeNavigator({
           onSwipeCancel && onSwipeCancel();
         },
       }),
-  [effectiveEdge, winWidth, isFirst, isLast, threshold, onSwipeLeft, onSwipeRight, velocityThreshold, dragFactor, progress, allowSwipeLeft, allowSwipeRight, edgeFrom, animateTo, translateX, verticalTolerance, multiTouchCancel, onSwipeCancel, onSwipeProgress, onSwipeStart]
+    [
+      effectiveEdge,
+      winWidth,
+      isFirst,
+      isLast,
+      threshold,
+      onSwipeLeft,
+      onSwipeRight,
+      velocityThreshold,
+      dragFactor,
+      progress,
+      allowSwipeLeft,
+      allowSwipeRight,
+      edgeFrom,
+      animateTo,
+      translateX,
+      verticalTolerance,
+      multiTouchCancel,
+      onSwipeCancel,
+      onSwipeProgress,
+      onSwipeStart,
+    ],
   );
 
   // Parallax: escala e opacidade variam levemente conforme o arraste
   const scale = parallax
     ? translateX.interpolate({
-    inputRange: [-winWidth, 0, winWidth],
+        inputRange: [-winWidth, 0, winWidth],
         outputRange: [1 - reduceScale, 1, 1 - reduceScale],
         extrapolate: 'clamp',
       })
@@ -167,14 +199,17 @@ export default function SwipeNavigator({
 
   const opacity = parallax
     ? translateX.interpolate({
-    inputRange: [-winWidth, 0, winWidth],
+        inputRange: [-winWidth, 0, winWidth],
         outputRange: [1 - reduceOpacity, 1, 1 - reduceOpacity],
         extrapolate: 'clamp',
       })
     : 1;
 
   return (
-    <Animated.View style={{ flex: 1, opacity, transform: [{ translateX }, { scale }] }} {...(enabled ? responder.panHandlers : {})}>
+    <Animated.View
+      style={{ flex: 1, opacity, transform: [{ translateX }, { scale }] }}
+      {...(enabled ? responder.panHandlers : {})}
+    >
       {children}
     </Animated.View>
   );

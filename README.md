@@ -1,6 +1,5 @@
 # SuperLista - App de Lista de Compras Familiar 🛒
 
-
 SuperLista é um aplicativo móvel completo, desenvolvido em React Native, para gerenciar listas de compras de forma colaborativa e inteligente. Ele permite que famílias criem e compartilhem listas, adicionem itens com preços e quantidades, e o mais importante: analisem a evolução dos preços dos produtos ao longo do tempo, ajudando a economizar e a fazer compras mais conscientes.
 
 O projeto foi desenvolvido com foco em uma experiência de usuário fluida e funciona de forma totalmente offline, salvando todos os dados localmente no dispositivo.
@@ -68,11 +67,11 @@ React Native Gifted Charts: Para a criação de gráficos interativos de barra e
 O código-fonte está organizado na pasta src para facilitar a manutenção e escalabilidade:
 
 /src
-|-- /components     # Componentes reutilizáveis (NavBar, Ícones)
-|-- /contexts       # Gerenciamento de estado global (DataContext)
-|-- /navigation     # Lógica de navegação entre telas (MainNavigator)
-|-- /screens        # Componentes de cada tela do app
-|-- /styles         # Arquivo de estilos globais
+|-- /components # Componentes reutilizáveis (NavBar, Ícones)
+|-- /contexts # Gerenciamento de estado global (DataContext)
+|-- /navigation # Lógica de navegação entre telas (MainNavigator)
+|-- /screens # Componentes de cada tela do app
+|-- /styles # Arquivo de estilos globais
 
 🚀 Como Rodar o Projeto
 Siga os passos abaixo para executar o projeto localmente:

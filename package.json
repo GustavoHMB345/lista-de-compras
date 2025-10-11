@@ -11,7 +11,9 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "e2e:build": "detox build -c android.emu.debug",
+    "e2e:test": "detox test -c android.emu.debug"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
@@ -57,6 +59,7 @@
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^29.5.12",
     "@types/react": "~19.0.10",
+    "detox": "^20.43.0",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~9.2.0",
     "eslint-config-prettier": "^9.1.0",
@@ -78,5 +81,30 @@
     "*.{json,md,css,scss,mdx}": [
       "prettier --write"
     ]
+  },
+  "detox": {
+    "testRunner": "jest",
+    "runnerConfig": "e2e/jest.config.js",
+    "apps": {
+      "android.debug": {
+        "type": "android.apk",
+        "binaryPath": "android/app/build/outputs/apk/debug/app-debug.apk",
+        "build": "echo \"Use Expo run:expo to build debug APK if needed\""
+      }
+    },
+    "devices": {
+      "android.emulator": {
+        "type": "android.emulator",
+        "device": {
+          "avdName": "Pixel_4_API_33"
+        }
+      }
+    },
+    "configurations": {
+      "android.emu.debug": {
+        "device": "android.emulator",
+        "app": "android.debug"
+      }
+    }
   }
 }

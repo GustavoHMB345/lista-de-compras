@@ -23,10 +23,11 @@ export default class ErrorBoundary extends React.Component {
         <ScrollView contentContainerStyle={styles.container}>
           <Text style={styles.title}>⚠️ Erro de Renderização</Text>
           <Text style={styles.message}>{String(error.message || error)}</Text>
-          {info?.componentStack ? (
-            <Text style={styles.stack}>{info.componentStack}</Text>
-          ) : null}
-          <Text style={styles.hint}>O erro original é mostrado aqui para evitar a falha de symbolication que gera o caminho "&lt;anonymous&gt;". Corrija a causa e reinicie o bundle.</Text>
+          {info?.componentStack ? <Text style={styles.stack}>{info.componentStack}</Text> : null}
+          <Text style={styles.hint}>
+            O erro original é mostrado aqui para evitar a falha de symbolication que gera o caminho
+            &quot;&lt;anonymous&gt;&quot;. Corrija a causa e reinicie o bundle.
+          </Text>
         </ScrollView>
       );
     }
