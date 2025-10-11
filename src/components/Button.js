@@ -15,9 +15,16 @@ export default function Button({
   ...props
 }) {
   const variantStyle = BUTTON_VARIANTS[variant] || BUTTON_VARIANTS.primary;
+  const labelStyle = [
+    TEXT_BUTTON,
+    // Texto escuro em botões "light" (fundo branco)
+    variant === 'light' && { color: '#111827' },
+    textStyle,
+  ];
+  const rippleColor = variant === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.15)';
   return (
     <Pressable
-      android_ripple={getRipple('rgba(255,255,255,0.15)')}
+      android_ripple={getRipple(rippleColor)}
       style={({ pressed }) => [
         BUTTON_BASE,
         variantStyle,
@@ -36,7 +43,7 @@ export default function Button({
       ) : children ? (
         children
       ) : (
-        <Text style={[TEXT_BUTTON, textStyle]}>{title}</Text>
+        <Text style={labelStyle}>{title}</Text>
       )}
     </Pressable>
   );

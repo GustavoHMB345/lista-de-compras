@@ -1,7 +1,8 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Image, StyleSheet, Text, View } from 'react-native';
+import Button from '../components/Button';
 
 const { width } = Dimensions.get('window');
 
@@ -19,18 +20,22 @@ export default function WelcomeScreen() {
           style={styles.image}
           resizeMode="contain"
         />
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: '#3B82F6' }]}
+        <Button
+          title="Entrar"
+          variant="primary"
           onPress={() => router.push('/sign-in')}
-        >
-          <Text style={styles.buttonText}>Entrar</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: '#10B981' }]}
+          style={{ width: '100%', marginTop: 10 }}
+          testID="welcomeSignIn"
+          accessibilityLabel="Entrar"
+        />
+        <Button
+          title="Criar conta"
+          variant="success"
           onPress={() => router.push('/sign-up')}
-        >
-          <Text style={styles.buttonText}>Criar conta</Text>
-        </TouchableOpacity>
+          style={{ width: '100%', marginTop: 10 }}
+          testID="welcomeSignUp"
+          accessibilityLabel="Criar conta"
+        />
       </View>
     </LinearGradient>
   );
@@ -53,14 +58,4 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: '800', color: '#111827', textAlign: 'center' },
   subtitle: { fontSize: 14, color: '#4B5563', marginTop: 8, textAlign: 'center' },
   image: { width: '80%', height: 140, marginVertical: 16, opacity: 0.85 },
-  button: {
-    width: '100%',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 10,
-    minHeight: 44,
-  },
-  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
 });

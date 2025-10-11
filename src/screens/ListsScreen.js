@@ -8,7 +8,6 @@ import {
   Dimensions,
   FlatList,
   Platform,
-  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -16,15 +15,14 @@ import {
   View,
 } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AddListModal from '../components/AddListModal';
 import Button from '../components/Button';
 import Chip from '../components/Chip';
-import { CategoryIcon } from '../components/Icons';
+import { CategoryIcon, PlusIcon } from '../components/Icons';
 import SwipeNavigator from '../components/SwipeNavigator';
 import TabBar from '../components/TabBar';
 import { DataContext } from '../contexts/DataContext';
-import { getRipple } from '../styles/theme';
 
 const { width } = Dimensions.get('window');
 const __fs = Math.min(1.2, Math.max(0.9, width / 390));
@@ -143,6 +141,22 @@ const listsStyles = StyleSheet.create({
   dateButtonText: { fontSize: 14 * __fs, color: '#111827' },
   listHeaderLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   listHeaderLeftTextWrap: { marginLeft: 10, flex: 1 },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 24,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
+    overflow: 'hidden',
+  },
 });
 
 // Priority color tokens (inspired by Tailwind classes from the HTML reference)
@@ -157,6 +171,7 @@ function ListsScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const router = useRouter();
   const progress = useState(new Animated.Value(0))[0];
+  const insets = useSafeAreaInsets();
 
   // Filtra listas do usuário logado
   const userLists = shoppingLists.filter(
@@ -300,22 +315,22 @@ function ListsScreen() {
   const renderRightActions = useCallback(
     (list) => (
       <View style={{ flexDirection: 'row', height: '100%' }}>
-        <TouchableOpacity
-          style={{
-            backgroundColor: '#F87171',
-            justifyContent: 'center',
-            paddingHorizontal: 16,
-            borderTopRightRadius: 14,
-            borderBottomRightRadius: 14,
-          }}
+        <Button
+          title="Apagar"
+          variant="danger"
           onPress={() => {
             const filtered = shoppingLists.filter((l) => l.id !== list.id);
             updateLists(filtered);
           }}
-          activeOpacity={0.85}
-        >
-          <Text style={{ color: '#fff', fontWeight: 'bold' }}>Apagar</Text>
-        </TouchableOpacity>
+          style={{
+            height: '100%',
+            borderTopRightRadius: 14,
+            borderBottomRightRadius: 14,
+            paddingHorizontal: 16,
+          }}
+          accessibilityLabel="Apagar lista"
+          testID={`listSwipeDelete-${list.id}`}
+        />
       </View>
     ),
     [shoppingLists, updateLists],
@@ -324,14 +339,9 @@ function ListsScreen() {
   const renderLeftActions = useCallback(
     (list) => (
       <View style={{ flexDirection: 'row', height: '100%' }}>
-        <TouchableOpacity
-          style={{
-            backgroundColor: '#111827',
-            justifyContent: 'center',
-            paddingHorizontal: 16,
-            borderTopLeftRadius: 14,
-            borderBottomLeftRadius: 14,
-          }}
+        <Button
+          title="Concluir"
+          variant="success"
           onPress={() => {
             // Toggle completed by marking all items purchased or clearing purchases
             const items = list.items || [];
@@ -355,10 +365,15 @@ function ListsScreen() {
             );
             updateLists(updated);
           }}
-          activeOpacity={0.85}
-        >
-          <Text style={{ color: '#fff', fontWeight: 'bold' }}>{/* toggle */}Concluir</Text>
-        </TouchableOpacity>
+          style={{
+            height: '100%',
+            borderTopLeftRadius: 14,
+            borderBottomLeftRadius: 14,
+            paddingHorizontal: 16,
+          }}
+          accessibilityLabel="Concluir lista"
+          testID={`listSwipeComplete-${list.id}`}
+        />
       </View>
     ),
     [shoppingLists, updateLists],
@@ -477,15 +492,15 @@ function ListsScreen() {
                       onChangeText={setDateFilter}
                     />
                   ) : (
-                    <Pressable
-                      style={listsStyles.dateButton}
+                    <Button
+                      variant="light"
+                      title={dateFilter ? `${dateFilter}` : 'Escolher data'}
                       onPress={() => setShowDatePicker(true)}
-                      android_ripple={getRipple('rgba(0,0,0,0.08)')}
-                    >
-                      <Text style={listsStyles.dateButtonText}>
-                        {dateFilter ? `${dateFilter}` : 'Escolher data'}
-                      </Text>
-                    </Pressable>
+                      style={[listsStyles.dateButton, { alignSelf: 'flex-start' }]}
+                      textStyle={listsStyles.dateButtonText}
+                      testID="datePickerButton"
+                      accessibilityLabel="Escolher data"
+                    />
                   )}
                 </View>
                 <View style={[listsStyles.formCol, { maxWidth: 140, alignSelf: 'flex-end' }]}>
@@ -545,6 +560,24 @@ function ListsScreen() {
           </View>
         </LinearGradient>
       </SwipeNavigator>
+
+      {/* Floating Action Button: criar nova lista */}
+      <TouchableOpacity
+        onPress={() => setModalVisible(true)}
+        activeOpacity={0.85}
+        style={[listsStyles.fab, { bottom: Math.max(24, (insets?.bottom || 0) + 16) }]}
+        accessibilityRole="button"
+        accessibilityLabel="Criar nova lista"
+        testID="fabAddList"
+      >
+        <LinearGradient
+          colors={['#4F46E5', '#2563EB']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFillObject}
+        />
+        <PlusIcon />
+      </TouchableOpacity>
 
       {currentUser && (
         <AddListModal

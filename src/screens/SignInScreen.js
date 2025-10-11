@@ -2,6 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useContext, useState } from 'react';
 import { Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import Button from '../components/Button';
 import { DataContext } from '../contexts/DataContext';
 
 const { width } = Dimensions.get('window');
@@ -11,15 +12,21 @@ export default function SignInScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleSignIn = async () => {
     setError('');
-    const result = await login(email, password);
-    if (result.success) {
-      router.replace('/dashboard');
-    } else {
-      setError(result.message || 'Email ou senha inválidos.');
+    setLoading(true);
+    try {
+      const result = await login(email, password);
+      if (result.success) {
+        router.replace('/dashboard');
+      } else {
+        setError(result.message || 'Email ou senha inválidos.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -49,24 +56,36 @@ export default function SignInScreen() {
           />
         </View>
         {!!error && <Text style={styles.error}>{error}</Text>}
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: '#3B82F6' }]}
+        <Button
+          title="Entrar"
+          variant="primary"
           onPress={handleSignIn}
-        >
-          <Text style={styles.buttonText}>Entrar</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: '#6366F1', marginTop: 8 }]}
+          style={{ width: '100%', marginTop: 10 }}
+          loading={loading}
+          disabled={loading}
+          testID="signInSubmit"
+          accessibilityLabel="Entrar"
+        />
+        <Button
+          title="Usuário de teste"
+          variant="secondary"
           onPress={async () => {
             setEmail('teste@teste.com');
             setPassword('123456');
-            const r = await login('teste@teste.com', '123456');
-            if (r.success) router.replace('/dashboard');
-            else setError('Usuário de teste não encontrado.');
+            setLoading(true);
+            try {
+              const r = await login('teste@teste.com', '123456');
+              if (r.success) router.replace('/dashboard');
+              else setError('Usuário de teste não encontrado.');
+            } finally {
+              setLoading(false);
+            }
           }}
-        >
-          <Text style={styles.buttonText}>Usuário de teste</Text>
-        </TouchableOpacity>
+          style={{ width: '100%', marginTop: 10 }}
+          disabled={loading}
+          testID="signInTestUser"
+          accessibilityLabel="Entrar com usuário de teste"
+        />
         <TouchableOpacity onPress={() => router.push('/sign-up')}>
           <Text style={styles.link}>Não tem conta? Cadastre-se</Text>
         </TouchableOpacity>
@@ -107,15 +126,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   error: { color: '#B91C1C', textAlign: 'center', marginBottom: 8 },
-  button: {
-    width: '100%',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 10,
-    minHeight: 44,
-  },
-  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
   link: { marginTop: 12, color: '#6366F1', fontWeight: '500', textAlign: 'center' },
 });

@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useContext, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -15,7 +15,7 @@ import {
   View,
 } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Context & components
 import AddListModal from '../components/AddListModal';
@@ -41,6 +41,7 @@ const __fs = typeof globalThis !== 'undefined' && globalThis.__fs ? globalThis._
 
 // Main screen component
 function ListDetailScreen(props) {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const params = useLocalSearchParams?.() || {};
   // Aceita 'id' (padrão) ou legado 'listId'
@@ -691,14 +692,16 @@ function ListDetailScreen(props) {
                       alignItems: 'center',
                     }}
                   >
-                    {
+                    <Text style={{ color: '#374151', fontWeight: '600' }}>
                       {
-                        all: 'Tudo',
-                        '7d': 'Últimos 7 dias',
-                        '30d': 'Últimos 30 dias',
-                        '6m': 'Últimos 6 meses',
-                      }[historyRange]
-                    }
+                        {
+                          all: 'Tudo',
+                          '7d': 'Últimos 7 dias',
+                          '30d': 'Últimos 30 dias',
+                          '6m': 'Últimos 6 meses',
+                        }[historyRange]
+                      }
+                    </Text>
                   </View>
                   {!!priceTrend && (
                     <Text
@@ -862,20 +865,29 @@ function ListDetailScreen(props) {
                           <Text style={detailStyles.memberName}>
                             {member.displayName || member.email}
                           </Text>
-                          <TouchableOpacity
-                            style={[
-                              detailStyles.memberButton,
-                              inList
-                                ? detailStyles.memberButtonRemove
-                                : detailStyles.memberButtonAdd,
-                            ]}
+                          <Button
+                            title={inList ? 'Remover' : 'Adicionar'}
+                            variant="light"
                             onPress={() => handleMemberToggle(member.id)}
-                            activeOpacity={0.8}
-                          >
-                            <Text style={detailStyles.memberButtonText}>
-                              {inList ? 'Remover' : 'Adicionar'}
-                            </Text>
-                          </TouchableOpacity>
+                            style={{
+                              paddingVertical: 6,
+                              paddingHorizontal: 10,
+                              borderRadius: 10,
+                              minHeight: 32,
+                              alignSelf: 'center',
+                              backgroundColor: inList ? '#FEE2E2' : '#D1FAE5',
+                              borderWidth: 0,
+                            }}
+                            textStyle={{
+                              fontSize: 12 * __fs,
+                              color: inList ? '#991B1B' : '#111827',
+                              fontWeight: '600',
+                            }}
+                            testID={`memberToggle-${member.id}`}
+                            accessibilityLabel={`${inList ? 'Remover' : 'Adicionar'} membro ${
+                              member.displayName || member.email
+                            }`}
+                          />
                         </View>
                       );
                     })}
@@ -910,18 +922,43 @@ function ListDetailScreen(props) {
         }}
       />
       {recentlyDeleted && (
-        <View style={detailStyles.snackbar} pointerEvents="box-none">
-          <TouchableOpacity
-            onPress={undoDelete}
-            activeOpacity={0.85}
-            style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}
-          >
+        <View
+          style={[detailStyles.snackbar, { bottom: Math.max(24, (insets?.bottom || 0) + 12) }]}
+          pointerEvents="box-none"
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
             <Text style={detailStyles.snackbarText}>Item removido</Text>
-            <Text style={detailStyles.snackbarUndo}> DESFAZER</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setRecentlyDeleted(null)} style={{ paddingLeft: 12 }}>
-            <Text style={[detailStyles.snackbarUndo, { color: '#fff' }]}>×</Text>
-          </TouchableOpacity>
+            <Button
+              variant="light"
+              title="DESFAZER"
+              onPress={undoDelete}
+              style={{
+                backgroundColor: 'transparent',
+                borderWidth: 0,
+                paddingVertical: 6,
+                paddingHorizontal: 8,
+                minHeight: 0,
+              }}
+              textStyle={{ color: '#60A5FA', fontSize: 14 * __fs, fontWeight: '700' }}
+              testID="snackbarUndo"
+              accessibilityLabel="Desfazer remoção"
+            />
+          </View>
+          <Button
+            variant="light"
+            title="×"
+            onPress={() => setRecentlyDeleted(null)}
+            style={{
+              backgroundColor: 'transparent',
+              borderWidth: 0,
+              paddingLeft: 12,
+              paddingVertical: 6,
+              minHeight: 0,
+            }}
+            textStyle={{ color: '#fff', fontSize: 16 * __fs, fontWeight: '700' }}
+            testID="snackbarClose"
+            accessibilityLabel="Fechar alerta"
+          />
         </View>
       )}
     </SafeAreaView>

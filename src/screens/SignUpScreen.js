@@ -2,6 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useContext, useState } from 'react';
 import { Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import Button from '../components/Button';
 import { DataContext } from '../contexts/DataContext';
 
 const { width } = Dimensions.get('window');
@@ -12,6 +13,7 @@ export default function SignUpScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleSignUp = async () => {
@@ -20,11 +22,16 @@ export default function SignUpScreen() {
       setError('Nome é obrigatório.');
       return;
     }
-    const result = await register(email, password, name);
-    if (result.success) {
-      router.replace('/dashboard');
-    } else {
-      setError(result.message || 'Erro ao registrar.');
+    setLoading(true);
+    try {
+      const result = await register(email, password, name);
+      if (result.success) {
+        router.replace('/dashboard');
+      } else {
+        setError(result.message || 'Erro ao registrar.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -63,12 +70,16 @@ export default function SignUpScreen() {
           />
         </View>
         {!!error && <Text style={styles.error}>{error}</Text>}
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: '#10B981' }]}
+        <Button
+          title="Cadastrar"
+          variant="success"
           onPress={handleSignUp}
-        >
-          <Text style={styles.buttonText}>Cadastrar</Text>
-        </TouchableOpacity>
+          style={{ width: '100%', marginTop: 10 }}
+          loading={loading}
+          disabled={loading}
+          testID="signUpSubmit"
+          accessibilityLabel="Cadastrar"
+        />
         <TouchableOpacity onPress={() => router.push('/sign-in')}>
           <Text style={styles.link}>Já tem conta? Entrar</Text>
         </TouchableOpacity>
@@ -109,15 +120,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   error: { color: '#B91C1C', textAlign: 'center', marginBottom: 8 },
-  button: {
-    width: '100%',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 10,
-    minHeight: 44,
-  },
-  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
   link: { marginTop: 12, color: '#6366F1', fontWeight: '500', textAlign: 'center' },
 });

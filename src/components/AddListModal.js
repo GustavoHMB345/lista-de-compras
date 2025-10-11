@@ -7,7 +7,6 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -401,268 +400,277 @@ export default function AddListModal({ visible, onClose, onCreate }) {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.card}>
-          <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-            <Text style={styles.title}>Nova Lista de Compras</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Nome da lista"
-              value={name}
-              onChangeText={(v) => {
-                setName(v);
-                if (nameError) validateName(v);
-              }}
-            />
-            {!!nameError && <Text style={styles.errorText}>{nameError}</Text>}
-            <TextInput
-              style={styles.input}
-              placeholder="Descrição (opcional)"
-              value={desc}
-              onChangeText={setDesc}
-            />
-            <Text style={styles.label}>Categoria da Lista</Text>
-            <View style={styles.categoryRow}>
-              {LIST_CATEGORIES.map((cat) => (
-                <TouchableOpacity
-                  key={cat.key}
-                  style={[
-                    styles.categoryButton,
-                    category === cat.key && styles.categoryButtonActive,
-                  ]}
-                  onPress={() => setCategory(cat.key)}
-                  activeOpacity={0.85}
-                >
-                  <CategoryIcon type={cat.key} size={40} neutral />
-                  <Text
-                    style={[
-                      styles.categoryLabel,
-                      category === cat.key && styles.categoryLabelActive,
-                    ]}
-                  >
-                    {cat.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <Text style={styles.label}>Categoria do Item</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingVertical: 4, paddingRight: 6 }}
-            >
-              {Object.entries(ITEM_CATEGORIES).map(([key, cfg]) => (
-                <TouchableOpacity
-                  key={key}
-                  onPress={() => setItemCategory(key)}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    backgroundColor: itemCategory === key ? '#4f46e5' : '#fff',
-                    borderWidth: 1,
-                    borderColor: itemCategory === key ? '#4f46e5' : '#e5e7eb',
-                    paddingHorizontal: 12,
-                    paddingVertical: 8,
-                    borderRadius: 12,
-                    marginRight: 8,
+          <FlatList
+            data={products}
+            keyExtractor={(item) => item.id}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            ListHeaderComponent={
+              <View>
+                <Text style={styles.title}>Nova Lista de Compras</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Nome da lista"
+                  value={name}
+                  onChangeText={(v) => {
+                    setName(v);
+                    if (nameError) validateName(v);
                   }}
-                  activeOpacity={0.85}
-                >
+                />
+                {!!nameError && <Text style={styles.errorText}>{nameError}</Text>}
+                <TextInput
+                  style={styles.input}
+                  placeholder="Descrição (opcional)"
+                  value={desc}
+                  onChangeText={setDesc}
+                />
+                <Text style={styles.label}>Categoria da Lista</Text>
+                <View style={styles.categoryRow}>
+                  {LIST_CATEGORIES.map((cat) => (
+                    <TouchableOpacity
+                      key={cat.key}
+                      style={[
+                        styles.categoryButton,
+                        category === cat.key && styles.categoryButtonActive,
+                      ]}
+                      onPress={() => setCategory(cat.key)}
+                      activeOpacity={0.85}
+                    >
+                      <CategoryIcon type={cat.key} size={40} neutral />
+                      <Text
+                        style={[
+                          styles.categoryLabel,
+                          category === cat.key && styles.categoryLabelActive,
+                        ]}
+                      >
+                        {cat.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <Text style={styles.label}>Categoria do Item</Text>
+                <FlatList
+                  data={Object.entries(ITEM_CATEGORIES)}
+                  keyExtractor={([key]) => key}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ paddingVertical: 4, paddingRight: 6 }}
+                  renderItem={({ item }) => {
+                    const [key, cfg] = item;
+                    return (
+                      <TouchableOpacity
+                        onPress={() => setItemCategory(key)}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          backgroundColor: itemCategory === key ? '#4f46e5' : '#fff',
+                          borderWidth: 1,
+                          borderColor: itemCategory === key ? '#4f46e5' : '#e5e7eb',
+                          paddingHorizontal: 12,
+                          paddingVertical: 8,
+                          borderRadius: 12,
+                          marginRight: 8,
+                        }}
+                        activeOpacity={0.85}
+                      >
+                        <Text
+                          style={{
+                            color: itemCategory === key ? '#fff' : '#111827',
+                            fontWeight: '600',
+                            fontSize: 13 * fs,
+                          }}
+                        >
+                          {cfg.emoji} {cfg.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  }}
+                />
+                <Text style={[styles.label, { marginTop: 4 }]}>Adicionar Produtos</Text>
+                <View style={styles.productRow}>
+                  <TextInput
+                    style={[styles.input, { flex: 2, marginRight: 4 }]}
+                    placeholder="Nome do produto"
+                    value={productName}
+                    onChangeText={setProductName}
+                  />
+                  <TextInput
+                    style={[styles.input, { flex: 1, marginRight: 4 }]}
+                    placeholder="Qtd."
+                    value={productQty}
+                    onChangeText={setProductQty}
+                    keyboardType="number-pad"
+                  />
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        flex: 1,
+                        borderColor: productError ? '#ef4444' : '#E5E7EB',
+                        borderWidth: 1,
+                      },
+                    ]}
+                    placeholder="Preço"
+                    value={productPrice}
+                    onChangeText={setProductPrice}
+                    keyboardType="numeric"
+                  />
+                  <Button
+                    title="+"
+                    onPress={handleAddProduct}
+                    style={[
+                      styles.addProductButton,
+                      { minHeight: 44, minWidth: 44, paddingVertical: 10, paddingHorizontal: 10 },
+                    ]}
+                    textStyle={{ fontSize: 18 * fs }}
+                  />
+                </View>
+                {!!productError && (
                   <Text
                     style={{
-                      color: itemCategory === key ? '#fff' : '#111827',
-                      fontWeight: '600',
-                      fontSize: 13 * fs,
+                      color: '#ef4444',
+                      marginTop: -4,
+                      marginBottom: 8,
+                      fontSize: 12 * fs,
+                      textAlign: 'center',
                     }}
                   >
-                    {cfg.emoji} {cfg.name}
+                    {productError}
                   </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            <Text style={[styles.label, { marginTop: 4 }]}>Adicionar Produtos</Text>
-            <View style={styles.productRow}>
-              <TextInput
-                style={[styles.input, { flex: 2, marginRight: 4 }]}
-                placeholder="Nome do produto"
-                value={productName}
-                onChangeText={setProductName}
-              />
-              <TextInput
-                style={[styles.input, { flex: 1, marginRight: 4 }]}
-                placeholder="Qtd."
-                value={productQty}
-                onChangeText={setProductQty}
-                keyboardType="number-pad"
-              />
-              <TextInput
-                style={[
-                  styles.input,
-                  { flex: 1, borderColor: productError ? '#ef4444' : '#E5E7EB', borderWidth: 1 },
-                ]}
-                placeholder="Preço"
-                value={productPrice}
-                onChangeText={setProductPrice}
-                keyboardType="numeric"
-              />
-              <Button
-                title="+"
-                onPress={handleAddProduct}
-                style={[
-                  styles.addProductButton,
-                  { minHeight: 44, minWidth: 44, paddingVertical: 10, paddingHorizontal: 10 },
-                ]}
-                textStyle={{ fontSize: 18 * fs }}
-              />
-            </View>
-            {!!productError && (
-              <Text
-                style={{
-                  color: '#ef4444',
-                  marginTop: -4,
-                  marginBottom: 8,
-                  fontSize: 12 * fs,
-                  textAlign: 'center',
-                }}
-              >
-                {productError}
-              </Text>
-            )}
-            {products.length > 0 && (
-              <TouchableOpacity
-                onPress={clearAllItems}
-                activeOpacity={0.8}
-                style={{ alignSelf: 'flex-end', marginBottom: 6 }}
-              >
-                <Text style={{ color: '#ef4444', fontSize: 12 * fs, fontWeight: '600' }}>
-                  Limpar todos
-                </Text>
-              </TouchableOpacity>
-            )}
-
-            <View style={styles.totalsRow}>
-              <Text style={styles.totalsText}>
-                {productsCount} {productsCount === 1 ? 'produto' : 'produtos'}
-              </Text>
-              <Text style={styles.totalsText}>Estimado: R$ {estimatedTotal.toFixed(2)}</Text>
-            </View>
-
-            <FlatList
-              data={products}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => {
-                const cat = ITEM_CATEGORIES[item.category] || ITEM_CATEGORIES.outros;
-                const renderRight = (progress, dragX) => {
-                  const scale = dragX.interpolate({
-                    inputRange: [-90, 0],
-                    outputRange: [1, 0.7],
-                    extrapolate: 'clamp',
-                  });
-                  const opacity = progress.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.4, 1],
-                  });
-                  return (
-                    <Animated.View
-                      style={[styles.swipeDelete, { transform: [{ scale }], opacity }]}
-                    >
-                      <Text style={styles.swipeDeleteText}>Remover</Text>
-                    </Animated.View>
-                  );
-                };
-                return (
-                  <Swipeable
-                    renderRightActions={renderRight}
-                    rightThreshold={40}
-                    overshootRight={false}
-                    onSwipeableOpen={(dir) => {
-                      if (dir === 'right') handleRemoveProduct(item.id);
-                    }}
+                )}
+                {products.length > 0 && (
+                  <TouchableOpacity
+                    onPress={clearAllItems}
+                    activeOpacity={0.8}
+                    style={{ alignSelf: 'flex-end', marginBottom: 6 }}
                   >
-                    <View style={styles.productItem}>
-                      <View style={styles.itemCatPill}>
-                        <Text style={{ fontSize: 13 * fs }}>{cat.emoji}</Text>
-                      </View>
-                      {editingItemId === item.id ? (
-                        <TextInput
-                          style={[
-                            styles.itemName,
-                            { backgroundColor: '#F1F5F9', paddingHorizontal: 6, borderRadius: 8 },
-                          ]}
-                          value={editingItemName}
-                          onChangeText={setEditingItemName}
-                          onBlur={commitEditItemName}
-                          returnKeyType="done"
-                          onSubmitEditing={commitEditItemName}
-                          autoFocus
-                        />
-                      ) : (
-                        <TouchableOpacity
-                          onPress={() => beginEditItemName(item)}
-                          activeOpacity={0.7}
-                          style={{ flex: 1 }}
-                        >
-                          <Text style={styles.itemName} numberOfLines={2}>
-                            {item.name}
-                          </Text>
-                        </TouchableOpacity>
-                      )}
-                      <View style={styles.qtyBox}>
-                        <TouchableOpacity
-                          onPress={() => handleDecQty(item.id)}
-                          style={styles.qtyBtn}
-                          activeOpacity={0.7}
-                        >
-                          <Text style={styles.qtyBtnText}>-</Text>
-                        </TouchableOpacity>
-                        <Text style={styles.qtyValue}>{item.quantity}</Text>
-                        <TouchableOpacity
-                          onPress={() => handleIncQty(item.id)}
-                          style={styles.qtyBtn}
-                          activeOpacity={0.7}
-                        >
-                          <Text style={styles.qtyBtnText}>+</Text>
-                        </TouchableOpacity>
-                      </View>
-                      <View style={styles.inlinePriceBox}>
-                        <Text style={{ color: '#64748B', marginRight: 4, fontSize: 12 * fs }}>
-                          R$
-                        </Text>
-                        <TextInput
-                          style={styles.inlinePriceInput}
-                          value={String(item.price || '')}
-                          onChangeText={(v) => handlePriceChange(item.id, v)}
-                          keyboardType="numeric"
-                        />
-                      </View>
-                    </View>
-                  </Swipeable>
+                    <Text style={{ color: '#ef4444', fontSize: 12 * fs, fontWeight: '600' }}>
+                      Limpar todos
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
+                <View style={styles.totalsRow}>
+                  <Text style={styles.totalsText}>
+                    {productsCount} {productsCount === 1 ? 'produto' : 'produtos'}
+                  </Text>
+                  <Text style={styles.totalsText}>Estimado: R$ {estimatedTotal.toFixed(2)}</Text>
+                </View>
+              </View>
+            }
+            renderItem={({ item }) => {
+              const cat = ITEM_CATEGORIES[item.category] || ITEM_CATEGORIES.outros;
+              const renderRight = (progress, dragX) => {
+                const scale = dragX.interpolate({
+                  inputRange: [-90, 0],
+                  outputRange: [1, 0.7],
+                  extrapolate: 'clamp',
+                });
+                const opacity = progress.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.4, 1],
+                });
+                return (
+                  <Animated.View style={[styles.swipeDelete, { transform: [{ scale }], opacity }]}>
+                    <Text style={styles.swipeDeleteText}>Remover</Text>
+                  </Animated.View>
                 );
-              }}
-              ListEmptyComponent={
-                <Text
-                  style={{
-                    color: '#6B7280',
-                    textAlign: 'center',
-                    marginVertical: 4,
-                    fontSize: 13 * fs,
+              };
+              return (
+                <Swipeable
+                  renderRightActions={renderRight}
+                  rightThreshold={40}
+                  overshootRight={false}
+                  onSwipeableOpen={(dir) => {
+                    if (dir === 'right') handleRemoveProduct(item.id);
                   }}
                 >
-                  Nenhum produto adicionado.
-                </Text>
-              }
-              style={{ maxHeight: listMaxHeight, marginBottom: 8 }}
-            />
-
-            <View style={styles.buttonRow}>
-              <Button variant="danger" title="Cancelar" onPress={onClose} />
-              <Button
-                variant={canCreate ? 'primary' : 'gray'}
-                title="Criar"
-                onPress={handleCreate}
-                disabled={!canCreate}
-              />
-            </View>
-          </ScrollView>
+                  <View style={styles.productItem}>
+                    <View style={styles.itemCatPill}>
+                      <Text style={{ fontSize: 13 * fs }}>{cat.emoji}</Text>
+                    </View>
+                    {editingItemId === item.id ? (
+                      <TextInput
+                        style={[
+                          styles.itemName,
+                          { backgroundColor: '#F1F5F9', paddingHorizontal: 6, borderRadius: 8 },
+                        ]}
+                        value={editingItemName}
+                        onChangeText={setEditingItemName}
+                        onBlur={commitEditItemName}
+                        returnKeyType="done"
+                        onSubmitEditing={commitEditItemName}
+                        autoFocus
+                      />
+                    ) : (
+                      <TouchableOpacity
+                        onPress={() => beginEditItemName(item)}
+                        activeOpacity={0.7}
+                        style={{ flex: 1 }}
+                      >
+                        <Text style={styles.itemName} numberOfLines={2}>
+                          {item.name}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                    <View style={styles.qtyBox}>
+                      <TouchableOpacity
+                        onPress={() => handleDecQty(item.id)}
+                        style={styles.qtyBtn}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.qtyBtnText}>-</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.qtyValue}>{item.quantity}</Text>
+                      <TouchableOpacity
+                        onPress={() => handleIncQty(item.id)}
+                        style={styles.qtyBtn}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.qtyBtnText}>+</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <View style={styles.inlinePriceBox}>
+                      <Text style={{ color: '#64748B', marginRight: 4, fontSize: 12 * fs }}>
+                        R$
+                      </Text>
+                      <TextInput
+                        style={styles.inlinePriceInput}
+                        value={String(item.price || '')}
+                        onChangeText={(v) => handlePriceChange(item.id, v)}
+                        keyboardType="numeric"
+                      />
+                    </View>
+                  </View>
+                </Swipeable>
+              );
+            }}
+            ListEmptyComponent={
+              <Text
+                style={{
+                  color: '#6B7280',
+                  textAlign: 'center',
+                  marginVertical: 4,
+                  fontSize: 13 * fs,
+                }}
+              >
+                Nenhum produto adicionado.
+              </Text>
+            }
+            ListFooterComponent={
+              <View style={[styles.buttonRow, { paddingBottom: 4 }]}>
+                <Button variant="danger" title="Cancelar" onPress={onClose} />
+                <Button
+                  variant={canCreate ? 'primary' : 'gray'}
+                  title="Criar"
+                  onPress={handleCreate}
+                  disabled={!canCreate}
+                />
+              </View>
+            }
+            contentContainerStyle={{ paddingBottom: 8 }}
+          />
         </View>
       </KeyboardAvoidingView>
     </Modal>

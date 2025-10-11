@@ -1,9 +1,7 @@
 import { BlurView } from 'expo-blur';
-import React from 'react';
-import { Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { getRipple } from '../styles/theme';
 
 // Top subtle tab bar (dashboard-style). Props: active, onNavigate(screen)
 export default function TabBar({ active, onNavigate, onAddList }) {
@@ -16,9 +14,6 @@ export default function TabBar({ active, onNavigate, onAddList }) {
           style={styles.blur}
         >
           <View style={styles.topWrap}>
-            <Text style={styles.brand}>
-              🛒 <Text style={{ color: '#2563EB' }}>Super Lista</Text>
-            </Text>
             <View style={styles.tabsRow}>
               <IconTab
                 active={active === 'FAMILY'}
@@ -44,16 +39,6 @@ export default function TabBar({ active, onNavigate, onAddList }) {
                 onPress={() => onNavigate('PROFILE')}
                 icon={(c) => <ProfileIcon color={c} />}
               />
-              {active === 'LISTS' && onAddList && (
-                <Pressable
-                  onPress={onAddList}
-                  android_ripple={getRipple('rgba(255,255,255,0.18)')}
-                  style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.96 }]}
-                  accessibilityLabel="Criar nova lista"
-                >
-                  <Text style={styles.addBtnText}>+ Nova</Text>
-                </Pressable>
-              )}
             </View>
           </View>
           <View style={styles.divider} />
@@ -66,9 +51,14 @@ export default function TabBar({ active, onNavigate, onAddList }) {
 function IconTab({ active, label, icon, onPress }) {
   const color = active ? '#1E3A8A' : '#6B7280';
   return (
-    <TouchableOpacity style={styles.iconTab} onPress={onPress} activeOpacity={0.75}>
+    <TouchableOpacity
+      style={styles.iconTab}
+      onPress={onPress}
+      activeOpacity={0.75}
+      accessibilityRole="tab"
+      accessibilityLabel={label}
+    >
       {icon(color)}
-      <Text style={[styles.iconTabLabel, active && styles.iconTabLabelActive]}>{label}</Text>
       {active && <View style={styles.activeBar} />}
     </TouchableOpacity>
   );
@@ -122,16 +112,13 @@ const styles = StyleSheet.create({
   topWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     paddingHorizontal: 18,
     paddingTop: 6,
     paddingBottom: 10,
   },
-  brand: { fontSize: 18, fontWeight: '700', color: '#111827' },
-  tabsRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  iconTab: { paddingHorizontal: 10, paddingVertical: 4, alignItems: 'center' },
-  iconTabLabel: { fontSize: 11, color: '#6B7280', marginTop: 2, fontWeight: '600' },
-  iconTabLabelActive: { color: '#1E3A8A' },
+  tabsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
+  iconTab: { paddingHorizontal: 12, paddingVertical: 6, alignItems: 'center' },
   activeBar: {
     position: 'absolute',
     bottom: -2,
@@ -142,14 +129,4 @@ const styles = StyleSheet.create({
     backgroundColor: '#2563EB',
   },
   divider: { height: 1, backgroundColor: 'rgba(0,0,0,0.07)', marginTop: 4 },
-  addBtn: {
-    backgroundColor: '#2563EB',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    marginLeft: 4,
-    minHeight: 40,
-    alignSelf: 'flex-start',
-  },
-  addBtnText: { color: '#fff', fontWeight: '700', fontSize: 12 },
 });
