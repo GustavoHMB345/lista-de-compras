@@ -1,5 +1,13 @@
 import { ActivityIndicator, Pressable, Text } from 'react-native';
-import { BUTTON_BASE, BUTTON_VARIANTS, TEXT_BUTTON, getRipple } from '../styles/theme';
+import { Colors } from '../../constants/Colors';
+import { useColorScheme } from '../../hooks/useColorScheme';
+import {
+  BUTTON_BASE,
+  BUTTON_VARIANTS as STATIC_BUTTON_VARIANTS,
+  TEXT_BUTTON as STATIC_TEXT_BUTTON,
+  buildButtonTokens,
+  getRipple,
+} from '../styles/theme';
 
 export default function Button({
   variant = 'primary',
@@ -14,9 +22,15 @@ export default function Button({
   testID,
   ...props
 }) {
-  const variantStyle = BUTTON_VARIANTS[variant] || BUTTON_VARIANTS.primary;
+  const theme = useColorScheme?.() ?? 'light';
+  const { BUTTON_VARIANTS, TEXT_BUTTON } = buildButtonTokens(Colors?.[theme] || {});
+  const variantStyle =
+    BUTTON_VARIANTS[variant] ||
+    BUTTON_VARIANTS.primary ||
+    STATIC_BUTTON_VARIANTS[variant] ||
+    STATIC_BUTTON_VARIANTS.primary;
   const labelStyle = [
-    TEXT_BUTTON,
+    TEXT_BUTTON || STATIC_TEXT_BUTTON,
     // Texto escuro em botões "light" (fundo branco)
     variant === 'light' && { color: '#111827' },
     textStyle,
@@ -43,7 +57,9 @@ export default function Button({
       ) : children ? (
         children
       ) : (
-        <Text style={labelStyle}>{title}</Text>
+        <Text style={labelStyle} maxFontSizeMultiplier={1.2}>
+          {title}
+        </Text>
       )}
     </Pressable>
   );

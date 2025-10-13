@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import { ScrollView, Text, TextInput, View } from 'react-native';
 import Button from '../../components/Button';
 import Chip from '../../components/Chip';
+import { useAppTheme } from '../../hooks/useAppTheme';
 
 function AddItemCard({
   styles,
@@ -17,16 +18,20 @@ function AddItemCard({
   itemCategories,
   onAdd,
 }) {
+  const { palette } = useAppTheme();
   return (
-    <View style={styles.card}>
-      <Text style={styles.cardTitle}>{title}</Text>
+    <View style={[styles.card, { backgroundColor: palette.card }]}>
+      <Text style={[styles.cardTitle, { color: palette.text }]}>{title}</Text>
       <TextInput
-        style={styles.input}
+        style={[
+          styles.input,
+          { backgroundColor: palette.card, borderColor: palette.border, color: palette.text },
+        ]}
         placeholder="Nome do item"
         value={newItemName}
         onChangeText={setNewItemName}
-        placeholderTextColor="#9CA3AF"
-        selectionColor="#2563EB"
+        placeholderTextColor={palette.mutedText}
+        selectionColor={palette.primary}
       />
       <ScrollView
         horizontal
@@ -56,22 +61,38 @@ function AddItemCard({
       </ScrollView>
       <View style={[styles.inputRow]}>
         <TextInput
-          style={[styles.input, { flex: 1 }]}
+          style={[
+            styles.input,
+            {
+              flex: 1,
+              backgroundColor: palette.card,
+              borderColor: palette.border,
+              color: palette.text,
+            },
+          ]}
           placeholder="Qtd."
           value={newItemQty}
           onChangeText={setNewItemQty}
           keyboardType="number-pad"
-          placeholderTextColor="#9CA3AF"
-          selectionColor="#2563EB"
+          placeholderTextColor={palette.mutedText}
+          selectionColor={palette.primary}
         />
         <TextInput
-          style={[styles.input, { flex: 2 }]}
+          style={[
+            styles.input,
+            {
+              flex: 2,
+              backgroundColor: palette.card,
+              borderColor: palette.border,
+              color: palette.text,
+            },
+          ]}
           placeholder="Preço (opcional)"
           value={newItemPrice}
           onChangeText={setNewItemPrice}
           keyboardType="numeric"
-          placeholderTextColor="#9CA3AF"
-          selectionColor="#2563EB"
+          placeholderTextColor={palette.mutedText}
+          selectionColor={palette.primary}
         />
       </View>
       <Button title="Adicionar" onPress={onAdd} style={{ alignSelf: 'flex-start' }} />

@@ -153,7 +153,7 @@ function ProfileScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f0f5ff' }} edges={['top']}>
-      <TabBar active={'PROFILE'} onNavigate={handleNavigate} />
+      <TabBar active={'PROFILE'} onNavigate={handleNavigate} tint="light" />
       <SwipeNavigator onSwipeRight={() => handleNavigate('DASHBOARD')} isLast progress={progress}>
         <LinearGradient colors={['#EFF6FF', '#E0E7FF']} style={profileStyles.root}>
           <ScrollView

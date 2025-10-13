@@ -3,9 +3,9 @@ import React from 'react';
 import { Text } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-export const PlusIcon = () => (
-  <Svg width={28} height={28} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 5v14M5 12h14" stroke="#fff" strokeWidth={2.5} strokeLinecap="round" />
+export const PlusIcon = ({ color = '#fff', size = 28 }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M12 5v14M5 12h14" stroke={color} strokeWidth={2.5} strokeLinecap="round" />
   </Svg>
 );
 export const EditIcon = () => <Text style={{ fontSize: 18 }}>✏️</Text>;

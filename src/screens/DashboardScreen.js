@@ -20,7 +20,7 @@ const __fs = Math.min(1.2, Math.max(0.9, width / 390));
 const MAX_WIDTH = Math.min(820, width * 0.98);
 
 export default function DashboardScreen() {
-  const { shoppingLists, currentUser, loading, users } = useContext(DataContext);
+  const { shoppingLists, currentUser, loading } = useContext(DataContext);
   const router = useRouter();
   const progress = useState(new Animated.Value(0))[0];
   const rootNavigation = useRootNavigationState();
@@ -239,7 +239,7 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
-      <TabBar active={'DASHBOARD'} onNavigate={handleNavigate} />
+      <TabBar active={'DASHBOARD'} onNavigate={handleNavigate} tint="light" />
       <SwipeNavigator
         onSwipeLeft={() => handleNavigate('PROFILE')}
         onSwipeRight={() => handleNavigate('LISTS')}
@@ -442,7 +442,7 @@ export default function DashboardScreen() {
 // legacy helpers removed during archived->completed migration
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#e6f0fa' },
+  root: { flex: 1, backgroundColor: '#f0f5ff' },
   scroll: { alignItems: 'center', paddingBottom: 24, paddingTop: 8 },
   card: {
     backgroundColor: '#fff',

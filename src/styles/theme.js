@@ -106,3 +106,57 @@ export const getRipple = (color = 'rgba(0,0,0,0.12)', borderless = false) =>
   Platform.OS === 'android' ? { color, borderless } : undefined;
 
 export const breakpoints = { sm: 380, md: 720, lg: 1100 };
+
+// Theme-aware builders (light/dark) using Colors.ts tokens
+// themeColors shape expected: { text, background, tint, icon, tabIconDefault, tabIconSelected }
+export const buildButtonTokens = (themeColors) => {
+  const BUTTON_VARIANTS = {
+    primary: { backgroundColor: themeColors?.tint || colors.primary },
+    secondary: { backgroundColor: colors.secondary },
+    success: { backgroundColor: colors.success },
+    danger: { backgroundColor: colors.danger },
+    dark: { backgroundColor: colors.dark },
+    gray: { backgroundColor: colors.gray },
+    light: {
+      backgroundColor: themeColors?.background || colors.bg,
+      borderWidth: 1,
+      borderColor: themeColors?.tabIconDefault || colors.lightGray,
+    },
+  };
+  const TEXT_BUTTON = {
+    color: '#ffffff', // keep white text for contrast on colored buttons
+    fontWeight: '700',
+    fontSize: 14,
+  };
+  return { BUTTON_VARIANTS, TEXT_BUTTON };
+};
+
+export const buildChipTokens = (themeColors) => {
+  const CHIP_BASE = {
+    borderWidth: 1,
+    borderColor: themeColors?.tabIconDefault || colors.chipBorder,
+    backgroundColor: themeColors?.background || colors.chipBg,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    minHeight: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    gap: 6,
+  };
+  const CHIP_ACTIVE = {
+    backgroundColor: themeColors?.tint || colors.primary,
+    borderColor: themeColors?.tint || colors.primary,
+  };
+  const CHIP_TEXT = {
+    color: themeColors?.text || '#374151',
+    fontWeight: '600',
+    fontSize: 12,
+  };
+  const CHIP_TEXT_ACTIVE = {
+    color: themeColors?.background || '#ffffff',
+  };
+  return { CHIP_BASE, CHIP_ACTIVE, CHIP_TEXT, CHIP_TEXT_ACTIVE };
+};

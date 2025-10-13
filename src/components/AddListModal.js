@@ -16,7 +16,7 @@ import {
 import { Swipeable } from 'react-native-gesture-handler';
 import useFontScale from '../hooks/useFontScale';
 import Button from './Button';
-import { CategoryIcon } from './Icons';
+import { BackIcon, CategoryIcon } from './Icons';
 
 // Categorias da LISTA (mantidas separadas das categorias de itens)
 const LIST_CATEGORIES = [
@@ -45,7 +45,6 @@ export default function AddListModal({ visible, onClose, onCreate }) {
   const fs = useFontScale();
   const { height } = Dimensions.get('window');
   const cardMaxHeight = Math.min(height * 0.9, 720);
-  const listMaxHeight = Math.max(140, Math.min(260, Math.round(160 * fs)));
 
   const styles = StyleSheet.create({
     overlay: {
@@ -63,10 +62,26 @@ export default function AddListModal({ visible, onClose, onCreate }) {
       maxHeight: cardMaxHeight,
       elevation: 5,
     },
+    headerWrap: {
+      position: 'relative',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 8,
+    },
+    backBtn: {
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     title: {
       fontSize: 20 * fs,
       fontWeight: 'bold',
-      marginBottom: 16,
+      marginBottom: 8,
       textAlign: 'center',
       color: '#111827',
     },
@@ -407,7 +422,18 @@ export default function AddListModal({ visible, onClose, onCreate }) {
             showsVerticalScrollIndicator={false}
             ListHeaderComponent={
               <View>
-                <Text style={styles.title}>Nova Lista de Compras</Text>
+                <View style={styles.headerWrap}>
+                  <TouchableOpacity
+                    onPress={onClose}
+                    accessibilityLabel="Voltar"
+                    accessibilityRole="button"
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    style={styles.backBtn}
+                  >
+                    <BackIcon />
+                  </TouchableOpacity>
+                  <Text style={styles.title}>Nova Lista de Compras</Text>
+                </View>
                 <TextInput
                   style={styles.input}
                   placeholder="Nome da lista"

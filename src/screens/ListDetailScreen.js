@@ -16,19 +16,21 @@ import {
   View,
 } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Context & components
 import AddListModal from '../components/AddListModal';
 import Button from '../components/Button';
 import Chip from '../components/Chip';
-import { CategoryIcon } from '../components/Icons';
+import { BackIcon, CategoryIcon } from '../components/Icons';
 import AddItemCard from '../components/list/AddItemCard';
 import HeaderActions from '../components/list/HeaderActions';
 import ItemRow from '../components/list/ItemRow';
+import Screen from '../components/Screen';
 import SwipeNavigator from '../components/SwipeNavigator';
-import TabBar, { TAB_BAR_OFFSET } from '../components/TabBar';
+import TabBar from '../components/TabBar';
 import { DataContext } from '../contexts/DataContext';
+import { useAppTheme } from '../hooks/useAppTheme';
 import { aggregatePriceHistory, filterByRange } from '../utils/prices';
 
 // --- Fallback globals (in case __w / __fs not injected) ---
@@ -43,6 +45,8 @@ const __fs = typeof globalThis !== 'undefined' && globalThis.__fs ? globalThis._
 // Main screen component
 function ListDetailScreen(props) {
   const insets = useSafeAreaInsets();
+  const { palette } = useAppTheme();
+  const styles = useMemo(() => makeDetailStyles(palette), [palette]);
   const router = useRouter();
   const params = useLocalSearchParams?.() || {};
   // Aceita 'id' (padrão) ou legado 'listId'
@@ -82,9 +86,8 @@ function ListDetailScreen(props) {
 
   // Price history selection & range filtering
   const [selectedPriceItem, setSelectedPriceItem] = useState('');
-  const [historyRange, setHistoryRange] = useState('all'); // all | 7d | 30d | 6m
-  const [compareRange, setCompareRange] = useState(null); // null | '7d' | '30d' | '6m' | 'all'
-  const [showComparePicker, setShowComparePicker] = useState(false);
+  const [historyRange] = useState('all'); // all | 7d | 30d | 6m
+  // compareRange removed
 
   const [modalVisible, setModalVisible] = useState(false);
   const [recentlyDeleted, setRecentlyDeleted] = useState(null); // {item,listId,timeoutId}
@@ -165,21 +168,9 @@ function ListDetailScreen(props) {
     () => filterByRange(basePriceRows, historyRange),
     [basePriceRows, historyRange],
   );
-  const compareData = useMemo(
-    () => (compareRange ? filterByRange(basePriceRows, compareRange) : []),
-    [basePriceRows, compareRange],
-  );
+  // compareData removed (unused after removing compareSummary)
 
-  const compareSummary = useMemo(() => {
-    if (!compareRange || priceData.length === 0 || compareData.length === 0) return null;
-    const currentLast = priceData[priceData.length - 1].unitAvg;
-    const compareLast = compareData[compareData.length - 1].unitAvg;
-    if (!Number.isFinite(currentLast) || !Number.isFinite(compareLast) || compareLast === 0)
-      return null;
-    const diff = currentLast - compareLast;
-    const pct = (diff / compareLast) * 100;
-    return { diff, pct, up: diff > 0, base: compareLast };
-  }, [priceData, compareData, compareRange]);
+  // compareSummary removed (unused)
 
   const priceTrend = useMemo(() => {
     if (priceData.length < 2) return null;
@@ -456,19 +447,27 @@ function ListDetailScreen(props) {
 
   // Conteúdo quando lista não encontrada ou ainda carregando
   const renderEmptyOrLoading = () => (
-    <View style={[detailStyles.centered, { paddingTop: TAB_BAR_OFFSET + 12 }]}>
+    <View style={[styles.centered, { paddingTop: 12, backgroundColor: palette.bg }]}>
       {loading ? (
         <>
-          <ActivityIndicator size="large" color="#4f46e5" />
-          <Text style={[detailStyles.emptyText, { marginTop: 12 }]}>Carregando dados...</Text>
+          <ActivityIndicator size="large" color={palette.primary} />
+          <Text style={[styles.emptyText, { color: palette.mutedText, marginTop: 12 }]}>
+            Carregando dados...
+          </Text>
         </>
       ) : (
         <>
-          <Text style={detailStyles.emptyText}>Lista não encontrada.</Text>
-          <Text style={[detailStyles.emptyText, { marginTop: 8, fontSize: 12 }]}>
+          <Text style={[styles.emptyText, { color: palette.mutedText }]}>
+            Lista não encontrada.
+          </Text>
+          <Text
+            style={[styles.emptyText, { color: palette.mutedText, marginTop: 8, fontSize: 12 }]}
+          >
             Debug id: {String(listId || '—')}
           </Text>
-          <Text style={[detailStyles.emptyText, { marginTop: 4, fontSize: 12 }]}>
+          <Text
+            style={[styles.emptyText, { color: palette.mutedText, marginTop: 4, fontSize: 12 }]}
+          >
             Listas: {shoppingLists.length}
           </Text>
         </>
@@ -483,9 +482,7 @@ function ListDetailScreen(props) {
   const itemSavingsMap = useMemo(() => {
     const map = {};
     (list?.items || []).forEach((it) => {
-      const nameKey = String(it.name || '')
-        .trim()
-        .toLowerCase();
+      // normalize name (unused key removed to silence lint)
       const snapshots = [];
       // snapshots only from this list's item history
       if (Array.isArray(it.priceHistory))
@@ -505,16 +502,37 @@ function ListDetailScreen(props) {
   }, [list?.items]);
 
   return (
-    <SafeAreaView style={detailStyles.root} edges={['top']}>
-      <View
-        style={detailStyles.tabHolder}
-        onLayout={(e) => setTabHeight(e.nativeEvent.layout.height)}
-      >
+    <Screen scroll={false} tabBarHeight={tabHeight || 56} contentStyle={{ paddingHorizontal: 0 }}>
+      <View style={styles.tabHolder} onLayout={(e) => setTabHeight(e.nativeEvent.layout.height)}>
         <TabBar
           active={'LISTS'}
           onNavigate={handleNavigate}
           onAddList={() => setModalVisible(true)}
         />
+      </View>
+      {/* Top-left Back Button (fixed below TabBar) */}
+      <View
+        pointerEvents="box-none"
+        style={{ position: 'absolute', left: 0, right: 0, top: 0, zIndex: 65 }}
+      >
+        <TouchableOpacity
+          accessibilityLabel="Voltar"
+          accessibilityRole="button"
+          onPress={() => {
+            if (typeof router?.canGoBack === 'function' && router.canGoBack()) router.back();
+            else router.push('/lists');
+          }}
+          activeOpacity={0.8}
+          style={[
+            styles.backButton,
+            {
+              top: (tabHeight || 56) + 8,
+              left: Math.max(12, (insets?.left || 0) + 12),
+            },
+          ]}
+        >
+          <BackIcon />
+        </TouchableOpacity>
       </View>
       <SwipeNavigator
         onSwipeLeft={() => handleNavigate('PROFILE')}
@@ -527,11 +545,13 @@ function ListDetailScreen(props) {
           renderEmptyOrLoading()
         ) : (
           <FlatList
-            style={detailStyles.container}
+            style={[styles.container, { backgroundColor: palette.bg }]}
             contentContainerStyle={[
-              detailStyles.scrollContent,
+              styles.scrollContent,
               {
-                paddingTop: (tabHeight || TAB_BAR_OFFSET) + contentExtraTop,
+                // Screen already adds top padding for tabBarHeight + insets.
+                // Keep only extra top spacing for header area here.
+                paddingTop: contentExtraTop,
                 // Add bottom padding so focused rows/inputs stay above the keyboard
                 paddingBottom: Math.max(
                   32,
@@ -547,7 +567,7 @@ function ListDetailScreen(props) {
             automaticallyAdjustKeyboardInsets
             ListHeaderComponent={
               <>
-                <View style={[detailStyles.card]}>
+                <View style={[styles.card, { backgroundColor: palette.card }]}>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <CategoryIcon type={list.category || 'outros'} size={44} neutral />
                     <View style={{ marginLeft: 12, flex: 1 }}>
@@ -556,28 +576,46 @@ function ListDetailScreen(props) {
                           <TextInput
                             value={editedName}
                             onChangeText={setEditedName}
-                            style={[detailStyles.headerInput, detailStyles.headerNameInput]}
+                            style={[
+                              styles.headerInput,
+                              styles.headerNameInput,
+                              {
+                                backgroundColor: palette.card,
+                                borderColor: palette.border,
+                                color: palette.text,
+                              },
+                            ]}
                             placeholder="Nome da lista"
-                            placeholderTextColor="#9CA3AF"
-                            selectionColor="#2563EB"
+                            placeholderTextColor={palette.mutedText}
+                            selectionColor={palette.primary}
                           />
                           <TextInput
                             value={editedDesc}
                             onChangeText={setEditedDesc}
-                            style={[detailStyles.headerInput, detailStyles.headerDescInput]}
+                            style={[
+                              styles.headerInput,
+                              styles.headerDescInput,
+                              {
+                                backgroundColor: palette.card,
+                                borderColor: palette.border,
+                                color: palette.text,
+                              },
+                            ]}
                             placeholder="Descrição (opcional)"
                             multiline
                             numberOfLines={3}
                             textAlignVertical="top"
-                            placeholderTextColor="#9CA3AF"
-                            selectionColor="#2563EB"
+                            placeholderTextColor={palette.mutedText}
+                            selectionColor={palette.primary}
                           />
                         </>
                       ) : (
                         <>
-                          <Text style={detailStyles.cardTitle}>{list.name}</Text>
+                          <Text style={[styles.cardTitle, { color: palette.text }]}>
+                            {list.name}
+                          </Text>
                           {!!(list.desc || list.description) && (
-                            <Text style={{ color: '#6B7280' }}>
+                            <Text style={{ color: palette.mutedText }}>
                               {list.desc || list.description}
                             </Text>
                           )}
@@ -585,27 +623,32 @@ function ListDetailScreen(props) {
                       )}
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
-                      <Text style={{ color: '#111827', fontWeight: 'bold' }}>
+                      <Text style={{ color: palette.text, fontWeight: 'bold' }}>
                         R$ {total.toFixed(2)}
                       </Text>
-                      <Text style={{ color: '#6B7280', fontSize: 12 }}>
+                      <Text style={{ color: palette.mutedText, fontSize: 12 }}>
                         {purchasedCount}/{totalCount} comprados
                       </Text>
                     </View>
                   </View>
-                  <View style={detailStyles.progressBarWrap}>
-                    <View style={detailStyles.progressBarBg}>
+                  <View style={styles.progressBarWrap}>
+                    <View style={[styles.progressBarBg, { backgroundColor: palette.border }]}>
                       <View
                         style={[
-                          detailStyles.progressBarFill,
-                          { width: `${totalCount ? (purchasedCount / totalCount) * 100 : 0}%` },
+                          styles.progressBarFill,
+                          {
+                            width: `${totalCount ? (purchasedCount / totalCount) * 100 : 0}%`,
+                            backgroundColor: palette.primary,
+                          },
                         ]}
                       />
                     </View>
-                    <Text style={detailStyles.progressText}>Progresso</Text>
+                    <Text style={[styles.progressText, { color: palette.mutedText }]}>
+                      Progresso
+                    </Text>
                   </View>
                   <HeaderActions
-                    styles={detailStyles}
+                    styles={styles}
                     isEditing={isEditingHeader}
                     onShare={handleShare}
                     onSave={saveEditHeader}
@@ -616,7 +659,7 @@ function ListDetailScreen(props) {
                 </View>
                 {canEdit && (
                   <AddItemCard
-                    styles={detailStyles}
+                    styles={styles}
                     newItemName={newItemName}
                     setNewItemName={setNewItemName}
                     newItemQty={newItemQty}
@@ -629,15 +672,24 @@ function ListDetailScreen(props) {
                     onAdd={handleAddItem}
                   />
                 )}
-                <View style={[detailStyles.card, { paddingBottom: 8 }]}>
+                <View style={[styles.card, { backgroundColor: palette.card, paddingBottom: 8 }]}>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <TextInput
-                      style={[detailStyles.input, { flex: 1, marginRight: 8 }]}
+                      style={[
+                        styles.input,
+                        {
+                          flex: 1,
+                          marginRight: 8,
+                          backgroundColor: palette.card,
+                          borderColor: palette.border,
+                          color: palette.text,
+                        },
+                      ]}
                       placeholder="Buscar item..."
                       value={query}
                       onChangeText={setQuery}
-                      placeholderTextColor="#9CA3AF"
-                      selectionColor="#2563EB"
+                      placeholderTextColor={palette.mutedText}
+                      selectionColor={palette.primary}
                     />
                     <View style={{ flexDirection: 'row', gap: 8 }}>
                       <Chip
@@ -688,13 +740,13 @@ function ListDetailScreen(props) {
                     ))}
                   </ScrollView>
                 </View>
-                <Text style={detailStyles.sectionTitle}>Itens da Lista</Text>
+                <Text style={[styles.sectionTitle, { color: palette.text }]}>Itens da Lista</Text>
               </>
             }
             renderItem={({ item }) => (
               <ItemRow
                 item={item}
-                styles={detailStyles}
+                styles={styles}
                 canEdit={canEdit}
                 onEditPrice={startEditPrice}
                 onDelete={handleDeleteItem}
@@ -711,8 +763,10 @@ function ListDetailScreen(props) {
             )}
             ListFooterComponent={
               <>
-                <View style={detailStyles.card}>
-                  <Text style={detailStyles.cardTitle}>Histórico de Preços</Text>
+                <View style={[styles.card, { backgroundColor: palette.card }]}>
+                  <Text style={[styles.cardTitle, { color: palette.text }]}>
+                    Histórico de Preços
+                  </Text>
                   <View
                     style={{
                       flexDirection: 'row',
@@ -722,7 +776,7 @@ function ListDetailScreen(props) {
                       alignItems: 'center',
                     }}
                   >
-                    <Text style={{ color: '#374151', fontWeight: '600' }}>
+                    <Text style={{ color: palette.text, fontWeight: '600' }}>
                       {
                         {
                           all: 'Tudo',
@@ -736,7 +790,7 @@ function ListDetailScreen(props) {
                   {!!priceTrend && (
                     <Text
                       style={{
-                        color: priceTrend.up ? '#DC2626' : '#16A34A',
+                        color: priceTrend.up ? palette.danger : palette.success,
                         fontWeight: '600',
                         marginBottom: 6,
                       }}
@@ -761,7 +815,9 @@ function ListDetailScreen(props) {
                       ))}
                     </ScrollView>
                   ) : (
-                    <Text style={detailStyles.emptyText}>Nenhum item com preço registrado.</Text>
+                    <Text style={[styles.emptyText, { color: palette.mutedText }]}>
+                      Nenhum item com preço registrado.
+                    </Text>
                   )}
                   {priceData.length > 0 ? (
                     <>
@@ -775,10 +831,10 @@ function ListDetailScreen(props) {
                         startOpacity={0.9}
                         endOpacity={0.05}
                         hideDataPoints={false}
-                        dataPointsColor="#1D4ED8"
-                        yAxisTextStyle={{ color: '#374151', fontSize: 10 * __fs }}
+                        dataPointsColor={palette.primary}
+                        yAxisTextStyle={{ color: palette.text, fontSize: 10 * __fs }}
                         xAxisLabelTextStyle={{
-                          color: '#374151',
+                          color: palette.mutedText,
                           fontSize: 10 * __fs,
                           transform: [{ translateY: 4 }],
                         }}
@@ -794,7 +850,7 @@ function ListDetailScreen(props) {
                           pointerStripUptoDataPoint: true,
                           pointerStripColor: 'rgba(59,130,246,0.35)',
                           pointerStripWidth: 2,
-                          pointerColor: '#1D4ED8',
+                          pointerColor: palette.primary,
                           radius: 5,
                           pointerLabelWidth: 150,
                           pointerLabelHeight: 88,
@@ -805,7 +861,7 @@ function ListDetailScreen(props) {
                             return (
                               <View
                                 style={{
-                                  backgroundColor: '#1F2937',
+                                  backgroundColor: palette.tooltipBg,
                                   paddingVertical: 6,
                                   paddingHorizontal: 10,
                                   borderRadius: 10,
@@ -816,7 +872,7 @@ function ListDetailScreen(props) {
                                 </Text>
                                 <Text
                                   style={{
-                                    color: '#fff',
+                                    color: palette.text,
                                     fontSize: 13,
                                     fontWeight: '700',
                                     marginTop: 2,
@@ -840,29 +896,33 @@ function ListDetailScreen(props) {
                         }}
                       />
                       {priceData.length === 1 && (
-                        <Text style={[detailStyles.emptyText, { marginTop: 8 }]}>
+                        <Text
+                          style={[styles.emptyText, { color: palette.mutedText, marginTop: 8 }]}
+                        >
                           Adicione outra alteração de preço para ver tendência.
                         </Text>
                       )}
                     </>
                   ) : (
-                    <Text style={detailStyles.emptyText}>Nenhum registro de preço ainda.</Text>
+                    <Text style={[styles.emptyText, { color: palette.mutedText }]}>
+                      Nenhum registro de preço ainda.
+                    </Text>
                   )}
                   {priceData.length > 0 && (
                     <View style={{ marginTop: 10 }}>
                       {priceData.map((p, idx) => (
                         <View key={idx} style={{ paddingVertical: 6 }}>
                           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                            <Text style={{ color: '#6B7280' }}>
+                            <Text style={{ color: palette.mutedText }}>
                               {new Date(p.date).toLocaleDateString()}
                             </Text>
-                            <Text style={{ color: '#2563EB', fontWeight: '700' }}>
+                            <Text style={{ color: palette.primary, fontWeight: '700' }}>
                               Unit R$ {p.unitAvg.toFixed(2)}
                             </Text>
                           </View>
                           <Text
                             style={{
-                              color: '#CA8A04',
+                              color: palette.warning,
                               fontSize: 12,
                               fontWeight: '600',
                               textAlign: 'right',
@@ -875,11 +935,13 @@ function ListDetailScreen(props) {
                     </View>
                   )}
                 </View>
-                <View style={detailStyles.card}>
-                  <Text style={detailStyles.cardTitle}>Membros na Lista</Text>
-                  <View style={detailStyles.membersRow}>
+                <View style={[styles.card, { backgroundColor: palette.card }]}>
+                  <Text style={[styles.cardTitle, { color: palette.text }]}>Membros na Lista</Text>
+                  <View style={styles.membersRow}>
                     {familyMembers.length === 0 && (
-                      <Text style={detailStyles.emptyText}>Nenhum membro encontrado.</Text>
+                      <Text style={[styles.emptyText, { color: palette.mutedText }]}>
+                        Nenhum membro encontrado.
+                      </Text>
                     )}
                     {familyMembers.map((member) => {
                       const initial = (member?.displayName || member?.email || '?')
@@ -888,11 +950,11 @@ function ListDetailScreen(props) {
                       const inList =
                         Array.isArray(list.members) && list.members.includes(member.id);
                       return (
-                        <View key={member.id} style={detailStyles.memberAvatarBox}>
-                          <View style={[detailStyles.memberAvatar, { backgroundColor: '#3B82F6' }]}>
-                            <Text style={detailStyles.memberAvatarText}>{initial}</Text>
+                        <View key={member.id} style={styles.memberAvatarBox}>
+                          <View style={[styles.memberAvatar, { backgroundColor: palette.primary }]}>
+                            <Text style={styles.memberAvatarText}>{initial}</Text>
                           </View>
-                          <Text style={detailStyles.memberName}>
+                          <Text style={[styles.memberName, { color: palette.text }]}>
                             {member.displayName || member.email}
                           </Text>
                           <Button
@@ -905,12 +967,13 @@ function ListDetailScreen(props) {
                               borderRadius: 10,
                               minHeight: 32,
                               alignSelf: 'center',
-                              backgroundColor: inList ? '#FEE2E2' : '#D1FAE5',
-                              borderWidth: 0,
+                              backgroundColor: 'transparent',
+                              borderWidth: 1,
+                              borderColor: inList ? palette.danger : palette.success,
                             }}
                             textStyle={{
                               fontSize: 12 * __fs,
-                              color: inList ? '#991B1B' : '#111827',
+                              color: inList ? palette.danger : palette.success,
                               fontWeight: '600',
                             }}
                             testID={`memberToggle-${member.id}`}
@@ -954,8 +1017,9 @@ function ListDetailScreen(props) {
       {recentlyDeleted && (
         <View
           style={[
-            detailStyles.snackbar,
+            styles.snackbar,
             {
+              backgroundColor: palette.snackbarBg,
               bottom: Math.max(
                 24,
                 (insets?.bottom || 0) + 12,
@@ -967,7 +1031,7 @@ function ListDetailScreen(props) {
           pointerEvents="box-none"
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-            <Text style={detailStyles.snackbarText}>Item removido</Text>
+            <Text style={styles.snackbarText}>Item removido</Text>
             <Button
               variant="light"
               title="DESFAZER"
@@ -979,7 +1043,7 @@ function ListDetailScreen(props) {
                 paddingHorizontal: 8,
                 minHeight: 0,
               }}
-              textStyle={{ color: '#60A5FA', fontSize: 14 * __fs, fontWeight: '700' }}
+              textStyle={{ color: palette.primary, fontSize: 14 * __fs, fontWeight: '700' }}
               testID="snackbarUndo"
               accessibilityLabel="Desfazer remoção"
             />
@@ -1001,15 +1065,13 @@ function ListDetailScreen(props) {
           />
         </View>
       )}
-    </SafeAreaView>
+    </Screen>
   );
 }
 export default ListDetailScreen;
 
 const MAX_CARD_WIDTH = Math.min(900, __w * 0.98);
-const __compact = __w < 420;
-// Ajustável: espaço adicional entre TabBar e conteúdo
-const CONTENT_EXTRA_TOP = 40; // altere aqui para ajustar rapidamente
+// eslint: removed unused __compact/CONTENT_EXTRA_TOP
 
 // Item categories (emoji + names) inspired by the Tailwind reference
 const itemCategories = {
@@ -1024,372 +1086,376 @@ const itemCategories = {
   outros: { name: 'Outros', emoji: '📦' },
 };
 
-const detailStyles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#e6f0fa' },
-  tabHolder: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 60 },
-  container: { flex: 1, backgroundColor: '#e6f0fa' },
-  // Usa constante de espaçamento configurável
-  scrollContent: { alignItems: 'center', paddingBottom: 32, paddingHorizontal: 8 },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 18,
-    width: '96%',
-    maxWidth: MAX_CARD_WIDTH,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  cardTitle: {
-    fontSize: 20 * __fs,
-    fontWeight: 'bold',
-    color: '#222',
-    marginBottom: 10,
-  },
-  headerInput: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: '#111827',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  headerNameInput: { fontSize: 18 * __fs, fontWeight: '700' },
-  headerDescInput: { marginTop: 8, minHeight: 72 },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    gap: 10,
-  },
-  input: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    fontSize: 15 * __fs,
-  },
-  addButton: {
-    backgroundColor: '#3B82F6',
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    minHeight: 44,
-    paddingHorizontal: 14,
-  },
-  addButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  sectionTitle: {
-    width: '96%',
-    maxWidth: MAX_CARD_WIDTH,
-    fontSize: 18 * __fs,
-    fontWeight: 'bold',
-    color: '#222',
-    marginBottom: 10,
-  },
-  progressBarWrap: {
-    marginTop: 12,
-  },
-  progressBarBg: {
-    width: '100%',
-    height: 10,
-    backgroundColor: '#e5e7eb',
-    borderRadius: 999,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: '#4f46e5',
-  },
-  progressText: {
-    color: '#6B7280',
-    marginTop: 6,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 12,
-  },
-  actionChip: {
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    minHeight: 44,
-    alignSelf: 'flex-start',
-  },
-  actionChipText: {
-    color: '#111827',
-    fontWeight: '600',
-  },
-  itemCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 14,
-    width: '96%',
-    maxWidth: MAX_CARD_WIDTH,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  swipeActionLeft: {
-    width: 88,
-    marginVertical: 5,
-    marginLeft: 8,
-    borderRadius: 16,
-    backgroundColor: '#3B82F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  swipeActionRight: {
-    width: 88,
-    marginVertical: 5,
-    marginRight: 8,
-    borderRadius: 16,
-    backgroundColor: '#EF4444',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  swipeActionText: { color: '#fff', fontWeight: '700', fontSize: 13 },
-  checkWrap: {
-    marginRight: 10,
-  },
-  checkCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: '#CBD5E1',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-  },
-  checkCircleOn: {
-    backgroundColor: '#22C55E',
-    borderColor: '#16A34A',
-  },
-  itemCardPurchased: {
-    opacity: 0.6,
-  },
-  itemName: {
-    fontSize: 16 * __fs,
-    fontWeight: 'bold',
-    color: '#111827',
-  },
-  itemNamePurchased: {
-    textDecorationLine: 'line-through',
-    color: '#6B7280',
-  },
-  itemSubText: {
-    color: '#6B7280',
-    marginTop: 2,
-    fontSize: 14 * __fs,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 6,
-  },
-  qtyBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
-  qtyBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    minWidth: 36,
-    minHeight: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  qtyBtnText: {
-    fontSize: 18 * __fs,
-    color: '#111827',
-  },
-  qtyValue: {
-    minWidth: 26,
-    textAlign: 'center',
-    fontWeight: '700',
-    color: '#111827',
-  },
-  pricePill: {
-    backgroundColor: '#EEF2FF',
-    borderRadius: 999,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: '#C7D2FE',
-  },
-  itemTotal: {
-    marginLeft: 8,
-    backgroundColor: '#DCFCE7',
-    borderColor: '#86EFAC',
-    borderWidth: 1,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 999,
-  },
-  itemTotalText: { color: '#15803D', fontWeight: '700' },
-  savingBadge: { paddingVertical: 4, paddingHorizontal: 8, borderRadius: 8, marginLeft: 4 },
-  savingPos: { backgroundColor: '#DCFCE7', borderWidth: 1, borderColor: '#86EFAC' },
-  savingNeg: { backgroundColor: '#FEE2E2', borderWidth: 1, borderColor: '#FCA5A5' },
-  savingBadgeText: { fontSize: 11 * __fs, fontWeight: '700', color: '#111827' },
-  priceText: {
-    color: '#4F46E5',
-    fontWeight: '700',
-  },
-  priceEditRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  pricePrefix: { color: '#6B7280', marginRight: 4 },
-  priceInput: {
-    minWidth: 72,
-    paddingVertical: 0,
-    paddingHorizontal: 0,
-    color: '#111827',
-    fontSize: 15 * __fs,
-  },
-  priceSave: { color: '#16A34A', fontWeight: '700', marginLeft: 6 },
-  membersRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  memberAvatarBox: {
-    alignItems: 'center',
-    width: 96,
-  },
-  memberAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 6,
-  },
-  memberAvatarText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  memberName: {
-    fontSize: 12 * __fs,
-    color: '#111827',
-    marginBottom: 6,
-  },
-  memberButton: {
-    borderRadius: 10,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-  },
-  memberButtonAdd: {
-    backgroundColor: '#D1FAE5',
-  },
-  memberButtonRemove: {
-    backgroundColor: '#FEE2E2',
-  },
-  memberButtonText: {
-    fontSize: 12 * __fs,
-    color: '#111827',
-  },
-  archiveButton: {
-    backgroundColor: '#111827',
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    minHeight: 46,
-    marginBottom: 24,
-  },
-  archiveButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 15 * __fs,
-  },
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#e6f0fa',
-  },
-  emptyText: {
-    color: '#6B7280',
-    fontSize: 14 * __fs,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  statBox: {
-    backgroundColor: '#f8fafc',
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    minWidth: 90,
-  },
-  statLabel: { color: '#6B7280' },
-  statValue: { color: '#111827', fontWeight: '700', marginTop: 2 },
-  // chip styles now centralized via Chip component
-  snackbar: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 24,
-    backgroundColor: '#111827',
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    borderRadius: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  snackbarText: { color: '#fff', fontSize: 14 * __fs, fontWeight: '500' },
-  snackbarUndo: { color: '#60A5FA', fontSize: 14 * __fs, fontWeight: '700' },
-});
+const makeDetailStyles = (palette) =>
+  StyleSheet.create({
+    root: { flex: 1, backgroundColor: palette.bg },
+    tabHolder: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 60 },
+    backButton: {
+      position: 'absolute',
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: palette.card,
+      borderWidth: 1,
+      borderColor: palette.border,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.12,
+      shadowRadius: 6,
+      elevation: 2,
+    },
+    container: { flex: 1, backgroundColor: palette.bg },
+    // Usa constante de espaçamento configurável
+    scrollContent: { alignItems: 'center', paddingBottom: 32, paddingHorizontal: 8 },
+    card: {
+      backgroundColor: palette.card,
+      borderRadius: 20,
+      padding: 16,
+      marginBottom: 18,
+      width: '96%',
+      maxWidth: MAX_CARD_WIDTH,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 12,
+      elevation: 6,
+    },
+    cardTitle: {
+      fontSize: 20 * __fs,
+      fontWeight: 'bold',
+      color: palette.text,
+      marginBottom: 10,
+    },
+    headerInput: {
+      backgroundColor: palette.card,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      color: palette.text,
+      borderWidth: 1,
+      borderColor: palette.border,
+    },
+    headerNameInput: { fontSize: 18 * __fs, fontWeight: '700' },
+    headerDescInput: { marginTop: 8, minHeight: 72 },
+    inputRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 12,
+      gap: 10,
+    },
+    input: {
+      backgroundColor: palette.card,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      marginBottom: 10,
+      borderWidth: 1,
+      borderColor: palette.border,
+      fontSize: 15 * __fs,
+      color: palette.text,
+    },
+    addButton: {
+      backgroundColor: palette.primary,
+      borderRadius: 12,
+      paddingVertical: 12,
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      minHeight: 44,
+      paddingHorizontal: 14,
+    },
+    addButtonText: {
+      color: '#fff',
+      fontWeight: 'bold',
+    },
+    sectionTitle: {
+      width: '96%',
+      maxWidth: MAX_CARD_WIDTH,
+      fontSize: 18 * __fs,
+      fontWeight: 'bold',
+      color: palette.text,
+      marginBottom: 10,
+    },
+    progressBarWrap: {
+      marginTop: 12,
+    },
+    progressBarBg: {
+      width: '100%',
+      height: 10,
+      backgroundColor: palette.border,
+      borderRadius: 999,
+      overflow: 'hidden',
+    },
+    progressBarFill: {
+      height: '100%',
+      backgroundColor: palette.primary,
+    },
+    progressText: {
+      color: palette.mutedText,
+      marginTop: 6,
+    },
+    actionsRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+      marginTop: 12,
+    },
+    actionChip: {
+      borderWidth: 1,
+      borderColor: palette.border,
+      paddingVertical: 10,
+      paddingHorizontal: 14,
+      borderRadius: 12,
+      backgroundColor: palette.card,
+      minHeight: 44,
+      alignSelf: 'flex-start',
+    },
+    actionChipText: {
+      color: palette.text,
+      fontWeight: '600',
+    },
+    itemCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: palette.card,
+      borderRadius: 16,
+      padding: 14,
+      width: '96%',
+      maxWidth: MAX_CARD_WIDTH,
+      marginBottom: 10,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.06,
+      shadowRadius: 6,
+      elevation: 2,
+    },
+    swipeActionLeft: {
+      width: 88,
+      marginVertical: 5,
+      marginLeft: 8,
+      borderRadius: 16,
+      backgroundColor: palette.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    swipeActionRight: {
+      width: 88,
+      marginVertical: 5,
+      marginRight: 8,
+      borderRadius: 16,
+      backgroundColor: palette.danger,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    swipeActionText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+    checkWrap: {
+      marginRight: 10,
+    },
+    checkCircle: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      borderWidth: 2,
+      borderColor: palette.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: palette.card,
+    },
+    checkCircleOn: {
+      backgroundColor: palette.success,
+      borderColor: palette.success,
+    },
+    itemCardPurchased: {
+      opacity: 0.6,
+    },
+    itemName: {
+      fontSize: 16 * __fs,
+      fontWeight: 'bold',
+      color: palette.text,
+    },
+    itemNamePurchased: {
+      textDecorationLine: 'line-through',
+      color: palette.mutedText,
+    },
+    itemSubText: {
+      color: palette.mutedText,
+      marginTop: 2,
+      fontSize: 14 * __fs,
+    },
+    metaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginTop: 6,
+    },
+    qtyBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: palette.altSurface,
+      borderRadius: 10,
+      overflow: 'hidden',
+    },
+    qtyBtn: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      minWidth: 36,
+      minHeight: 36,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    qtyBtnText: {
+      fontSize: 18 * __fs,
+      color: palette.text,
+    },
+    qtyValue: {
+      minWidth: 26,
+      textAlign: 'center',
+      fontWeight: '700',
+      color: palette.text,
+    },
+    pricePill: {
+      backgroundColor: palette.altSurface,
+      borderRadius: 999,
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+      borderWidth: 1,
+      borderColor: palette.border,
+    },
+    itemTotal: {
+      marginLeft: 8,
+      backgroundColor: palette.altSurface,
+      borderColor: palette.success,
+      borderWidth: 1,
+      paddingVertical: 6,
+      paddingHorizontal: 10,
+      borderRadius: 999,
+    },
+    itemTotalText: { color: palette.success, fontWeight: '700' },
+    savingBadge: { paddingVertical: 4, paddingHorizontal: 8, borderRadius: 8, marginLeft: 4 },
+    savingPos: {
+      backgroundColor: palette.altSurface,
+      borderWidth: 1,
+      borderColor: palette.success,
+    },
+    savingNeg: { backgroundColor: palette.altSurface, borderWidth: 1, borderColor: palette.danger },
+    savingBadgeText: { fontSize: 11 * __fs, fontWeight: '700', color: palette.text },
+    priceText: {
+      color: palette.primary,
+      fontWeight: '700',
+    },
+    priceEditRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    pricePrefix: { color: palette.mutedText, marginRight: 4 },
+    priceInput: {
+      minWidth: 72,
+      paddingVertical: 0,
+      paddingHorizontal: 0,
+      color: palette.text,
+      fontSize: 15 * __fs,
+    },
+    priceSave: { color: palette.success, fontWeight: '700', marginLeft: 6 },
+    membersRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 12,
+    },
+    memberAvatarBox: {
+      alignItems: 'center',
+      width: 96,
+    },
+    memberAvatar: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 6,
+    },
+    memberAvatarText: {
+      color: '#fff',
+      fontWeight: 'bold',
+    },
+    memberName: {
+      fontSize: 12 * __fs,
+      color: palette.text,
+      marginBottom: 6,
+    },
+    memberButton: {
+      borderRadius: 10,
+      paddingVertical: 6,
+      paddingHorizontal: 10,
+    },
+    memberButtonAdd: {
+      backgroundColor: 'transparent',
+    },
+    memberButtonRemove: {
+      backgroundColor: 'transparent',
+    },
+    memberButtonText: {
+      fontSize: 12 * __fs,
+      color: palette.text,
+    },
+    archiveButton: {
+      backgroundColor: '#111827',
+      borderRadius: 14,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      minHeight: 46,
+      marginBottom: 24,
+    },
+    archiveButtonText: {
+      color: '#fff',
+      fontWeight: 'bold',
+      fontSize: 15 * __fs,
+    },
+    centered: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: palette.bg,
+    },
+    emptyText: {
+      color: palette.mutedText,
+      fontSize: 14 * __fs,
+    },
+    statsRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 12,
+    },
+    statBox: {
+      backgroundColor: palette.altSurface,
+      borderRadius: 12,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      minWidth: 90,
+    },
+    statLabel: { color: palette.mutedText },
+    statValue: { color: palette.text, fontWeight: '700', marginTop: 2 },
+    // chip styles now centralized via Chip component
+    snackbar: {
+      position: 'absolute',
+      left: 16,
+      right: 16,
+      bottom: 24,
+      backgroundColor: palette.snackbarBg,
+      paddingVertical: 12,
+      paddingHorizontal: 18,
+      borderRadius: 14,
+      flexDirection: 'row',
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      elevation: 6,
+    },
+    snackbarText: { color: '#fff', fontSize: 14 * __fs, fontWeight: '500' },
+    snackbarUndo: { color: palette.primary, fontSize: 14 * __fs, fontWeight: '700' },
+  });
 
-// Small category chip component used above
-function CategoryChip({ label, emoji, active, onPress, isFilter }) {
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.85}
-      style={[
-        detailStyles.chip,
-        active && detailStyles.chipActive,
-        { flexDirection: 'row', alignItems: 'center' },
-      ]}
-    >
-      <Text style={[detailStyles.chipText, active && { color: '#fff' }]}>
-        {emoji ? `${emoji} ` : ''}
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
-}
+// CategoryChip was replaced by the centralized Chip component

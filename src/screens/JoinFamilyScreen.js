@@ -107,7 +107,7 @@ export default function JoinFamilyScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f0f5ff' }} edges={['top']}>
-      <TabBar active={'FAMILY'} onNavigate={handleNavigate} />
+      <TabBar active={'FAMILY'} onNavigate={handleNavigate} tint="light" />
       <LinearGradient colors={['#EFF6FF', '#E0E7FF']} style={styles.root}>
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           <View style={styles.card}>

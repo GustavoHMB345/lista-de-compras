@@ -113,7 +113,7 @@ function ItemRow({
                     onChangeText={setEditingPriceText}
                     onBlur={() => saveEditPrice(item.id)}
                     keyboardType="numeric"
-                    selectionColor="#2563EB"
+                    selectionColor={styles?.priceText?.color || '#2563EB'}
                     autoFocus
                   />
                   <TouchableOpacity onPress={() => saveEditPrice(item.id)} activeOpacity={0.7}>

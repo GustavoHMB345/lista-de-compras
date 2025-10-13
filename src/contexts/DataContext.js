@@ -32,6 +32,7 @@ export const DataProvider = ({ children }) => {
     ],
     shoppingLists: [],
     currentUser: null,
+    resetTokens: [], // { email, code, expiresAt }
   });
   const [loading, setLoading] = useState(true);
 
@@ -91,6 +92,58 @@ export const DataProvider = ({ children }) => {
     } catch (e) {
       console.error('Failed to save data.', e);
     }
+  };
+
+  // Password reset: request a code (valid for 15 minutes)
+  const requestPasswordReset = async (email) => {
+    const normalized = String(email || '')
+      .trim()
+      .toLowerCase();
+    if (!normalized) return { success: false, message: 'Informe um email.' };
+    const code = String(Math.floor(100000 + Math.random() * 900000)); // 6 dígitos
+    const expiresAt = Date.now() + 15 * 60 * 1000; // 15 minutos
+    const existing = (data.resetTokens || []).filter((t) => t.email !== normalized);
+    const next = { ...data, resetTokens: [...existing, { email: normalized, code, expiresAt }] };
+    await saveData(next);
+    setData(next);
+    // Não revelar se email existe ou não
+    // Em desenvolvimento, retornamos o código para facilitar testes manuais
+    return { success: true, devCode: typeof __DEV__ !== 'undefined' && __DEV__ ? code : undefined };
+  };
+
+  // Password reset: validate code and set new password
+  const resetPassword = async (email, code, newPassword) => {
+    const normalized = String(email || '')
+      .trim()
+      .toLowerCase();
+    const codeStr = String(code || '').trim();
+    if (!normalized || !codeStr || !newPassword) {
+      return { success: false, message: 'Dados incompletos.' };
+    }
+    const token = (data.resetTokens || []).find(
+      (t) => t.email === normalized && t.code === codeStr,
+    );
+    if (!token) return { success: false, message: 'Código inválido.' };
+    if (Date.now() > token.expiresAt) return { success: false, message: 'Código expirado.' };
+    // Atualiza senha do usuário se existir
+    const userIdx = (data.users || []).findIndex((u) => u.email.toLowerCase() === normalized);
+    if (userIdx === -1) {
+      // Para não revelar existência, consideramos sucesso mas limpamos o token
+      const cleaned = { ...data, resetTokens: (data.resetTokens || []).filter((t) => t !== token) };
+      await saveData(cleaned);
+      setData(cleaned);
+      return { success: true };
+    }
+    const users = [...data.users];
+    users[userIdx] = { ...users[userIdx], password: String(newPassword) };
+    const cleaned = {
+      ...data,
+      users,
+      resetTokens: (data.resetTokens || []).filter((t) => t !== token),
+    };
+    await saveData(cleaned);
+    setData(cleaned);
+    return { success: true };
   };
 
   const login = async (email, password) => {
@@ -182,6 +235,8 @@ export const DataProvider = ({ children }) => {
         login,
         logout,
         register,
+        requestPasswordReset,
+        resetPassword,
         updateLists,
         updateFamilies,
         updateUsers,

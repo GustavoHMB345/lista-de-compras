@@ -67,6 +67,22 @@ export default function AuthScreen() {
     <LinearGradient colors={['#3B82F6', '#8B5CF6']} style={stylesAuth.gradient}>
       <Screen>
         <View style={stylesAuth.card}>
+          <View style={stylesAuth.headerWrap}>
+            <LinearGradient
+              colors={['#6C7DFF', '#4F46E5']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={stylesAuth.badge}
+            >
+              <Text style={stylesAuth.badgeGlyph}>{isLogin ? '🔑' : '🔐'}</Text>
+            </LinearGradient>
+            <Text style={stylesAuth.title}>{isLogin ? t('auth.login') : t('auth.register')}</Text>
+            <Text style={stylesAuth.subtitle}>
+              {isLogin
+                ? (t('auth.subtitle.login') ?? 'Acesse suas listas')
+                : (t('auth.subtitle.register') ?? 'Comece a organizar suas compras')}
+            </Text>
+          </View>
           <View style={stylesAuth.tabContainer} accessibilityRole="tablist">
             <Chip
               label={t('auth.login')}
@@ -111,6 +127,7 @@ export default function AuthScreen() {
                       onBlur={onBlur}
                       autoCapitalize="words"
                       returnKeyType="next"
+                      maxFontSizeMultiplier={1.2}
                       testID="auth-name"
                     />
                   )}
@@ -137,6 +154,7 @@ export default function AuthScreen() {
                     keyboardType="email-address"
                     textContentType="emailAddress"
                     returnKeyType="next"
+                    maxFontSizeMultiplier={1.2}
                     testID="auth-email"
                   />
                 )}
@@ -161,12 +179,23 @@ export default function AuthScreen() {
                     textContentType="password"
                     returnKeyType={isLogin ? 'go' : 'next'}
                     onSubmitEditing={handleSubmit(onSubmit)}
+                    maxFontSizeMultiplier={1.2}
                     testID="auth-password"
                   />
                 )}
               />
               {errors.password && (
                 <Text style={stylesAuth.errorField}>{errors.password.message}</Text>
+              )}
+              {isLogin && (
+                <TouchableOpacity
+                  onPress={() => router.push('/reset-password')}
+                  activeOpacity={0.8}
+                >
+                  <View style={stylesAuth.forgotRow}>
+                    <Text style={stylesAuth.forgot}>Esqueci minha senha</Text>
+                  </View>
+                </TouchableOpacity>
               )}
             </View>
             {!!error && (
@@ -218,6 +247,7 @@ export default function AuthScreen() {
 }
 
 const { width } = Dimensions.get('window');
+const __fs = Math.min(1.2, Math.max(0.9, width / 390));
 const stylesAuth = StyleSheet.create({
   gradient: {
     flex: 1,
@@ -237,6 +267,33 @@ const stylesAuth = StyleSheet.create({
     shadowOpacity: 0.13,
     shadowRadius: 10,
     elevation: 7,
+  },
+  headerWrap: { alignItems: 'center', marginBottom: 12 },
+  badge: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#6C7DFF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 4,
+    marginBottom: 8,
+  },
+  badgeGlyph: { fontSize: Math.round(26 * __fs), color: '#fff' },
+  title: {
+    fontSize: Math.round(24 * __fs),
+    fontWeight: '800',
+    color: '#111827',
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: Math.round(13 * __fs),
+    color: '#6B7280',
+    textAlign: 'center',
+    marginTop: 2,
   },
   tabContainer: {
     flexDirection: 'row',
@@ -274,7 +331,7 @@ const stylesAuth = StyleSheet.create({
     marginBottom: 12,
   },
   label: {
-    fontSize: 14,
+    fontSize: Math.round(14 * __fs),
     color: '#374151',
     marginBottom: 4,
     fontWeight: '500',
@@ -286,7 +343,8 @@ const stylesAuth = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#D1D5DB',
-    fontSize: 16,
+    fontSize: Math.round(16 * __fs),
+    color: '#111827',
   },
   errorBox: {
     backgroundColor: '#FEE2E2',
@@ -325,4 +383,6 @@ const stylesAuth = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'center',
   },
+  forgotRow: { alignItems: 'flex-end', marginTop: 6 },
+  forgot: { color: '#6366F1', fontWeight: '600', fontSize: Math.round(12 * __fs) },
 });

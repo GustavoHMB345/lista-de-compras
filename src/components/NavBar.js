@@ -150,7 +150,7 @@ export default function NavBar({ navigate, activeScreen, onAddList, progress }) 
           />
           <Animated.View style={{ transform: [{ scale: centerScale }] }}>
             <LinearGradient
-              colors={GRAY_ACTIVE}
+              colors={['#FFFFFF', '#FFFFFF']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={[
@@ -165,7 +165,7 @@ export default function NavBar({ navigate, activeScreen, onAddList, progress }) 
                 accessibilityLabel="Adicionar lista"
                 testID="tab-add"
               >
-                <PlusIcon />
+                <PlusIcon color="#111827" />
               </TouchableOpacity>
             </LinearGradient>
           </Animated.View>

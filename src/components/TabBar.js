@@ -1,18 +1,15 @@
 import { BlurView } from 'expo-blur';
-import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 // Top subtle tab bar (dashboard-style). Props: active, onNavigate(screen)
-export default function TabBar({ active, onNavigate, onAddList }) {
+export default function TabBar({ active, onNavigate, onAddList, tint = 'light' }) {
   return (
     <SafeAreaView edges={['top']} style={styles.safe}>
       <View style={styles.wrapper}>
-        <BlurView
-          intensity={30}
-          tint={Platform.OS === 'ios' ? 'light' : 'default'}
-          style={styles.blur}
-        >
+        <BlurView intensity={30} tint={tint} style={styles.blur}>
+          <View pointerEvents="none" style={styles.tintOverlay} />
           <View style={styles.topWrap}>
             <View style={styles.tabsRow}>
               <IconTab
@@ -129,4 +126,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#2563EB',
   },
   divider: { height: 1, backgroundColor: 'rgba(0,0,0,0.07)', marginTop: 4 },
+  tintOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(37, 99, 235, 0.12)',
+  },
 });

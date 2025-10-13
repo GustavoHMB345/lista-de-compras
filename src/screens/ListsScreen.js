@@ -16,7 +16,7 @@ import {
   View,
 } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AddListModal from '../components/AddListModal';
 import Button from '../components/Button';
 import Chip from '../components/Chip';
@@ -463,13 +463,25 @@ function ListsScreen() {
 
   return (
     <Screen tabBarHeight={TAB_BAR_OFFSET} contentStyle={{ paddingHorizontal: 0 }} scroll={false}>
-      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 50 }}>
+      <SafeAreaView
+        edges={['top']}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 50,
+          backgroundColor: '#f0f5ff',
+        }}
+        pointerEvents="box-none"
+      >
         <TabBar
           active={'LISTS'}
           onNavigate={handleNavigate}
           onAddList={() => setModalVisible(true)}
+          tint="light"
         />
-      </View>
+      </SafeAreaView>
       <SwipeNavigator
         onSwipeLeft={() => handleNavigate('DASHBOARD')}
         onSwipeRight={() => handleNavigate('FAMILY')}
@@ -600,9 +612,18 @@ function ListsScreen() {
             colors={['#4F46E5', '#2563EB']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={StyleSheet.absoluteFillObject}
+            pointerEvents="none"
+            style={[StyleSheet.absoluteFillObject, { zIndex: 0 }]}
           />
-          <PlusIcon />
+          <View
+            pointerEvents="none"
+            style={[
+              StyleSheet.absoluteFillObject,
+              { zIndex: 1, alignItems: 'center', justifyContent: 'center' },
+            ]}
+          >
+            <PlusIcon color="#FFFFFF" />
+          </View>
         </TouchableOpacity>
       )}
 

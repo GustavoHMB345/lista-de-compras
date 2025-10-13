@@ -1,2 +1,4 @@
-import SignUpScreen from '../src/screens/SignUpScreen';
-export default SignUpScreen;
+import { Redirect } from 'expo-router';
+export default function RedirectToAuth() {
+  return <Redirect href="/auth" />;
+}

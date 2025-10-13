@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useContext, useState } from 'react';
-import { Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Dimensions, StyleSheet, Text, TextInput, View } from 'react-native';
 import Button from '../components/Button';
 import Screen from '../components/Screen';
 import { DataContext } from '../contexts/DataContext';
@@ -9,23 +9,43 @@ import { DataContext } from '../contexts/DataContext';
 const { width } = Dimensions.get('window');
 const __fs = Math.min(1.2, Math.max(0.9, width / 390));
 
-export default function SignInScreen() {
-  const { login } = useContext(DataContext);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+export default function ResetPasswordScreen() {
+  const { resetPassword, requestPasswordReset } = useContext(DataContext);
   const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [devHint, setDevHint] = useState('');
 
-  const handleSignIn = async () => {
-    setError('');
+  const handleRequest = async () => {
+    const trimmed = email.trim();
+    if (!/.+@.+\..+/.test(trimmed)) {
+      Alert.alert('Recuperar senha', 'Informe um email válido.');
+      return;
+    }
     setLoading(true);
     try {
-      const result = await login(email, password);
-      if (result.success) {
-        router.replace('/dashboard');
+      const res = await requestPasswordReset(trimmed);
+      if (res?.devCode) {
+        setDevHint(`Código (dev): ${res.devCode}`);
+      }
+      Alert.alert('Recuperar senha', 'Se existir uma conta, um código foi enviado.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReset = async () => {
+    setLoading(true);
+    try {
+      const res = await resetPassword(email.trim(), code.trim(), password);
+      if (res.success) {
+        Alert.alert('Sucesso', 'Senha alterada. Faça login novamente.');
+        // Após redefinir, voltar para a tela de login dedicada
+        router.replace('/sign-in');
       } else {
-        setError(result.message || 'Email ou senha inválidos.');
+        Alert.alert('Erro', res.message || 'Não foi possível redefinir.');
       }
     } finally {
       setLoading(false);
@@ -33,20 +53,15 @@ export default function SignInScreen() {
   };
 
   return (
-    <LinearGradient colors={['#3B82F6', '#8B5CF6']} style={styles.container}>
+    <LinearGradient colors={['#3B82F6', '#8B5CF6']} style={{ flex: 1 }}>
       <Screen>
         <View style={styles.card}>
           <View style={styles.headerWrap}>
-            <LinearGradient
-              colors={['#6C7DFF', '#4F46E5']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.badge}
-            >
-              <Text style={styles.badgeGlyph}>🔑</Text>
+            <LinearGradient colors={['#6C7DFF', '#4F46E5']} style={styles.badge}>
+              <Text style={styles.badgeGlyph}>🛡️</Text>
             </LinearGradient>
-            <Text style={styles.title}>Entrar</Text>
-            <Text style={styles.subtitle}>Acesse suas listas e histórico</Text>
+            <Text style={styles.title}>Redefinir Senha</Text>
+            <Text style={styles.subtitle}>Use o código enviado ao seu email</Text>
           </View>
           <View style={styles.inputBox}>
             <Text style={styles.label}>Email</Text>
@@ -56,70 +71,71 @@ export default function SignInScreen() {
               placeholderTextColor="#9CA3AF"
               selectionColor="#2563EB"
               autoCapitalize="none"
-              autoCorrect={false}
               keyboardType="email-address"
-              textContentType="emailAddress"
               value={email}
               onChangeText={setEmail}
               returnKeyType="next"
               maxFontSizeMultiplier={1.2}
             />
           </View>
+          {!!devHint && (
+            <View style={{ marginBottom: 8 }}>
+              <Text
+                style={{
+                  color: '#065F46',
+                  backgroundColor: '#D1FAE5',
+                  borderColor: '#A7F3D0',
+                  borderWidth: 1,
+                  padding: 8,
+                  borderRadius: 8,
+                }}
+              >
+                {devHint}
+              </Text>
+            </View>
+          )}
+          <Button
+            title="Enviar código"
+            variant="secondary"
+            onPress={handleRequest}
+            disabled={loading}
+          />
+          <View style={[styles.inputBox, { marginTop: 12 }]}>
+            <Text style={styles.label}>Código</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="6 dígitos"
+              placeholderTextColor="#9CA3AF"
+              selectionColor="#2563EB"
+              keyboardType="number-pad"
+              value={code}
+              onChangeText={(t) => setCode(t.replace(/[^0-9]/g, ''))}
+              maxLength={6}
+              returnKeyType="next"
+              maxFontSizeMultiplier={1.2}
+            />
+          </View>
           <View style={styles.inputBox}>
-            <Text style={styles.label}>Senha</Text>
+            <Text style={styles.label}>Nova senha</Text>
             <TextInput
               style={styles.input}
               placeholder="••••••••"
               placeholderTextColor="#9CA3AF"
               selectionColor="#2563EB"
               secureTextEntry
-              textContentType="password"
               value={password}
               onChangeText={setPassword}
               returnKeyType="go"
-              onSubmitEditing={handleSignIn}
+              onSubmitEditing={handleReset}
               maxFontSizeMultiplier={1.2}
             />
           </View>
-          <View style={styles.forgotRow}>
-            <TouchableOpacity onPress={() => router.push('/reset-password')} activeOpacity={0.8}>
-              <Text style={styles.forgot}>Esqueci minha senha</Text>
-            </TouchableOpacity>
-          </View>
-          {!!error && <Text style={styles.error}>{error}</Text>}
           <Button
-            title="Entrar"
-            variant="primary"
-            onPress={handleSignIn}
-            style={{ width: '100%', marginTop: 10 }}
+            title="Redefinir Senha"
+            onPress={handleReset}
             loading={loading}
             disabled={loading}
-            testID="signInSubmit"
-            accessibilityLabel="Entrar"
           />
-          <Button
-            title="Usuário de teste"
-            variant="secondary"
-            onPress={async () => {
-              setEmail('teste@teste.com');
-              setPassword('123456');
-              setLoading(true);
-              try {
-                const r = await login('teste@teste.com', '123456');
-                if (r.success) router.replace('/dashboard');
-                else setError('Usuário de teste não encontrado.');
-              } finally {
-                setLoading(false);
-              }
-            }}
-            style={{ width: '100%', marginTop: 10 }}
-            disabled={loading}
-            testID="signInTestUser"
-            accessibilityLabel="Entrar com usuário de teste"
-          />
-          <TouchableOpacity onPress={() => router.push('/sign-up')} activeOpacity={0.8}>
-            <Text style={styles.link}>Não tem conta? Cadastre-se</Text>
-          </TouchableOpacity>
         </View>
       </Screen>
     </LinearGradient>
@@ -127,7 +143,6 @@ export default function SignInScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
   card: {
     width: width > 420 ? 380 : '92%',
     backgroundColor: '#fff',
@@ -178,8 +193,4 @@ const styles = StyleSheet.create({
     fontSize: Math.round(16 * __fs),
     color: '#111827',
   },
-  error: { color: '#B91C1C', textAlign: 'center', marginBottom: 8 },
-  link: { marginTop: 12, color: '#6366F1', fontWeight: '600', textAlign: 'center' },
-  forgotRow: { alignItems: 'flex-end', marginTop: 4 },
-  forgot: { color: '#6366F1', fontWeight: '600', fontSize: Math.round(12 * __fs) },
 });

@@ -252,7 +252,7 @@ function FamilyScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f0f5ff' }} edges={['top']}>
-      <TabBar active={'FAMILY'} onNavigate={handleNavigate} />
+      <TabBar active={'FAMILY'} onNavigate={handleNavigate} tint="light" />
       <SwipeNavigator onSwipeLeft={() => handleNavigate('LISTS')} isFirst progress={progress}>
         <LinearGradient colors={['#EFF6FF', '#E0E7FF']} style={familyStyles.root}>
           <ScrollView
