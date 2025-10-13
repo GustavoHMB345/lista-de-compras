@@ -310,6 +310,8 @@ function FamilyScreen() {
                   style={familyStyles.input}
                   value={famSearch}
                   onChangeText={setFamSearch}
+                  placeholderTextColor="#9CA3AF"
+                  selectionColor="#2563EB"
                 />
                 <View
                   style={{
@@ -442,12 +444,16 @@ function FamilyScreen() {
               style={familyStyles.input}
               value={famName}
               onChangeText={setFamName}
+              placeholderTextColor="#9CA3AF"
+              selectionColor="#2563EB"
             />
             <TextInput
               placeholder="Descrição (opcional)"
               style={familyStyles.input}
               value={famDesc}
               onChangeText={setFamDesc}
+              placeholderTextColor="#9CA3AF"
+              selectionColor="#2563EB"
             />
             <View style={[familyStyles.rowEnd, { justifyContent: 'center' }]}>
               <Button variant="light" title="Cancelar" onPress={() => setShowNewFamily(false)} />

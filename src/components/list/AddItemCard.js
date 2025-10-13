@@ -25,6 +25,8 @@ function AddItemCard({
         placeholder="Nome do item"
         value={newItemName}
         onChangeText={setNewItemName}
+        placeholderTextColor="#9CA3AF"
+        selectionColor="#2563EB"
       />
       <ScrollView
         horizontal
@@ -59,6 +61,8 @@ function AddItemCard({
           value={newItemQty}
           onChangeText={setNewItemQty}
           keyboardType="number-pad"
+          placeholderTextColor="#9CA3AF"
+          selectionColor="#2563EB"
         />
         <TextInput
           style={[styles.input, { flex: 2 }]}
@@ -66,6 +70,8 @@ function AddItemCard({
           value={newItemPrice}
           onChangeText={setNewItemPrice}
           keyboardType="numeric"
+          placeholderTextColor="#9CA3AF"
+          selectionColor="#2563EB"
         />
       </View>
       <Button title="Adicionar" onPress={onAdd} style={{ alignSelf: 'flex-start' }} />

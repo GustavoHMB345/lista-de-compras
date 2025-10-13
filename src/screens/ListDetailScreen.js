@@ -1,11 +1,12 @@
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useContext, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Dimensions,
   FlatList,
+  Keyboard,
   ScrollView,
   Share,
   StyleSheet,
@@ -91,6 +92,19 @@ function ListDetailScreen(props) {
 
   const progress = useRef(0); // placeholder if SwipeNavigator expects ref
   const [tabHeight, setTabHeight] = useState(0);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  // Raise bottom overlays when keyboard is visible (Android/iOS)
+  useEffect(() => {
+    const onShow = (e) => setKeyboardHeight(e?.endCoordinates?.height || 0);
+    const onHide = () => setKeyboardHeight(0);
+    const s = Keyboard.addListener('keyboardDidShow', onShow);
+    const h = Keyboard.addListener('keyboardDidHide', onHide);
+    return () => {
+      s.remove();
+      h.remove();
+    };
+  }, []);
 
   const canEdit = true; // adjust auth logic if needed
 
@@ -516,11 +530,21 @@ function ListDetailScreen(props) {
             style={detailStyles.container}
             contentContainerStyle={[
               detailStyles.scrollContent,
-              { paddingTop: (tabHeight || TAB_BAR_OFFSET) + contentExtraTop },
+              {
+                paddingTop: (tabHeight || TAB_BAR_OFFSET) + contentExtraTop,
+                // Add bottom padding so focused rows/inputs stay above the keyboard
+                paddingBottom: Math.max(
+                  32,
+                  (insets?.bottom || 0) + (keyboardHeight ? keyboardHeight + 24 : 32),
+                ),
+              },
             ]}
             data={items}
             keyExtractor={(item) => item.id}
             numColumns={1}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            automaticallyAdjustKeyboardInsets
             ListHeaderComponent={
               <>
                 <View style={[detailStyles.card]}>
@@ -534,6 +558,8 @@ function ListDetailScreen(props) {
                             onChangeText={setEditedName}
                             style={[detailStyles.headerInput, detailStyles.headerNameInput]}
                             placeholder="Nome da lista"
+                            placeholderTextColor="#9CA3AF"
+                            selectionColor="#2563EB"
                           />
                           <TextInput
                             value={editedDesc}
@@ -543,6 +569,8 @@ function ListDetailScreen(props) {
                             multiline
                             numberOfLines={3}
                             textAlignVertical="top"
+                            placeholderTextColor="#9CA3AF"
+                            selectionColor="#2563EB"
                           />
                         </>
                       ) : (
@@ -608,6 +636,8 @@ function ListDetailScreen(props) {
                       placeholder="Buscar item..."
                       value={query}
                       onChangeText={setQuery}
+                      placeholderTextColor="#9CA3AF"
+                      selectionColor="#2563EB"
                     />
                     <View style={{ flexDirection: 'row', gap: 8 }}>
                       <Chip
@@ -923,7 +953,17 @@ function ListDetailScreen(props) {
       />
       {recentlyDeleted && (
         <View
-          style={[detailStyles.snackbar, { bottom: Math.max(24, (insets?.bottom || 0) + 12) }]}
+          style={[
+            detailStyles.snackbar,
+            {
+              bottom: Math.max(
+                24,
+                (insets?.bottom || 0) + 12,
+                // If keyboard is visible, push snackbar above it
+                keyboardHeight ? keyboardHeight + 12 : 0,
+              ),
+            },
+          ]}
           pointerEvents="box-none"
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>

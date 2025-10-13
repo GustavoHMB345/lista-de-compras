@@ -44,6 +44,8 @@ export default function SignUpScreen() {
           <TextInput
             style={styles.input}
             placeholder="Seu nome"
+            placeholderTextColor="#9CA3AF"
+            selectionColor="#2563EB"
             value={name}
             onChangeText={setName}
           />
@@ -53,6 +55,8 @@ export default function SignUpScreen() {
           <TextInput
             style={styles.input}
             placeholder="voce@email.com"
+            placeholderTextColor="#9CA3AF"
+            selectionColor="#2563EB"
             autoCapitalize="none"
             keyboardType="email-address"
             value={email}
@@ -64,6 +68,8 @@ export default function SignUpScreen() {
           <TextInput
             style={styles.input}
             placeholder="••••••••"
+            placeholderTextColor="#9CA3AF"
+            selectionColor="#2563EB"
             secureTextEntry
             value={password}
             onChangeText={setPassword}
@@ -118,6 +124,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#D1D5DB',
     fontSize: 16,
+    color: '#111827',
   },
   error: { color: '#B91C1C', textAlign: 'center', marginBottom: 8 },
   link: { marginTop: 12, color: '#6366F1', fontWeight: '500', textAlign: 'center' },

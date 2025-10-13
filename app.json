@@ -17,7 +17,9 @@
         "backgroundColor": "#3B82F6"
       },
       "edgeToEdgeEnabled": true,
-      "jsEngine": "hermes"
+      "jsEngine": "hermes",
+      "package": "com.wolfred6969.novoapp",
+      "softwareKeyboardLayoutMode": "resize"
     },
     "web": {
       "bundler": "metro",
@@ -38,10 +40,15 @@
     ],
     "extra": {
       "SUPABASE_URL": "",
-      "SUPABASE_ANON_KEY": ""
+      "SUPABASE_ANON_KEY": "",
+      "router": {},
+      "eas": {
+        "projectId": "75af68f5-a705-4c9a-aefa-740b5d03e33e"
+      }
     },
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "owner": "wolfred6969"
   }
 }

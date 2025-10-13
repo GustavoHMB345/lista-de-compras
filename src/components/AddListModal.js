@@ -411,18 +411,24 @@ export default function AddListModal({ visible, onClose, onCreate }) {
                 <TextInput
                   style={styles.input}
                   placeholder="Nome da lista"
+                  placeholderTextColor="#9CA3AF"
+                  selectionColor="#2563EB"
                   value={name}
                   onChangeText={(v) => {
                     setName(v);
                     if (nameError) validateName(v);
                   }}
+                  maxFontSizeMultiplier={1.2}
                 />
                 {!!nameError && <Text style={styles.errorText}>{nameError}</Text>}
                 <TextInput
                   style={styles.input}
                   placeholder="Descrição (opcional)"
+                  placeholderTextColor="#9CA3AF"
+                  selectionColor="#2563EB"
                   value={desc}
                   onChangeText={setDesc}
+                  maxFontSizeMultiplier={1.2}
                 />
                 <Text style={styles.label}>Categoria da Lista</Text>
                 <View style={styles.categoryRow}>
@@ -436,7 +442,11 @@ export default function AddListModal({ visible, onClose, onCreate }) {
                       onPress={() => setCategory(cat.key)}
                       activeOpacity={0.85}
                     >
-                      <CategoryIcon type={cat.key} size={40} neutral />
+                      <CategoryIcon
+                        type={cat.key}
+                        size={Math.max(32, Math.min(44, Math.round(36 * fs)))}
+                        neutral
+                      />
                       <Text
                         style={[
                           styles.categoryLabel,
@@ -491,16 +501,22 @@ export default function AddListModal({ visible, onClose, onCreate }) {
                 <View style={styles.productRow}>
                   <TextInput
                     style={[styles.input, { flex: 2, marginRight: 4 }]}
-                    placeholder="Nome do produto"
+                    placeholder="Nome"
+                    placeholderTextColor="#9CA3AF"
+                    selectionColor="#2563EB"
                     value={productName}
                     onChangeText={setProductName}
+                    maxFontSizeMultiplier={1.2}
                   />
                   <TextInput
                     style={[styles.input, { flex: 1, marginRight: 4 }]}
-                    placeholder="Qtd."
+                    placeholder="Qtd"
+                    placeholderTextColor="#9CA3AF"
+                    selectionColor="#2563EB"
                     value={productQty}
                     onChangeText={setProductQty}
                     keyboardType="number-pad"
+                    maxFontSizeMultiplier={1.2}
                   />
                   <TextInput
                     style={[
@@ -512,9 +528,12 @@ export default function AddListModal({ visible, onClose, onCreate }) {
                       },
                     ]}
                     placeholder="Preço"
+                    placeholderTextColor="#9CA3AF"
+                    selectionColor="#2563EB"
                     value={productPrice}
                     onChangeText={setProductPrice}
                     keyboardType="numeric"
+                    maxFontSizeMultiplier={1.2}
                   />
                   <Button
                     title="+"
@@ -601,7 +620,9 @@ export default function AddListModal({ visible, onClose, onCreate }) {
                         onBlur={commitEditItemName}
                         returnKeyType="done"
                         onSubmitEditing={commitEditItemName}
+                        selectionColor="#2563EB"
                         autoFocus
+                        maxFontSizeMultiplier={1.2}
                       />
                     ) : (
                       <TouchableOpacity
@@ -640,6 +661,8 @@ export default function AddListModal({ visible, onClose, onCreate }) {
                         value={String(item.price || '')}
                         onChangeText={(v) => handlePriceChange(item.id, v)}
                         keyboardType="numeric"
+                        selectionColor="#2563EB"
+                        maxFontSizeMultiplier={1.2}
                       />
                     </View>
                   </View>

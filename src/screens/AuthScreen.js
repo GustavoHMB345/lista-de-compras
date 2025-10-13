@@ -104,6 +104,8 @@ export default function AuthScreen() {
                     <TextInput
                       style={[stylesAuth.input, errors.name && stylesAuth.inputError]}
                       placeholder={t('auth.placeholder.name')}
+                      placeholderTextColor="#9CA3AF"
+                      selectionColor="#2563EB"
                       value={value}
                       onChangeText={onChange}
                       onBlur={onBlur}
@@ -125,6 +127,8 @@ export default function AuthScreen() {
                   <TextInput
                     style={[stylesAuth.input, errors.email && stylesAuth.inputError]}
                     placeholder={t('auth.placeholder.email')}
+                    placeholderTextColor="#9CA3AF"
+                    selectionColor="#2563EB"
                     value={value}
                     onChangeText={onChange}
                     onBlur={onBlur}
@@ -148,6 +152,8 @@ export default function AuthScreen() {
                   <TextInput
                     style={[stylesAuth.input, errors.password && stylesAuth.inputError]}
                     placeholder={t('auth.placeholder.password')}
+                    placeholderTextColor="#9CA3AF"
+                    selectionColor="#2563EB"
                     value={value}
                     onChangeText={onChange}
                     onBlur={onBlur}

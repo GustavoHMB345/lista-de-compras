@@ -14,12 +14,22 @@ export default function Screen({ children, tabBarHeight = 0, contentStyle, scrol
       <Content
         contentContainerStyle={
           scroll
-            ? [{ paddingTop, paddingHorizontal: 16, paddingBottom: 20 }, contentStyle]
+            ? [
+                {
+                  paddingTop,
+                  paddingHorizontal: 16,
+                  // ensure content clears bottom safe area
+                  paddingBottom: Math.max(20, insets.bottom + 16),
+                },
+                contentStyle,
+              ]
             : undefined
         }
         style={
           !scroll ? [{ paddingTop, paddingHorizontal: 16, flex: 1 }, contentStyle] : { flex: 1 }
         }
+        automaticallyAdjustKeyboardInsets
+        keyboardDismissMode={scroll ? 'on-drag' : undefined}
         keyboardShouldPersistTaps="handled"
       >
         {children}

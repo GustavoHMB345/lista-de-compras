@@ -7,6 +7,7 @@ import {
   Animated,
   Dimensions,
   FlatList,
+  Keyboard,
   Platform,
   StyleSheet,
   Text,
@@ -15,11 +16,12 @@ import {
   View,
 } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AddListModal from '../components/AddListModal';
 import Button from '../components/Button';
 import Chip from '../components/Chip';
 import { CategoryIcon, PlusIcon } from '../components/Icons';
+import Screen from '../components/Screen';
 import SwipeNavigator from '../components/SwipeNavigator';
 import TabBar from '../components/TabBar';
 import { DataContext } from '../contexts/DataContext';
@@ -27,7 +29,7 @@ import { DataContext } from '../contexts/DataContext';
 const { width } = Dimensions.get('window');
 const __fs = Math.min(1.2, Math.max(0.9, width / 390));
 const MAX_CARD_WIDTH = Math.min(820, width * 0.98);
-const TAB_BAR_OFFSET = 78; // altura aproximada da TabBar (SafeArea + conteúdo)
+const TAB_BAR_OFFSET = 56; // altura aproximada da TabBar (somente conteúdo; insets aplicados pelo Screen)
 const listsStyles = StyleSheet.create({
   bg: {
     flex: 1,
@@ -35,7 +37,7 @@ const listsStyles = StyleSheet.create({
     justifyContent: 'flex-start',
     paddingHorizontal: 0,
     paddingVertical: 0,
-    paddingTop: TAB_BAR_OFFSET,
+    // Top padding agora é gerenciado pelo Screen via tabBarHeight + insets
   },
   container: {
     width: MAX_CARD_WIDTH,
@@ -172,6 +174,17 @@ function ListsScreen() {
   const router = useRouter();
   const progress = useState(new Animated.Value(0))[0];
   const insets = useSafeAreaInsets();
+  const [kbVisible, setKbVisible] = useState(false);
+
+  // Keyboard visibility to avoid overlaying FAB over inputs
+  useEffect(() => {
+    const showSub = Keyboard.addListener('keyboardDidShow', () => setKbVisible(true));
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => setKbVisible(false));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   // Filtra listas do usuário logado
   const userLists = shoppingLists.filter(
@@ -449,7 +462,7 @@ function ListsScreen() {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f0f5ff' }} edges={['top']}>
+    <Screen tabBarHeight={TAB_BAR_OFFSET} contentStyle={{ paddingHorizontal: 0 }} scroll={false}>
       <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 50 }}>
         <TabBar
           active={'LISTS'}
@@ -463,7 +476,12 @@ function ListsScreen() {
         progress={progress}
       >
         <LinearGradient colors={['#EFF6FF', '#E0E7FF']} style={listsStyles.bg}>
-          <View style={listsStyles.container}>
+          <View
+            style={[
+              listsStyles.container,
+              kbVisible && { paddingBottom: Math.max(24, (insets?.bottom || 0) + 260) },
+            ]}
+          >
             <View style={listsStyles.headerWrap}>
               <Text style={listsStyles.headerTitle}>🛒 Minhas Listas</Text>
               <Text style={listsStyles.headerSubtitle}>
@@ -480,6 +498,8 @@ function ListsScreen() {
                     placeholder="Digite o nome da lista..."
                     value={search}
                     onChangeText={setSearch}
+                    placeholderTextColor="#9CA3AF"
+                    selectionColor="#2563EB"
                   />
                 </View>
                 <View style={[listsStyles.formCol, { maxWidth: 240 }]}>
@@ -490,6 +510,8 @@ function ListsScreen() {
                       placeholder="AAAA-MM-DD"
                       value={dateFilter}
                       onChangeText={setDateFilter}
+                      placeholderTextColor="#9CA3AF"
+                      selectionColor="#2563EB"
                     />
                   ) : (
                     <Button
@@ -555,6 +577,9 @@ function ListsScreen() {
                 numColumns={width >= 720 ? 3 : width >= 520 ? 2 : 1}
                 contentContainerStyle={listsStyles.listsGrid}
                 renderItem={({ item }) => <ListCard item={item} />}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
+                automaticallyAdjustKeyboardInsets
               />
             )}
           </View>
@@ -562,22 +587,24 @@ function ListsScreen() {
       </SwipeNavigator>
 
       {/* Floating Action Button: criar nova lista */}
-      <TouchableOpacity
-        onPress={() => setModalVisible(true)}
-        activeOpacity={0.85}
-        style={[listsStyles.fab, { bottom: Math.max(24, (insets?.bottom || 0) + 16) }]}
-        accessibilityRole="button"
-        accessibilityLabel="Criar nova lista"
-        testID="fabAddList"
-      >
-        <LinearGradient
-          colors={['#4F46E5', '#2563EB']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFillObject}
-        />
-        <PlusIcon />
-      </TouchableOpacity>
+      {!kbVisible && (
+        <TouchableOpacity
+          onPress={() => setModalVisible(true)}
+          activeOpacity={0.85}
+          style={[listsStyles.fab, { bottom: Math.max(24, (insets?.bottom || 0) + 16) }]}
+          accessibilityRole="button"
+          accessibilityLabel="Criar nova lista"
+          testID="fabAddList"
+        >
+          <LinearGradient
+            colors={['#4F46E5', '#2563EB']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+          />
+          <PlusIcon />
+        </TouchableOpacity>
+      )}
 
       {currentUser && (
         <AddListModal
@@ -600,7 +627,7 @@ function ListsScreen() {
         />
       )}
       {/* TabBar movida para o topo */}
-    </SafeAreaView>
+    </Screen>
   );
 }
 

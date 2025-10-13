@@ -185,6 +185,8 @@ function ProfileScreen() {
                     value={displayName}
                     onChangeText={setDisplayName}
                     placeholder="Seu nome"
+                    placeholderTextColor="#9CA3AF"
+                    selectionColor="#2563EB"
                   />
                   <TouchableOpacity
                     onPress={handleUpdateProfile}

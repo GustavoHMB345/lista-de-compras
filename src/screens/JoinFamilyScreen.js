@@ -44,6 +44,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 14 * __fs,
+    color: '#111827',
     marginTop: 8,
   },
   rowCenter: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginTop: 12 },
@@ -125,6 +126,8 @@ export default function JoinFamilyScreen() {
               }}
               autoCapitalize="none"
               style={[styles.input, error ? { borderColor: '#EF4444' } : null]}
+              placeholderTextColor="#9CA3AF"
+              selectionColor="#2563EB"
             />
             {!!error && (
               <Text style={{ color: '#B91C1C', marginTop: 6, textAlign: 'center' }}>{error}</Text>

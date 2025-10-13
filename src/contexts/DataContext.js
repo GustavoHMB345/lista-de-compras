@@ -2,7 +2,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useState } from 'react';
 import { LayoutAnimation, Platform, UIManager } from 'react-native';
 
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+// Avoid calling the experimental enabler on New Architecture (Fabric), where it's a no-op
+// and causes WARN logs. LayoutAnimation on Android Fabric does not require enabling.
+const isFabric = typeof global !== 'undefined' && !!global.nativeFabricUIManager;
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental && !isFabric) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 

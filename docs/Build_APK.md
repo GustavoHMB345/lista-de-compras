@@ -30,6 +30,16 @@ npm run build:android:apk
 
 - O build ocorre na nuvem da Expo. Ao finalizar, será exibido um link para download do APK.
 
+## Download rápido (APK)
+
+- Link direto do último build:
+  - https://expo.dev/artifacts/eas/3bUx2JCuxgwn2qky9Gw3wh.apk
+- QR code (aponte a câmera para instalar no Android):
+
+![QR para APK](https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=https%3A%2F%2Fexpo.dev%2Fartifacts%2Feas%2F3bUx2JCuxgwn2qky9Gw3wh.apk)
+
+Observação: se o link expirar ou você fizer um novo build, atualize este documento com o novo link (o comando acima gera um link ao final da execução).
+
 ## Gerar AAB (para Play Store)
 
 ```pwsh
