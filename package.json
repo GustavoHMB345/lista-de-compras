@@ -12,6 +12,8 @@
     "format": "prettier --write .",
     "test": "jest",
     "test:watch": "jest --watch",
+    "build:android:apk": "eas build -p android --profile preview",
+    "build:android:aab": "eas build -p android --profile production",
     "e2e:build": "detox build -c android.emu.debug",
     "e2e:test": "detox test -c android.emu.debug"
   },
