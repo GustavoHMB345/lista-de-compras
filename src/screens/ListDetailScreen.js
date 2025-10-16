@@ -26,9 +26,7 @@ import { BackIcon, CategoryIcon } from '../components/Icons';
 import AddItemCard from '../components/list/AddItemCard';
 import HeaderActions from '../components/list/HeaderActions';
 import ItemRow from '../components/list/ItemRow';
-import Screen from '../components/Screen';
-import SwipeNavigator from '../components/SwipeNavigator';
-import TabBar from '../components/TabBar';
+import ScreensDefault from '../components/ScreensDefault';
 import { DataContext } from '../contexts/DataContext';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { aggregatePriceHistory, filterByRange } from '../utils/prices';
@@ -52,7 +50,7 @@ function ListDetailScreen(props) {
   // Aceita 'id' (padrão) ou legado 'listId'
   const fallbackId = props?.route?.params?.id || props?.route?.params?.listId;
   const listId = params.id || params.listId || fallbackId;
-  const { shoppingLists, updateLists, currentUser, families, loading, users } =
+  const { shoppingLists, updateLists, currentUser, families, loading, users, uiPrefs } =
     useContext(DataContext);
 
   const list = shoppingLists.find((l) => l.id === listId);
@@ -94,7 +92,7 @@ function ListDetailScreen(props) {
   const undoTimer = useRef(null);
 
   const progress = useRef(0); // placeholder if SwipeNavigator expects ref
-  const [tabHeight, setTabHeight] = useState(0);
+  const [tabHeight] = useState(56);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   // Raise bottom overlays when keyboard is visible (Android/iOS)
@@ -502,14 +500,7 @@ function ListDetailScreen(props) {
   }, [list?.items]);
 
   return (
-    <Screen scroll={false} tabBarHeight={tabHeight || 56} contentStyle={{ paddingHorizontal: 0 }}>
-      <View style={styles.tabHolder} onLayout={(e) => setTabHeight(e.nativeEvent.layout.height)}>
-        <TabBar
-          active={'LISTS'}
-          onNavigate={handleNavigate}
-          onAddList={() => setModalVisible(true)}
-        />
-      </View>
+    <ScreensDefault active="LISTS" leftTab="LISTS" rightTab="PROFILE" scroll={false} contentStyle={{ paddingHorizontal: 0 }} onPrimaryAction={() => setModalVisible(true)}>
       {/* Top-left Back Button (fixed below TabBar) */}
       <View
         pointerEvents="box-none"
@@ -534,13 +525,7 @@ function ListDetailScreen(props) {
           <BackIcon />
         </TouchableOpacity>
       </View>
-      <SwipeNavigator
-        onSwipeLeft={() => handleNavigate('PROFILE')}
-        onSwipeRight={() => handleNavigate('LISTS')}
-        progress={progress}
-        allowSwipeLeft={false}
-        allowSwipeRight
-      >
+      
         {!list ? (
           renderEmptyOrLoading()
         ) : (
@@ -989,6 +974,15 @@ function ListDetailScreen(props) {
                 <Button variant="dark" title="Concluir Lista" onPress={handleArchiveList} />
                 <View style={{ height: 8 }} />
                 <Button variant="danger" title="Excluir Lista" onPress={deleteList} />
+                {/* Spacer to avoid bottom buttons being covered by overlaid TabBar */}
+                <View
+                  style={{
+                    height: Math.max(
+                      24,
+                      (insets?.bottom || 0) + (tabHeight || 56) + (keyboardHeight ? keyboardHeight : 0),
+                    ),
+                  }}
+                />
               </>
             }
             showsVerticalScrollIndicator={false}
@@ -996,7 +990,6 @@ function ListDetailScreen(props) {
             overScrollMode="always"
           />
         )}
-      </SwipeNavigator>
       <AddListModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
@@ -1065,7 +1058,7 @@ function ListDetailScreen(props) {
           />
         </View>
       )}
-    </Screen>
+    </ScreensDefault>
   );
 }
 export default ListDetailScreen;
@@ -1100,7 +1093,7 @@ const makeDetailStyles = (palette) =>
       backgroundColor: palette.card,
       borderWidth: 1,
       borderColor: palette.border,
-      shadowColor: '#000',
+  shadowColor: '#0B0B0B',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.12,
       shadowRadius: 6,
@@ -1116,7 +1109,7 @@ const makeDetailStyles = (palette) =>
       marginBottom: 18,
       width: '96%',
       maxWidth: MAX_CARD_WIDTH,
-      shadowColor: '#000',
+  shadowColor: '#0B0B0B',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.1,
       shadowRadius: 12,
@@ -1224,7 +1217,7 @@ const makeDetailStyles = (palette) =>
       width: '96%',
       maxWidth: MAX_CARD_WIDTH,
       marginBottom: 10,
-      shadowColor: '#000',
+  shadowColor: '#0B0B0B',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.06,
       shadowRadius: 6,
@@ -1449,7 +1442,7 @@ const makeDetailStyles = (palette) =>
       borderRadius: 14,
       flexDirection: 'row',
       alignItems: 'center',
-      shadowColor: '#000',
+  shadowColor: '#0B0B0B',
       shadowOpacity: 0.2,
       shadowRadius: 8,
       elevation: 6,

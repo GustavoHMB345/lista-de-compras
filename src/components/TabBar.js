@@ -1,52 +1,86 @@
-import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
-// Top subtle tab bar (dashboard-style). Props: active, onNavigate(screen)
-export default function TabBar({ active, onNavigate, onAddList, tint = 'light' }) {
+// Simple, solid TabBar (top or bottom). Props: active, onNavigate(screen), tint, position
+export default function TabBar({
+  active,
+  onNavigate,
+  onAddList,
+  tint = 'light',
+  position = 'bottom',
+}) {
   return (
-    <SafeAreaView edges={['top']} style={styles.safe}>
-      <View style={styles.wrapper}>
-        <BlurView intensity={30} tint={tint} style={styles.blur}>
-          <View pointerEvents="none" style={styles.tintOverlay} />
-          <View style={styles.topWrap}>
-            <View style={styles.tabsRow}>
-              <IconTab
-                active={active === 'FAMILY'}
-                label="Famílias"
-                onPress={() => onNavigate('FAMILY')}
-                icon={(c) => <FamilyIcon color={c} />}
+    <SafeAreaView
+      edges={position === 'top' ? ['top'] : ['bottom']}
+      style={[styles.safe, position === 'bottom' ? styles.safeBottom : null]}
+    >
+      {/* Top fade to improve contrast when content is light under the bar */}
+      {position === 'bottom' ? (
+        <LinearGradient
+          pointerEvents="none"
+          colors={["rgba(255,255,255,0)", "rgba(255,255,255,0.9)"]}
+          style={styles.topFade}
+        />
+      ) : null}
+      <View style={[styles.bar, position === 'top' ? styles.barTop : styles.barBottom]}>
+        {/* Notch behind the floating action button */}
+        {typeof onAddList === 'function' ? <View style={styles.fabNotch} /> : null}
+        <View style={styles.tabsRow}>
+          {/* Order aligned with swipe flow: Profile → Lists → Family → Dashboard */}
+          <IconTab
+            active={active === 'PROFILE'}
+            label="Perfil"
+            onPress={() => onNavigate('PROFILE')}
+            icon={(c) => <ProfileIcon color={c} />}
+          />
+          <IconTab
+            active={active === 'LISTS'}
+            label="Listas"
+            onPress={() => onNavigate('LISTS')}
+            icon={(c) => <ListsIcon color={c} />}
+          />
+          {typeof onAddList === 'function' ? (
+            <TouchableOpacity
+              style={styles.fab}
+              activeOpacity={0.9}
+              onPress={onAddList}
+              accessibilityRole="button"
+              accessibilityLabel="Ação principal"
+            >
+              <LinearGradient
+                colors={["#4F46E5", "#2563EB"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFill}
               />
-              <IconTab
-                active={active === 'LISTS'}
-                label="Listas"
-                onPress={() => onNavigate('LISTS')}
-                icon={(c) => <ListsIcon color={c} />}
-              />
-              <IconTab
-                active={active === 'DASHBOARD'}
-                label="Dashboard"
-                onPress={() => onNavigate('DASHBOARD')}
-                icon={(c) => <HomeIcon color={c} />}
-              />
-              <IconTab
-                active={active === 'PROFILE'}
-                label="Perfil"
-                onPress={() => onNavigate('PROFILE')}
-                icon={(c) => <ProfileIcon color={c} />}
-              />
-            </View>
-          </View>
-          <View style={styles.divider} />
-        </BlurView>
+              <View style={styles.fabPlus}>
+                <View style={styles.plusBarV} />
+                <View style={styles.plusBarH} />
+              </View>
+            </TouchableOpacity>
+          ) : null}
+          <IconTab
+            active={active === 'FAMILY'}
+            label="Famílias"
+            onPress={() => onNavigate('FAMILY')}
+            icon={(c) => <FamilyIcon color={c} />}
+          />
+          <IconTab
+            active={active === 'DASHBOARD'}
+            label="Dashboard"
+            onPress={() => onNavigate('DASHBOARD')}
+            icon={(c) => <HomeIcon color={c} />}
+          />
+        </View>
       </View>
     </SafeAreaView>
   );
 }
 
 function IconTab({ active, label, icon, onPress }) {
-  const color = active ? '#1E3A8A' : '#6B7280';
+  const color = active ? '#2563EB' : '#9CA3AF';
   return (
     <TouchableOpacity
       style={styles.iconTab}
@@ -56,7 +90,7 @@ function IconTab({ active, label, icon, onPress }) {
       accessibilityLabel={label}
     >
       {icon(color)}
-      {active && <View style={styles.activeBar} />}
+      {active && <View style={styles.activeDot} />}
     </TouchableOpacity>
   );
 }
@@ -104,30 +138,80 @@ const ProfileIcon = ({ color = '#6B7280' }) => (
 
 const styles = StyleSheet.create({
   safe: { backgroundColor: 'transparent' },
-  wrapper: { width: '100%' },
-  blur: { width: '100%' },
-  topWrap: {
+  safeBottom: { position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 50 },
+  topFade: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 56, // approximate bar height; gradient sits just above the bar
+    height: 20,
+    zIndex: 49,
+  },
+  bar: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    shadowColor: '#0B0B0B',
+    shadowOpacity: 0.06,
+    shadowOffset: { width: 0, height: -2 },
+    shadowRadius: 6,
+    elevation: 8,
+    paddingVertical: 10,
+  },
+  fabNotch: {
+    position: 'absolute',
+    top: -18,
+    alignSelf: 'center',
+    width: 70,
+    height: 36,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    zIndex: 51,
+  },
+  barTop: {
+    borderTopWidth: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+    shadowOffset: { width: 0, height: 2 },
+  },
+  barBottom: {},
+  tabsRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingHorizontal: 16,
+  },
+  iconTab: { paddingHorizontal: 16, paddingVertical: 6, alignItems: 'center' },
+  fab: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    marginHorizontal: 6,
+    elevation: 8,
+    shadowColor: '#0B0B0B',
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+    alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 18,
-    paddingTop: 6,
-    paddingBottom: 10,
   },
-  tabsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
-  iconTab: { paddingHorizontal: 12, paddingVertical: 6, alignItems: 'center' },
-  activeBar: {
-    position: 'absolute',
-    bottom: -2,
-    height: 3,
-    left: 8,
-    right: 8,
-    borderRadius: 2,
+  fabPlus: {
+    width: 22,
+    height: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  plusBarV: { position: 'absolute', width: 4, height: 22, borderRadius: 2, backgroundColor: '#fff' },
+  plusBarH: { position: 'absolute', height: 4, width: 22, borderRadius: 2, backgroundColor: '#fff' },
+  activeDot: {
+    marginTop: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: '#2563EB',
-  },
-  divider: { height: 1, backgroundColor: 'rgba(0,0,0,0.07)', marginTop: 4 },
-  tintOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(37, 99, 235, 0.12)',
   },
 });

@@ -1,10 +1,14 @@
+import { useContext } from 'react';
 import { Colors } from '../../constants/Colors';
 import { useColorScheme } from '../../hooks/useColorScheme';
+import { DataContext } from '../contexts/DataContext';
 
 export function useAppTheme() {
   // Call hooks unconditionally to satisfy rules-of-hooks
   const schemeHook = useColorScheme();
-  const scheme = schemeHook || 'light';
+  const ctx = useContext(DataContext);
+  const prefTheme = ctx?.uiPrefs?.theme; // 'light' | 'dark' | undefined
+  const scheme = prefTheme === 'dark' || prefTheme === 'light' ? prefTheme : schemeHook || 'light';
   const T = Colors?.[scheme] || Colors.light;
   const palette = {
     bg: T.background,

@@ -19,7 +19,7 @@ export default function SwipeNavigator({
   enabled = true,
   allowSwipeLeft = true,
   allowSwipeRight = true,
-  edgeFrom = 'both', // 'both' | 'left' | 'right'
+  edgeFrom = 'both', // 'both' | 'left' | 'right' | 'any'
   verticalTolerance = 18, // delta vertical máximo para considerar gesto horizontal
   multiTouchCancel = true, // cancela se mais de um toque estiver ativo
   onSwipeStart, // callback ao começar um swipe válido
@@ -76,14 +76,17 @@ export default function SwipeNavigator({
           const leftEdge = startXRef.current <= effectiveEdge;
           const rightEdge = startXRef.current >= winWidth - effectiveEdge;
           const edgeOk =
-            edgeFrom === 'both'
-              ? leftEdge || rightEdge
-              : edgeFrom === 'left'
-                ? leftEdge
-                : rightEdge;
+            edgeFrom === 'any'
+              ? true
+              : edgeFrom === 'both'
+                ? leftEdge || rightEdge
+                : edgeFrom === 'left'
+                  ? leftEdge
+                  : rightEdge;
           // Requer deslocamento horizontal suficiente, dentro da tolerância vertical.
+          const minDx = edgeFrom === 'any' ? 22 : 14;
           const horizontalIntent =
-            Math.abs(dx) > 14 &&
+            Math.abs(dx) > minDx &&
             Math.abs(dx) > Math.abs(dy) * 1.15 &&
             Math.abs(dy) <= verticalTolerance;
           const dirOk = (dx < 0 && allowSwipeLeft) || (dx > 0 && allowSwipeRight);

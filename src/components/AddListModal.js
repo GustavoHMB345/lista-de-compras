@@ -1,17 +1,17 @@
 import * as Haptics from 'expo-haptics';
 import React from 'react';
 import {
-  Animated,
-  Dimensions,
-  FlatList,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Animated,
+    Dimensions,
+    FlatList,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import useFontScale from '../hooks/useFontScale';
@@ -169,7 +169,7 @@ export default function AddListModal({ visible, onClose, onCreate }) {
       borderRadius: 14,
       padding: 10,
       marginBottom: 8,
-      shadowColor: '#000',
+  shadowColor: '#0B0B0B',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.06,
       shadowRadius: 4,

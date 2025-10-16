@@ -3,16 +3,14 @@ import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import SwipeNavigator from '../components/SwipeNavigator';
-import TabBar from '../components/TabBar';
+import ScreensDefault from '../components/ScreensDefault';
 import { DataContext } from '../contexts/DataContext';
 
 const { width } = Dimensions.get('window');
@@ -20,7 +18,7 @@ const __fs = Math.min(1.2, Math.max(0.9, width / 390));
 const MAX_WIDTH = Math.min(820, width * 0.98);
 
 export default function DashboardScreen() {
-  const { shoppingLists, currentUser, loading } = useContext(DataContext);
+  const { shoppingLists, currentUser, loading, uiPrefs } = useContext(DataContext);
   const router = useRouter();
   const progress = useState(new Animated.Value(0))[0];
   const rootNavigation = useRootNavigationState();
@@ -239,13 +237,7 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
-      <TabBar active={'DASHBOARD'} onNavigate={handleNavigate} tint="light" />
-      <SwipeNavigator
-        onSwipeLeft={() => handleNavigate('PROFILE')}
-        onSwipeRight={() => handleNavigate('LISTS')}
-        progress={progress}
-      >
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScreensDefault active="DASHBOARD" leftTab="FAMILY" rightTab={undefined} contentStyle={styles.scroll}>
           {/* Header + Stats */}
           <View style={[styles.card, { width: MAX_WIDTH }]}>
             <View style={{ alignItems: 'center', marginBottom: 16 }}>
@@ -377,7 +369,7 @@ export default function DashboardScreen() {
                             paddingVertical: 6,
                             paddingHorizontal: 10,
                             borderRadius: 10,
-                            shadowColor: '#000',
+                            shadowColor: '#0B0B0B',
                             shadowOpacity: 0.25,
                             shadowOffset: { width: 0, height: 2 },
                           }}
@@ -433,8 +425,7 @@ export default function DashboardScreen() {
               </View>
             )}
           </View>
-        </ScrollView>
-      </SwipeNavigator>
+      </ScreensDefault>
     </SafeAreaView>
   );
 }
@@ -448,7 +439,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 22,
     padding: 16,
-    shadowColor: '#000',
+  shadowColor: '#0B0B0B',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,

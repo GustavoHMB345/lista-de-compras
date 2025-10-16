@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: isTablet ? 22 : 18,
     paddingTop: isTablet ? 10 : 8,
     paddingBottom: isTablet ? 10 : 8,
-    shadowColor: '#000',
+  shadowColor: '#0B0B0B',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.18,
     shadowRadius: 12,

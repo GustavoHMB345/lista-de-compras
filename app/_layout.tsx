@@ -36,6 +36,7 @@ export default function RootLayout() {
               <Stack.Screen name="family" options={{ headerShown: false }} />
               <Stack.Screen name="profile" options={{ headerShown: false }} />
               <Stack.Screen name="list-detail" options={{ headerShown: false }} />
+              <Stack.Screen name="join-family" options={{ headerShown: false }} />
               <Stack.Screen name="+not-found" />
             </Stack>
           </ErrorBoundary>

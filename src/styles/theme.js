@@ -21,14 +21,14 @@ export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24 };
 export const radius = { sm: 8, md: 10, lg: 12, xl: 16, xxl: 22 };
 export const shadows = {
   card: {
-    shadowColor: '#000',
+    shadowColor: '#0B0B0B',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.13,
     shadowRadius: 10,
     elevation: 7,
   },
   soft: {
-    shadowColor: '#000',
+    shadowColor: '#0B0B0B',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
@@ -41,6 +41,15 @@ export const typography = {
   h2: { fontSize: 18, fontWeight: '700', color: '#111827' },
   body: { fontSize: 16, color: '#374151' },
   caption: { fontSize: 12, color: '#6B7280' },
+};
+
+// Gradient presets (start -> end). Keep colors bright and accessible.
+export const GRADIENTS = {
+  primary: ['#4F46E5', '#2563EB'],
+  secondary: ['#8B5CF6', '#3B82F6'],
+  success: ['#16A34A', '#22C55E'],
+  danger: ['#DC2626', '#EF4444'],
+  gray: ['#6B7280', '#4B5563'],
 };
 
 // Base button container and label
@@ -117,10 +126,11 @@ export const buildButtonTokens = (themeColors) => {
     danger: { backgroundColor: colors.danger },
     dark: { backgroundColor: colors.dark },
     gray: { backgroundColor: colors.gray },
+    // Keep light buttons visually light regardless of theme to avoid black pills on light cards
     light: {
-      backgroundColor: themeColors?.background || colors.bg,
+      backgroundColor: colors.bg, // always white surface
       borderWidth: 1,
-      borderColor: themeColors?.tabIconDefault || colors.lightGray,
+      borderColor: colors.lightGray,
     },
   };
   const TEXT_BUTTON = {

@@ -3,7 +3,7 @@ export const GRADIENT_BG = ['#EFF6FF', '#E0E7FF']; // light blue -> indigo hint
 export const CARD_RADIUS = 22;
 export const CARD_BORDER = '#F1F5F9';
 export const CARD_SHADOW = {
-  shadowColor: '#000',
+  shadowColor: '#0B0B0B',
   shadowOffset: { width: 0, height: 4 },
   shadowOpacity: 0.08,
   shadowRadius: 12,

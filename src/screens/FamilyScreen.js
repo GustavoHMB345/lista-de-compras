@@ -2,34 +2,32 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useContext, useMemo, useState } from 'react';
 import {
-  Alert,
-  Animated,
-  Dimensions,
-  Modal,
-  ScrollView,
-  Share,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    Alert,
+    Animated,
+    Dimensions,
+    Modal,
+    Share,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../components/Button';
-import SwipeNavigator from '../components/SwipeNavigator';
-import TabBar from '../components/TabBar';
+import ScreensDefault from '../components/ScreensDefault';
 import { DataContext } from '../contexts/DataContext';
 
 const { width } = Dimensions.get('window');
 const __fs = Math.min(1.2, Math.max(0.9, width / 390));
 const MAX_WIDTH = Math.min(820, width * 0.98);
 const familyStyles = StyleSheet.create({
-  root: { flex: 1 },
-  scroll: { alignItems: 'center', paddingBottom: 28, paddingTop: 18 },
+  root: { flex: 1, backgroundColor: '#f0f5ff' },
+  scroll: { alignItems: 'center', paddingBottom: 28, paddingTop: 8 },
   card: {
     backgroundColor: '#fff',
     borderRadius: 22,
     padding: 18,
-    shadowColor: '#000',
+    shadowColor: '#0B0B0B',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
@@ -52,7 +50,7 @@ const familyStyles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: '#F1F5F9',
-    shadowColor: '#000',
+    shadowColor: '#0B0B0B',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
@@ -96,7 +94,7 @@ const familyStyles = StyleSheet.create({
   // Modal
   modalWrap: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(11,11,11,0.4)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
@@ -121,7 +119,8 @@ const familyStyles = StyleSheet.create({
 });
 
 function FamilyScreen() {
-  const { families, users, currentUser, shoppingLists, updateFamilies } = useContext(DataContext);
+  const { families, users, currentUser, shoppingLists, updateFamilies, uiPrefs } =
+    useContext(DataContext);
   const router = useRouter();
   const progress = useState(new Animated.Value(0))[0];
   const [showNewFamily, setShowNewFamily] = useState(false);
@@ -251,14 +250,12 @@ function FamilyScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f0f5ff' }} edges={['top']}>
-      <TabBar active={'FAMILY'} onNavigate={handleNavigate} tint="light" />
-      <SwipeNavigator onSwipeLeft={() => handleNavigate('LISTS')} isFirst progress={progress}>
-        <LinearGradient colors={['#EFF6FF', '#E0E7FF']} style={familyStyles.root}>
-          <ScrollView
-            contentContainerStyle={familyStyles.scroll}
-            showsVerticalScrollIndicator={false}
-          >
+    <SafeAreaView style={familyStyles.root} edges={['top']}>
+      <ScreensDefault active="FAMILY" leftTab="LISTS" rightTab="DASHBOARD" contentStyle={familyStyles.scroll}>
+          <LinearGradient
+            colors={['#EFF6FF', '#E0E7FF']}
+            style={[StyleSheet.absoluteFillObject, { zIndex: -1 }]}
+          />
             {/* Header */}
             <View style={familyStyles.card}>
               <View style={familyStyles.headerCenter}>
@@ -341,7 +338,12 @@ function FamilyScreen() {
               <View style={{ gap: 12 }}>
                 {/* Quick access create pinned at top */}
                 <View style={[familyStyles.familyCard, { alignItems: 'center' }]}>
-                  <Button title="Criar Nova Família" onPress={() => setShowNewFamily(true)} />
+                  <Button
+                    title="Criar Nova Família"
+                    onPress={() => setShowNewFamily(true)}
+                    withGradient
+                    gradientPreset="primary"
+                  />
                 </View>
                 {filteredFamilies.map((f) => {
                   const isOwner = f.owner === currentUser?.id;
@@ -415,14 +417,8 @@ function FamilyScreen() {
                 })}
               </View>
             </View>
-
-            {/* Add Family Button */}
-            <View style={[familyStyles.card, { alignItems: 'center' }]}>
-              <Button title="Criar Nova Família" onPress={() => setShowNewFamily(true)} />
-            </View>
-          </ScrollView>
-        </LinearGradient>
-      </SwipeNavigator>
+            {/* Removed duplicate 'Criar Nova Família' button at bottom (kept top quick-access) */}
+    </ScreensDefault>
 
       {/* New Family Modal */}
       <Modal
@@ -483,7 +479,7 @@ function FamilyScreen() {
 
       {/* Join by Code modal removed; use dedicated screen */}
 
-      {/* TabBar agora no topo */}
+  {/* TabBar permanece no rodapé */}
 
       {/* Details Modal */}
       <FamilyDetailsModal

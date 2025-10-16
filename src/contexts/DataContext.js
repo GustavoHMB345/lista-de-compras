@@ -33,6 +33,10 @@ export const DataProvider = ({ children }) => {
     shoppingLists: [],
     currentUser: null,
     resetTokens: [], // { email, code, expiresAt }
+    uiPrefs: {
+      theme: 'light', // 'light' | 'dark'
+      tabBarPosition: 'bottom', // 'bottom' | 'top'
+    },
   });
   const [loading, setLoading] = useState(true);
 
@@ -92,6 +96,31 @@ export const DataProvider = ({ children }) => {
     } catch (e) {
       console.error('Failed to save data.', e);
     }
+  };
+
+  // UI preferences helpers
+  const setTheme = async (theme) => {
+    const next = { ...data, uiPrefs: { ...(data.uiPrefs || {}), theme } };
+    await saveData(next);
+    setData(next);
+  };
+
+  const toggleTheme = async () => {
+    const current = (data.uiPrefs && data.uiPrefs.theme) || 'light';
+    const nextTheme = current === 'dark' ? 'light' : 'dark';
+    await setTheme(nextTheme);
+  };
+
+  const setTabBarPosition = async (pos) => {
+    const next = { ...data, uiPrefs: { ...(data.uiPrefs || {}), tabBarPosition: pos } };
+    await saveData(next);
+    setData(next);
+  };
+
+  const toggleTabBarPosition = async () => {
+    const current = (data.uiPrefs && data.uiPrefs.tabBarPosition) || 'bottom';
+    const nextPos = current === 'bottom' ? 'top' : 'bottom';
+    await setTabBarPosition(nextPos);
   };
 
   // Password reset: request a code (valid for 15 minutes)
@@ -240,6 +269,12 @@ export const DataProvider = ({ children }) => {
         updateLists,
         updateFamilies,
         updateUsers,
+        // UI prefs
+        uiPrefs: data.uiPrefs,
+        setTheme,
+        toggleTheme,
+        setTabBarPosition,
+        toggleTabBarPosition,
       }}
     >
       {children}

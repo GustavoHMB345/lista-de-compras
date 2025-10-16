@@ -65,7 +65,16 @@ export default function AuthScreen() {
 
   return (
     <LinearGradient colors={['#3B82F6', '#8B5CF6']} style={stylesAuth.gradient}>
-      <Screen>
+      <Screen
+        scroll={false}
+        contentStyle={{
+          paddingTop: 0,
+          paddingHorizontal: 0,
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
         <View style={stylesAuth.card}>
           <View style={stylesAuth.headerWrap}>
             <LinearGradient
@@ -262,7 +271,7 @@ const stylesAuth = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 24,
     padding: 24,
-    shadowColor: '#000',
+    shadowColor: '#0B0B0B',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.13,
     shadowRadius: 10,
@@ -309,7 +318,7 @@ const stylesAuth = StyleSheet.create({
   },
   tabActive: {
     backgroundColor: '#fff',
-    shadowColor: '#000',
+    shadowColor: '#0B0B0B',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,

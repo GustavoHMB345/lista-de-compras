@@ -16,14 +16,12 @@ import {
   View,
 } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AddListModal from '../components/AddListModal';
 import Button from '../components/Button';
 import Chip from '../components/Chip';
 import { CategoryIcon, PlusIcon } from '../components/Icons';
-import Screen from '../components/Screen';
-import SwipeNavigator from '../components/SwipeNavigator';
-import TabBar from '../components/TabBar';
+import ScreensDefault from '../components/ScreensDefault';
 import { DataContext } from '../contexts/DataContext';
 
 const { width } = Dimensions.get('window');
@@ -51,7 +49,7 @@ const listsStyles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 22,
     padding: 16,
-    shadowColor: '#000',
+    shadowColor: '#0B0B0B',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
@@ -88,7 +86,7 @@ const listsStyles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: '#F1F5F9',
-    shadowColor: '#000',
+    shadowColor: '#0B0B0B',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 10,
@@ -152,7 +150,7 @@ const listsStyles = StyleSheet.create({
     borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
+    shadowColor: '#0B0B0B',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -169,7 +167,7 @@ const PRIORITY_COLORS = {
 };
 
 function ListsScreen() {
-  const { shoppingLists, currentUser, updateLists } = useContext(DataContext);
+  const { shoppingLists, currentUser, updateLists, uiPrefs } = useContext(DataContext);
   const [modalVisible, setModalVisible] = useState(false);
   const router = useRouter();
   const progress = useState(new Animated.Value(0))[0];
@@ -462,31 +460,15 @@ function ListsScreen() {
   );
 
   return (
-    <Screen tabBarHeight={TAB_BAR_OFFSET} contentStyle={{ paddingHorizontal: 0 }} scroll={false}>
-      <SafeAreaView
-        edges={['top']}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 50,
-          backgroundColor: '#f0f5ff',
-        }}
-        pointerEvents="box-none"
-      >
-        <TabBar
-          active={'LISTS'}
-          onNavigate={handleNavigate}
-          onAddList={() => setModalVisible(true)}
-          tint="light"
-        />
-      </SafeAreaView>
-      <SwipeNavigator
-        onSwipeLeft={() => handleNavigate('DASHBOARD')}
-        onSwipeRight={() => handleNavigate('FAMILY')}
-        progress={progress}
-      >
+    <ScreensDefault
+      active="LISTS"
+      leftTab="PROFILE"
+      rightTab="FAMILY"
+      scroll={false}
+      contentStyle={{ paddingHorizontal: 0 }}
+      onPrimaryAction={() => setModalVisible(true)}
+      primaryActionPlacement="floating"
+    >
         <LinearGradient colors={['#EFF6FF', '#E0E7FF']} style={listsStyles.bg}>
           <View
             style={[
@@ -591,39 +573,41 @@ function ListsScreen() {
                 renderItem={({ item }) => <ListCard item={item} />}
                 keyboardShouldPersistTaps="handled"
                 keyboardDismissMode="on-drag"
+                ListFooterComponent={<View style={{ height: Math.max(24, (insets?.bottom || 0) + TAB_BAR_OFFSET + 24) }} />}
                 automaticallyAdjustKeyboardInsets
               />
             )}
           </View>
         </LinearGradient>
-      </SwipeNavigator>
-
-      {/* Floating Action Button: criar nova lista */}
+      
+      {/* Floating FAB (previous ListsScreen model) */}
       {!kbVisible && (
         <TouchableOpacity
-          onPress={() => setModalVisible(true)}
-          activeOpacity={0.85}
-          style={[listsStyles.fab, { bottom: Math.max(24, (insets?.bottom || 0) + 16) }]}
           accessibilityRole="button"
-          accessibilityLabel="Criar nova lista"
-          testID="fabAddList"
+          accessibilityLabel="Adicionar nova lista"
+          onPress={() => setModalVisible(true)}
+          activeOpacity={0.9}
+          style={[
+            listsStyles.fab,
+            {
+              bottom: Math.max(24, (insets?.bottom || 0) + TAB_BAR_OFFSET + 12),
+            },
+          ]}
         >
           <LinearGradient
-            colors={['#4F46E5', '#2563EB']}
+            colors={['#4F46E5', '#6C7DFF']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            pointerEvents="none"
-            style={[StyleSheet.absoluteFillObject, { zIndex: 0 }]}
+            style={{
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              bottom: 0,
+              left: 0,
+              borderRadius: 30,
+            }}
           />
-          <View
-            pointerEvents="none"
-            style={[
-              StyleSheet.absoluteFillObject,
-              { zIndex: 1, alignItems: 'center', justifyContent: 'center' },
-            ]}
-          >
-            <PlusIcon color="#FFFFFF" />
-          </View>
+          <PlusIcon size={26} color="#fff" />
         </TouchableOpacity>
       )}
 
@@ -647,8 +631,7 @@ function ListsScreen() {
           }}
         />
       )}
-      {/* TabBar movida para o topo */}
-    </Screen>
+    </ScreensDefault>
   );
 }
 
