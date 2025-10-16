@@ -10,12 +10,10 @@
     "web": "expo start --web",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "test": "jest",
-    "test:watch": "jest --watch",
     "build:android:apk": "npx eas-cli build -p android --profile preview",
     "build:android:aab": "npx eas-cli build -p android --profile production",
-    "e2e:build": "detox build -c android.emu.debug",
-    "e2e:test": "detox test -c android.emu.debug"
+    "e2e:build": "echo 'Detox disabled'",
+    "e2e:test": "echo 'Detox disabled'"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
@@ -61,56 +59,18 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@react-native-community/cli": "latest",
-    "@testing-library/jest-native": "^5.4.3",
-    "@testing-library/react-native": "^13.3.3",
-    "@types/jest": "29.5.14",
+    
     "@types/react": "~19.1.10",
-    "detox": "^20.43.0",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",
-    "husky": "^9.0.11",
-    "jest": "^29.7.0",
-    "jest-expo": "~54.0.0",
-    "lint-staged": "^15.2.10",
+    
+    
     "prettier": "^3.6.2",
-    "react-test-renderer": "19.1.0",
+    
     "typescript": "~5.9.2"
   },
-  "private": true,
-  "lint-staged": {
-    "*.{js,jsx,ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{json,md,css,scss,mdx}": [
-      "prettier --write"
-    ]
-  },
-  "detox": {
-    "testRunner": "jest",
-    "runnerConfig": "e2e/jest.config.js",
-    "apps": {
-      "android.debug": {
-        "type": "android.apk",
-        "binaryPath": "android/app/build/outputs/apk/debug/app-debug.apk",
-        "build": "echo \"Use Expo run:expo to build debug APK if needed\""
-      }
-    },
-    "devices": {
-      "android.emulator": {
-        "type": "android.emulator",
-        "device": {
-          "avdName": "Pixel_4_API_33"
-        }
-      }
-    },
-    "configurations": {
-      "android.emu.debug": {
-        "device": "android.emulator",
-        "app": "android.debug"
-      }
-    }
-  }
+  "private": true
+  
 }

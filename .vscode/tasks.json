@@ -1,0 +1,13 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Clean node modules (no-op)",
+			"type": "shell",
+			"command": "node -e \"try{const p=require('./package.json');console.log(Object.keys(p.devDependencies||{}))}catch(e){console.error(e)}\"",
+			"args": [],
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}
