@@ -1,8 +1,9 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useContext, useState } from 'react';
-import { Alert, Dimensions, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Button from '../components/Button';
+import { BackIcon } from '../components/Icons';
 import Screen from '../components/Screen';
 import { DataContext } from '../contexts/DataContext';
 
@@ -17,6 +18,7 @@ export default function ResetPasswordScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [devHint, setDevHint] = useState('');
+  const [step, setStep] = useState(1); // 1: request code; 2: enter code + new password
 
   const handleRequest = async () => {
     const trimmed = email.trim();
@@ -31,6 +33,7 @@ export default function ResetPasswordScreen() {
         setDevHint(`Código (dev): ${res.devCode}`);
       }
       Alert.alert('Recuperar senha', 'Se existir uma conta, um código foi enviado.');
+      setStep(2);
     } finally {
       setLoading(false);
     }
@@ -54,8 +57,25 @@ export default function ResetPasswordScreen() {
 
   return (
     <LinearGradient colors={['#3B82F6', '#8B5CF6']} style={{ flex: 1 }}>
-      <Screen>
+      <Screen
+        scroll={false}
+        contentStyle={{
+          paddingTop: 0,
+          paddingHorizontal: 0,
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
         <View style={styles.card}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Voltar"
+            onPress={() => router.back()}
+            style={{ alignSelf: 'flex-start', marginBottom: 8 }}
+          >
+            <BackIcon />
+          </TouchableOpacity>
           <View style={styles.headerWrap}>
             <LinearGradient colors={['#6C7DFF', '#4F46E5']} style={styles.badge}>
               <Text style={styles.badgeGlyph}>🛡️</Text>
@@ -100,42 +120,46 @@ export default function ResetPasswordScreen() {
             onPress={handleRequest}
             disabled={loading}
           />
-          <View style={[styles.inputBox, { marginTop: 12 }]}>
-            <Text style={styles.label}>Código</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="6 dígitos"
-              placeholderTextColor="#9CA3AF"
-              selectionColor="#2563EB"
-              keyboardType="number-pad"
-              value={code}
-              onChangeText={(t) => setCode(t.replace(/[^0-9]/g, ''))}
-              maxLength={6}
-              returnKeyType="next"
-              maxFontSizeMultiplier={1.2}
-            />
-          </View>
-          <View style={styles.inputBox}>
-            <Text style={styles.label}>Nova senha</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="••••••••"
-              placeholderTextColor="#9CA3AF"
-              selectionColor="#2563EB"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-              returnKeyType="go"
-              onSubmitEditing={handleReset}
-              maxFontSizeMultiplier={1.2}
-            />
-          </View>
-          <Button
-            title="Redefinir Senha"
-            onPress={handleReset}
-            loading={loading}
-            disabled={loading}
-          />
+          {step === 2 && (
+            <>
+              <View style={[styles.inputBox, { marginTop: 12 }]}>
+                <Text style={styles.label}>Código</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="6 dígitos"
+                  placeholderTextColor="#9CA3AF"
+                  selectionColor="#2563EB"
+                  keyboardType="number-pad"
+                  value={code}
+                  onChangeText={(t) => setCode(t.replace(/[^0-9]/g, ''))}
+                  maxLength={6}
+                  returnKeyType="next"
+                  maxFontSizeMultiplier={1.2}
+                />
+              </View>
+              <View style={styles.inputBox}>
+                <Text style={styles.label}>Nova senha</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="••••••••"
+                  placeholderTextColor="#9CA3AF"
+                  selectionColor="#2563EB"
+                  secureTextEntry
+                  value={password}
+                  onChangeText={setPassword}
+                  returnKeyType="go"
+                  onSubmitEditing={handleReset}
+                  maxFontSizeMultiplier={1.2}
+                />
+              </View>
+              <Button
+                title="Redefinir Senha"
+                onPress={handleReset}
+                loading={loading}
+                disabled={loading}
+              />
+            </>
+          )}
         </View>
       </Screen>
     </LinearGradient>

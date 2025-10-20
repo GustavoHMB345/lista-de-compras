@@ -2,18 +2,18 @@ import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Dimensions,
-  FlatList,
-  Keyboard,
-  ScrollView,
-  Share,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Dimensions,
+    FlatList,
+    Keyboard,
+    ScrollView,
+    Share,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -500,7 +500,15 @@ function ListDetailScreen(props) {
   }, [list?.items]);
 
   return (
-    <ScreensDefault active="LISTS" leftTab="LISTS" rightTab="PROFILE" scroll={false} contentStyle={{ paddingHorizontal: 0 }} onPrimaryAction={() => setModalVisible(true)}>
+    <ScreensDefault
+      active="LISTS"
+      leftTab="LISTS"
+      rightTab="PROFILE"
+      scroll={false}
+      contentStyle={{ paddingHorizontal: 0 }}
+      onPrimaryAction={() => setModalVisible(true)}
+      forceHideTabBar
+    >
       {/* Top-left Back Button (fixed below TabBar) */}
       <View
         pointerEvents="box-none"

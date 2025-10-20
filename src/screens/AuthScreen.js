@@ -6,7 +6,6 @@ import { Controller, useForm } from 'react-hook-form';
 import { Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { z } from 'zod';
 import Button from '../components/Button';
-import Chip from '../components/Chip';
 import Screen from '../components/Screen';
 import { DataContext } from '../contexts/DataContext';
 import { t } from '../i18n';
@@ -92,31 +91,33 @@ export default function AuthScreen() {
                 : (t('auth.subtitle.register') ?? 'Comece a organizar suas compras')}
             </Text>
           </View>
-          <View style={stylesAuth.tabContainer} accessibilityRole="tablist">
-            <Chip
-              label={t('auth.login')}
-              active={isLogin}
+          <View style={stylesAuth.segment} accessibilityRole="tablist">
+            <TouchableOpacity
               onPress={() => {
                 setIsLogin(true);
                 setError('');
               }}
               accessibilityRole="tab"
               accessibilityState={{ selected: isLogin }}
-              style={stylesAuth.tab}
-              testID="tab-login"
-            />
-            <Chip
-              label={t('auth.register')}
-              active={!isLogin}
+              style={[stylesAuth.segmentItem, isLogin && stylesAuth.segmentItemActive]}
+            >
+              <Text style={[stylesAuth.segmentText, isLogin && stylesAuth.segmentTextActive]}>
+                {t('auth.login')}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
               onPress={() => {
                 setIsLogin(false);
                 setError('');
               }}
               accessibilityRole="tab"
               accessibilityState={{ selected: !isLogin }}
-              style={stylesAuth.tab}
-              testID="tab-register"
-            />
+              style={[stylesAuth.segmentItem, !isLogin && stylesAuth.segmentItemActive]}
+            >
+              <Text style={[stylesAuth.segmentText, !isLogin && stylesAuth.segmentTextActive]}>
+                {t('auth.register')}
+              </Text>
+            </TouchableOpacity>
           </View>
           <View style={stylesAuth.formArea}>
             {!isLogin && (
@@ -237,17 +238,7 @@ export default function AuthScreen() {
               style={{ width: '100%', marginTop: 0 }}
               testID="auth-testuser"
             />
-            <TouchableOpacity
-              onPress={() => {
-                setIsLogin(!isLogin);
-                setError('');
-              }}
-              activeOpacity={0.7}
-            >
-              <Text style={stylesAuth.toggleText}>
-                {isLogin ? t('auth.toggle.toRegister') : t('auth.toggle.toLogin')}
-              </Text>
-            </TouchableOpacity>
+            {/* Toggle link removed to avoid duplicating segmented control */}
           </View>
         </View>
       </Screen>
@@ -333,6 +324,19 @@ const stylesAuth = StyleSheet.create({
     color: '#3B82F6',
     fontWeight: 'bold',
   },
+  segment: {
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#F9FAFB',
+    marginBottom: 16,
+  },
+  segmentItem: { flex: 1, paddingVertical: 10, alignItems: 'center' },
+  segmentItemActive: { backgroundColor: '#fff' },
+  segmentText: { color: '#6B7280', fontWeight: '600' },
+  segmentTextActive: { color: '#1D4ED8' },
   formArea: {
     marginTop: 18,
   },
@@ -392,6 +396,7 @@ const stylesAuth = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'center',
   },
+  footerLink: { marginTop: 12, color: '#2563EB', fontWeight: '600', textAlign: 'center' },
   forgotRow: { alignItems: 'flex-end', marginTop: 6 },
   forgot: { color: '#6366F1', fontWeight: '600', fontSize: Math.round(12 * __fs) },
 });

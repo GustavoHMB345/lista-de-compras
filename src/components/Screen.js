@@ -9,6 +9,7 @@ export default function Screen({
   scroll = true,
   overlayTabBar = false,
   overlayBottomSpacer = 0,
+  onScroll,
 }) {
   const insets = useSafeAreaInsets();
   const paddingTop = (tabBarPosition === 'top' ? tabBarHeight : 0) + insets.top + 8;
@@ -40,6 +41,8 @@ export default function Screen({
             : undefined
         }
         style={!scroll ? [{ paddingTop, paddingHorizontal: 16, flex: 1, paddingBottom: paddingBottomExtra }, contentStyle] : { flex: 1 }}
+        onScroll={scroll ? onScroll : undefined}
+        scrollEventThrottle={scroll ? 16 : undefined}
         automaticallyAdjustKeyboardInsets
         keyboardDismissMode={scroll ? 'on-drag' : undefined}
         keyboardShouldPersistTaps="handled"

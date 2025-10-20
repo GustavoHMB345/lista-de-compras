@@ -2,18 +2,27 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useContext, useMemo, useState } from 'react';
 import {
-    Alert,
-    Animated,
-    Dimensions,
-    Modal,
-    Share,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  Alert,
+  Dimensions,
+  Modal,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../components/Button';
+import {
+  ChevronRightIcon,
+  ListCheckIcon,
+  MagnifyingGlassIcon,
+  ShieldIcon,
+  UserIcon,
+  UsersGroupIcon,
+} from '../components/Icons';
 import ScreensDefault from '../components/ScreensDefault';
 import { DataContext } from '../contexts/DataContext';
 
@@ -56,6 +65,8 @@ const familyStyles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
+  famHeaderRow: { flexDirection: 'row', alignItems: 'center' },
+  famHeaderText: { flex: 1 },
   famTitle: { fontSize: 18 * __fs, fontWeight: '700', color: '#111827' },
   famDesc: { fontSize: 12 * __fs, color: '#6B7280', marginTop: 2 },
   badge: {
@@ -79,18 +90,6 @@ const familyStyles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'center',
   },
-  btn: {
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    minHeight: 44,
-  },
-  btnPrimary: { backgroundColor: '#2563EB' },
-  btnGray: { backgroundColor: '#E5E7EB' },
-  btnText: { color: '#fff', fontWeight: '600' },
-  btnTextGray: { color: '#111827', fontWeight: '600' },
   // Modal
   modalWrap: {
     flex: 1,
@@ -115,21 +114,22 @@ const familyStyles = StyleSheet.create({
     fontSize: 14 * __fs,
     marginTop: 8,
   },
+  inputWrap: { position: 'relative' },
+  inputIcon: { position: 'absolute', left: 12, top: 18, zIndex: 1 },
+  inputWithIcon: { paddingLeft: 38 },
   rowEnd: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 12 },
 });
 
 function FamilyScreen() {
-  const { families, users, currentUser, shoppingLists, updateFamilies, uiPrefs } =
+  const { families, users, currentUser, shoppingLists, updateFamilies } =
     useContext(DataContext);
   const router = useRouter();
-  const progress = useState(new Animated.Value(0))[0];
   const [showNewFamily, setShowNewFamily] = useState(false);
   const [famName, setFamName] = useState('');
   const [famDesc, setFamDesc] = useState('');
   const [detailsFamily, setDetailsFamily] = useState(null);
   const [manageFamily, setManageFamily] = useState(null);
   const [famSearch, setFamSearch] = useState('');
-  // Join by ID moved to dedicated screen
 
   const myFamilies = useMemo(
     () => (!currentUser ? [] : families.filter((f) => (f.members || []).includes(currentUser.id))),
@@ -152,25 +152,6 @@ function FamilyScreen() {
       : 0;
     return { totalFamilies, adminFamilies, totalMembers, activeLists };
   }, [myFamilies, currentUser, shoppingLists]);
-
-  const handleNavigate = (screen) => {
-    switch (screen) {
-      case 'DASHBOARD':
-        router.push('/dashboard');
-        break;
-      case 'LISTS':
-        router.push('/lists');
-        break;
-      case 'FAMILY':
-        router.push('/family');
-        break;
-      case 'PROFILE':
-        router.push('/profile');
-        break;
-      default:
-        break;
-    }
-  };
 
   const familyMembers = (f) =>
     (f.members || []).map((id) => users.find((u) => u.id === id)).filter(Boolean);
@@ -203,20 +184,17 @@ function FamilyScreen() {
     const performLeave = () => {
       if (isOwner) {
         if (otherMembers.length === 0) {
-          // remove family entirely if no members left
           const updated = familiesCopy.filter((fam) => fam.id !== f.id);
           updateFamilies(updated);
           return;
         }
-        // transfer ownership to first remaining member
         familiesCopy[idx].owner = otherMembers[0];
       }
-      familiesCopy[idx].members = otherMembers;
+        familiesCopy[idx].members = otherMembers;
       updateFamilies(familiesCopy);
     };
 
     if (isOwner) {
-      // extra confirmation explaining auto-transfer
       Alert.alert(
         'Sair da família',
         otherMembers.length === 0
@@ -242,7 +220,6 @@ function FamilyScreen() {
     if (!isMember) {
       next[idx].members = [...(f.members || []), memberId];
     } else {
-      // cannot remove current owner via toggle here
       if (isOwner) return;
       next[idx].members = (f.members || []).filter((id) => id !== memberId);
     }
@@ -251,174 +228,201 @@ function FamilyScreen() {
 
   return (
     <SafeAreaView style={familyStyles.root} edges={['top']}>
-      <ScreensDefault active="FAMILY" leftTab="LISTS" rightTab="DASHBOARD" contentStyle={familyStyles.scroll}>
-          <LinearGradient
-            colors={['#EFF6FF', '#E0E7FF']}
-            style={[StyleSheet.absoluteFillObject, { zIndex: -1 }]}
-          />
-            {/* Header */}
-            <View style={familyStyles.card}>
-              <View style={familyStyles.headerCenter}>
-                <Text style={familyStyles.emoji}>👨‍👩‍👧‍👦</Text>
-                <Text style={familyStyles.title}>Minhas Famílias</Text>
-                <Text style={familyStyles.subtitle}>
-                  Gerencie as listas de compras das suas famílias
-                </Text>
-              </View>
-              <View style={familyStyles.statsGrid}>
-                <View style={[familyStyles.statBox, { backgroundColor: '#EFF6FF' }]}>
-                  <Text style={[familyStyles.statValue, { color: '#2563EB' }]}>
-                    {stats.totalFamilies}
-                  </Text>
-                  <Text style={familyStyles.statLabel}>Famílias</Text>
-                </View>
-                <View style={[familyStyles.statBox, { backgroundColor: '#ECFDF5' }]}>
-                  <Text style={[familyStyles.statValue, { color: '#16A34A' }]}>
-                    {stats.adminFamilies}
-                  </Text>
-                  <Text style={familyStyles.statLabel}>Admin</Text>
-                </View>
-                <View style={[familyStyles.statBox, { backgroundColor: '#FEFCE8' }]}>
-                  <Text style={[familyStyles.statValue, { color: '#CA8A04' }]}>
-                    {stats.totalMembers}
-                  </Text>
-                  <Text style={familyStyles.statLabel}>Membros</Text>
-                </View>
-                <View style={[familyStyles.statBox, { backgroundColor: '#F5F3FF' }]}>
-                  <Text style={[familyStyles.statValue, { color: '#7C3AED' }]}>
-                    {stats.activeLists}
-                  </Text>
-                  <Text style={familyStyles.statLabel}>Listas Ativas</Text>
-                </View>
-              </View>
-              <View style={{ marginTop: 12 }}>
-                <Text
-                  style={{
-                    color: '#374151',
-                    fontSize: 12 * __fs,
-                    marginBottom: 6,
-                    fontWeight: '600',
-                  }}
-                >
-                  Pesquisar famílias
-                </Text>
-                <TextInput
-                  placeholder="Digite um nome ou descrição"
-                  style={familyStyles.input}
-                  value={famSearch}
-                  onChangeText={setFamSearch}
-                  placeholderTextColor="#9CA3AF"
-                  selectionColor="#2563EB"
-                />
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    justifyContent: 'center',
-                    gap: 8,
-                    marginTop: 10,
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  <Button
-                    title="Entrar por ID"
-                    variant="light"
-                    onPress={() => router.push('/join-family')}
-                  />
-                </View>
-              </View>
-            </View>
+      <ScreensDefault
+        active="FAMILY"
+        leftTab="LISTS"
+        rightTab="DASHBOARD"
+        contentStyle={familyStyles.scroll}
+        hideTabBarOnScroll
+      >
+        <LinearGradient
+          colors={['#EFF6FF', '#E0E7FF']}
+          style={[StyleSheet.absoluteFillObject, { zIndex: -1 }]}
+        />
 
-            {/* Families Grid */}
-            <View
-              style={[
-                familyStyles.card,
-                { backgroundColor: 'transparent', shadowOpacity: 0, elevation: 0, padding: 0 },
-              ]}
+        {/* Header */}
+        <View style={familyStyles.card}>
+          <View style={familyStyles.headerCenter}>
+            <Text style={familyStyles.emoji}>👨‍👩‍👧‍👦</Text>
+            <Text style={familyStyles.title}>Minhas Famílias</Text>
+            <Text style={familyStyles.subtitle}>
+              Gerencie as listas de compras das suas famílias
+            </Text>
+          </View>
+          <View style={familyStyles.statsGrid}>
+            <View style={[familyStyles.statBox, { backgroundColor: '#EFF6FF' }]}>
+              <UsersGroupIcon color="#2563EB" />
+              <Text style={[familyStyles.statValue, { color: '#2563EB', marginTop: 4 }]}>
+                {stats.totalFamilies}
+              </Text>
+              <Text style={familyStyles.statLabel}>Famílias</Text>
+            </View>
+            <View style={[familyStyles.statBox, { backgroundColor: '#ECFDF5' }]}>
+              <ShieldIcon color="#16A34A" />
+              <Text style={[familyStyles.statValue, { color: '#16A34A', marginTop: 4 }]}>
+                {stats.adminFamilies}
+              </Text>
+              <Text style={familyStyles.statLabel}>Admin</Text>
+            </View>
+            <View style={[familyStyles.statBox, { backgroundColor: '#FEFCE8' }]}>
+              <UserIcon color="#CA8A04" />
+              <Text style={[familyStyles.statValue, { color: '#CA8A04', marginTop: 4 }]}>
+                {stats.totalMembers}
+              </Text>
+              <Text style={familyStyles.statLabel}>Membros</Text>
+            </View>
+            <View style={[familyStyles.statBox, { backgroundColor: '#F5F3FF' }]}>
+              <ListCheckIcon color="#7C3AED" />
+              <Text style={[familyStyles.statValue, { color: '#7C3AED', marginTop: 4 }]}>
+                {stats.activeLists}
+              </Text>
+              <Text style={familyStyles.statLabel}>Listas Ativas</Text>
+            </View>
+          </View>
+          <View style={{ marginTop: 12 }}>
+            <Text
+              style={{
+                color: '#374151',
+                fontSize: 12 * __fs,
+                marginBottom: 6,
+                fontWeight: '600',
+              }}
             >
-              <View style={{ gap: 12 }}>
-                {/* Quick access create pinned at top */}
-                <View style={[familyStyles.familyCard, { alignItems: 'center' }]}>
-                  <Button
-                    title="Criar Nova Família"
-                    onPress={() => setShowNewFamily(true)}
-                    withGradient
-                    gradientPreset="primary"
-                  />
-                </View>
-                {filteredFamilies.map((f) => {
-                  const isOwner = f.owner === currentUser?.id;
-                  const mems = familyMembers(f);
-                  return (
-                    <View key={f.id} style={familyStyles.familyCard}>
-                      {isOwner && (
-                        <View style={familyStyles.badge}>
-                          <Text style={familyStyles.badgeText}>👑 Admin</Text>
-                        </View>
-                      )}
+              Pesquisar famílias
+            </Text>
+            <View style={familyStyles.inputWrap}>
+              <View style={familyStyles.inputIcon}>
+                <MagnifyingGlassIcon />
+              </View>
+              <TextInput
+                placeholder="Digite um nome ou descrição"
+                style={[familyStyles.input, familyStyles.inputWithIcon]}
+                value={famSearch}
+                onChangeText={setFamSearch}
+                placeholderTextColor="#9CA3AF"
+                selectionColor="#2563EB"
+              />
+            </View>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'center',
+                gap: 8,
+                marginTop: 10,
+                flexWrap: 'wrap',
+              }}
+            >
+              <Button
+                title="Entrar por ID"
+                variant="light"
+                onPress={() => router.push('/join-family')}
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* Families Grid */}
+        <View
+          style={[
+            familyStyles.card,
+            { backgroundColor: 'transparent', shadowOpacity: 0, elevation: 0, padding: 0 },
+          ]}
+        >
+          <View style={{ gap: 12 }}>
+            {/* Quick access create pinned at top */}
+            <View style={[familyStyles.familyCard, { alignItems: 'center' }]}> 
+              <Button
+                title="Criar Nova Família"
+                onPress={() => setShowNewFamily(true)}
+                withGradient
+                gradientPreset="primary"
+              />
+            </View>
+            {filteredFamilies.map((f) => {
+              const isOwner = f.owner === currentUser?.id;
+              const mems = familyMembers(f);
+              const activeCount = shoppingLists.filter((l) => {
+                if (l.familyId !== f.id) return false;
+                const items = l.items || [];
+                const completed =
+                  items.length > 0 &&
+                  items.every(
+                    (it) => it.isPurchased || it.done || it.completed || it.checked,
+                  );
+                return !completed;
+              }).length;
+              return (
+                <View key={f.id} style={familyStyles.familyCard}>
+                  {isOwner && (
+                    <View style={familyStyles.badge}>
+                      <Text style={familyStyles.badgeText}>👑 Admin</Text>
+                    </View>
+                  )}
+                  <Pressable
+                    style={({ pressed }) => [
+                      familyStyles.famHeaderRow,
+                      { opacity: pressed ? 0.8 : 1 },
+                    ]}
+                    onPress={() => setDetailsFamily(f)}
+                  >
+                    <View style={familyStyles.famHeaderText}>
                       <Text style={familyStyles.famTitle}>{f.name}</Text>
-                      <Text style={familyStyles.famDesc}>{f.description || 'Sem descrição'}</Text>
+                      <Text style={familyStyles.famDesc}>
+                        {f.description || 'Sem descrição'}
+                      </Text>
                       {isOwner && (
                         <Text style={{ color: '#6B7280', marginTop: 4, fontSize: 11 * __fs }}>
                           Você é admin
                         </Text>
                       )}
-                      <View style={[familyStyles.row, { marginTop: 12 }]}>
-                        <View style={[familyStyles.miniStat, { backgroundColor: '#EFF6FF' }]}>
-                          <Text style={[familyStyles.miniVal, { color: '#2563EB' }]}>
-                            {mems.length}
-                          </Text>
-                          <Text style={familyStyles.miniLab}>Membros</Text>
-                        </View>
-                        <View style={[familyStyles.miniStat, { backgroundColor: '#ECFDF5' }]}>
-                          <Text style={[familyStyles.miniVal, { color: '#16A34A' }]}>
-                            {
-                              shoppingLists.filter((l) => {
-                                if (l.familyId !== f.id) return false;
-                                const items = l.items || [];
-                                const completed =
-                                  items.length > 0 &&
-                                  items.every(
-                                    (it) => it.isPurchased || it.done || it.completed || it.checked,
-                                  );
-                                return !completed;
-                              }).length
-                            }
-                          </Text>
-                          <Text style={familyStyles.miniLab}>Listas Ativas</Text>
-                        </View>
-                      </View>
-                      <View style={familyStyles.actionsRow}>
-                        <Button title="Ver Detalhes" onPress={() => setDetailsFamily(f)} />
-                        {isOwner ? (
-                          <Button
-                            variant="light"
-                            title="Gerenciar"
-                            onPress={() => setManageFamily(f)}
-                          />
-                        ) : (
-                          <Button
-                            variant="light"
-                            title="Sair"
-                            onPress={() => {
-                              Alert.alert('Sair da família', `Deseja sair de ${f.name}?`, [
-                                { text: 'Cancelar', style: 'cancel' },
-                                {
-                                  text: 'Sair',
-                                  style: 'destructive',
-                                  onPress: () => leaveFamily(f),
-                                },
-                              ]);
-                            }}
-                          />
-                        )}
-                      </View>
                     </View>
-                  );
-                })}
-              </View>
-            </View>
-            {/* Removed duplicate 'Criar Nova Família' button at bottom (kept top quick-access) */}
-    </ScreensDefault>
+                    <ChevronRightIcon color="#9CA3AF" />
+                  </Pressable>
+                  <View style={[familyStyles.row, { marginTop: 12 }]}>
+                    <View style={[familyStyles.miniStat, { backgroundColor: '#EFF6FF' }]}>
+                      <Text style={[familyStyles.miniVal, { color: '#2563EB' }]}>
+                        {mems.length}
+                      </Text>
+                      <Text style={familyStyles.miniLab}>Membros</Text>
+                    </View>
+                    <View style={[familyStyles.miniStat, { backgroundColor: '#ECFDF5' }]}>
+                      <Text style={[familyStyles.miniVal, { color: '#16A34A' }]}>
+                        {activeCount}
+                      </Text>
+                      <Text style={familyStyles.miniLab}>Listas Ativas</Text>
+                    </View>
+                  </View>
+                  <View style={familyStyles.actionsRow}>
+                    {isOwner ? (
+                      <Button
+                        variant="light"
+                        title="Gerenciar"
+                        onPress={() => setManageFamily(f)}
+                      />
+                    ) : (
+                      <Button
+                        variant="light"
+                        title="Sair"
+                        onPress={() => {
+                          Alert.alert('Sair da família', `Deseja sair de ${f.name}?`, [
+                            { text: 'Cancelar', style: 'cancel' },
+                            {
+                              text: 'Sair',
+                              style: 'destructive',
+                              onPress: () => leaveFamily(f),
+                            },
+                          ]);
+                        }}
+                      />
+                    )}
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+        {/* Removed duplicate 'Criar Nova Família' button at bottom (kept top quick-access) */}
+      </ScreensDefault>
 
       {/* New Family Modal */}
       <Modal
@@ -477,10 +481,6 @@ function FamilyScreen() {
         </View>
       </Modal>
 
-      {/* Join by Code modal removed; use dedicated screen */}
-
-  {/* TabBar permanece no rodapé */}
-
       {/* Details Modal */}
       <FamilyDetailsModal
         visible={!!detailsFamily}
@@ -500,7 +500,6 @@ function FamilyScreen() {
         currentUserId={currentUser?.id}
         onToggleMember={(f, uid) => toggleMember(f, uid)}
         onTransferOwner={(f, uid) => {
-          // transfer ownership
           const idx = families.findIndex((fam) => fam.id === f.id);
           if (idx < 0) return;
           const next = families.map((fam) => ({ ...fam }));
@@ -518,8 +517,7 @@ function FamilyScreen() {
 
 export default FamilyScreen;
 
-// Details & Manage Modals appended above to keep single-file implementation concise.
-
+// Details & Manage Modals
 function FamilyDetailsModal({ visible, family, onClose, shoppingLists, users, currentUserId }) {
   if (!family) return null;
   const mems = (family.members || []).map((id) => users.find((u) => u.id === id)).filter(Boolean);

@@ -1,5 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Easing, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
@@ -10,21 +11,47 @@ export default function TabBar({
   onAddList,
   tint = 'light',
   position = 'bottom',
+  hidden = false,
 }) {
+  const translateY = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(translateY, {
+      toValue: hidden ? 80 : 0,
+      duration: 180,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [hidden, translateY]);
+  const fade = translateY.interpolate({ inputRange: [0, 60, 80], outputRange: [1, 0.2, 0], extrapolate: 'clamp' });
   return (
     <SafeAreaView
       edges={position === 'top' ? ['top'] : ['bottom']}
       style={[styles.safe, position === 'bottom' ? styles.safeBottom : null]}
+      pointerEvents={hidden ? 'none' : 'auto'}
     >
       {/* Top fade to improve contrast when content is light under the bar */}
       {position === 'bottom' ? (
-        <LinearGradient
+        <Animated.View
           pointerEvents="none"
-          colors={["rgba(255,255,255,0)", "rgba(255,255,255,0.9)"]}
-          style={styles.topFade}
-        />
+          style={[styles.topFadeWrap, { transform: [{ translateY }] }]}
+        >
+          {!hidden && (
+            <LinearGradient
+              pointerEvents="none"
+              colors={["rgba(255,255,255,0)", "rgba(255,255,255,0.9)"]}
+              style={styles.topFade}
+            />
+          )}
+        </Animated.View>
       ) : null}
-      <View style={[styles.bar, position === 'top' ? styles.barTop : styles.barBottom]}>
+      <Animated.View
+        style={[
+          styles.bar,
+          position === 'top' ? styles.barTop : styles.barBottom,
+          { transform: [{ translateY }], opacity: fade },
+          hidden ? styles.barHidden : null,
+        ]}
+      >
         {/* Notch behind the floating action button */}
         {typeof onAddList === 'function' ? <View style={styles.fabNotch} /> : null}
         <View style={styles.tabsRow}>
@@ -74,7 +101,7 @@ export default function TabBar({
             icon={(c) => <HomeIcon color={c} />}
           />
         </View>
-      </View>
+      </Animated.View>
     </SafeAreaView>
   );
 }
@@ -139,11 +166,16 @@ const ProfileIcon = ({ color = '#6B7280' }) => (
 const styles = StyleSheet.create({
   safe: { backgroundColor: 'transparent' },
   safeBottom: { position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 50 },
-  topFade: {
+  topFadeWrap: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 56, // approximate bar height; gradient sits just above the bar
+    height: 20,
+    zIndex: 49,
+  },
+  topFade: {
+    width: '100%',
     height: 20,
     zIndex: 49,
   },
@@ -179,6 +211,10 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
   },
   barBottom: {},
+  barHidden: {
+    borderTopWidth: 0,
+    shadowOpacity: 0,
+  },
   tabsRow: {
     flexDirection: 'row',
     alignItems: 'center',

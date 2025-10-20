@@ -4,7 +4,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
-import { useColorScheme } from 'react-native';
+import { Platform, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import ErrorBoundary from '../src/components/ErrorBoundary';
 import { DataProvider } from '../src/contexts/DataContext';
@@ -22,7 +22,9 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <GestureHandlerRootView style={{ flex: 1 }}>
+      <GestureHandlerRootView
+        style={{ flex: 1, ...(Platform.OS === 'web' ? { minHeight: '100vh' } : {}) } as any}
+      >
         <DataProvider>
           <ErrorBoundary>
             <Stack>

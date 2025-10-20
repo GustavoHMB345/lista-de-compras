@@ -21,7 +21,7 @@ import AddListModal from '../components/AddListModal';
 import Button from '../components/Button';
 import Chip from '../components/Chip';
 import { CategoryIcon, PlusIcon } from '../components/Icons';
-import ScreensDefault from '../components/ScreensDefault';
+import ScreensDefault, { TabBarVisibilityContext } from '../components/ScreensDefault';
 import { DataContext } from '../contexts/DataContext';
 
 const { width } = Dimensions.get('window');
@@ -167,6 +167,7 @@ const PRIORITY_COLORS = {
 };
 
 function ListsScreen() {
+  const { reportScrollY } = React.useContext(TabBarVisibilityContext) || {};
   const { shoppingLists, currentUser, updateLists, uiPrefs } = useContext(DataContext);
   const [modalVisible, setModalVisible] = useState(false);
   const router = useRouter();
@@ -459,6 +460,8 @@ function ListsScreen() {
     [renderLeftActions, renderRightActions, router, getCounts, getPriority],
   );
 
+  // Note: We keep scroll={false} here because FlatList manages its own scroll.
+  // We can wire hide-on-scroll by forwarding onScroll later if desired.
   return (
     <ScreensDefault
       active="LISTS"
@@ -468,6 +471,7 @@ function ListsScreen() {
       contentStyle={{ paddingHorizontal: 0 }}
       onPrimaryAction={() => setModalVisible(true)}
       primaryActionPlacement="floating"
+      hideTabBarOnScroll
     >
         <LinearGradient colors={['#EFF6FF', '#E0E7FF']} style={listsStyles.bg}>
           <View
@@ -573,6 +577,8 @@ function ListsScreen() {
                 renderItem={({ item }) => <ListCard item={item} />}
                 keyboardShouldPersistTaps="handled"
                 keyboardDismissMode="on-drag"
+                onScroll={(e) => reportScrollY?.(e?.nativeEvent?.contentOffset?.y || 0)}
+                scrollEventThrottle={16}
                 ListFooterComponent={<View style={{ height: Math.max(24, (insets?.bottom || 0) + TAB_BAR_OFFSET + 24) }} />}
                 automaticallyAdjustKeyboardInsets
               />

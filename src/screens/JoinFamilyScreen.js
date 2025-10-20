@@ -1,14 +1,14 @@
 import { useRouter } from 'expo-router';
 import React, { useContext, useMemo, useState } from 'react';
 import {
-  Alert,
-  Dimensions,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  ToastAndroid,
-  View,
+    Alert,
+    Dimensions,
+    Platform,
+    StyleSheet,
+    Text,
+    TextInput,
+    ToastAndroid,
+    View,
 } from 'react-native';
 import Button from '../components/Button';
 import ScreensDefault from '../components/ScreensDefault';
@@ -116,7 +116,13 @@ export default function JoinFamilyScreen() {
   };
 
   return (
-    <ScreensDefault active="FAMILY" leftTab="FAMILY" rightTab="LISTS" contentStyle={{ paddingHorizontal: 0 }}>
+    <ScreensDefault
+      active="FAMILY"
+      leftTab="FAMILY"
+      rightTab="LISTS"
+      contentStyle={{ paddingHorizontal: 0 }}
+      forceHideTabBar
+    >
         <View style={[styles.container]}>
           <View style={{ alignItems: 'center' }}>
             <View style={styles.card}>

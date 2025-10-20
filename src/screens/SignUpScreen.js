@@ -39,7 +39,16 @@ export default function SignUpScreen() {
 
   return (
     <LinearGradient colors={['#3B82F6', '#8B5CF6']} style={styles.container}>
-      <Screen>
+      <Screen
+        scroll={false}
+        contentStyle={{
+          paddingTop: 0,
+          paddingHorizontal: 0,
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
         <View style={styles.card}>
           <View style={styles.headerWrap}>
             <LinearGradient
@@ -101,7 +110,7 @@ export default function SignUpScreen() {
           {!!error && <Text style={styles.error}>{error}</Text>}
           <Button
             title="Cadastrar"
-            variant="success"
+            variant="primary"
             onPress={handleSignUp}
             style={{ width: '100%', marginTop: 10 }}
             loading={loading}

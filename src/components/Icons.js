@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { Text } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 export const PlusIcon = ({ color = '#fff', size = 28 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -11,6 +11,51 @@ export const PlusIcon = ({ color = '#fff', size = 28 }) => (
 export const EditIcon = () => <Text style={{ fontSize: 18 }}>✏️</Text>;
 export const CheckIcon = () => <Text style={{ color: '#22c55e', fontSize: 18 }}>✔️</Text>;
 export const BackIcon = () => <Text style={{ fontSize: 20 }}>⬅️</Text>;
+
+// Minimal, consistent outline icons used across the app
+export const ChevronRightIcon = ({ color = '#9CA3AF', size = 20, strokeWidth = 2.2 }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M9 6l6 6-6 6" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+export const MagnifyingGlassIcon = ({ color = '#9CA3AF', size = 18, strokeWidth = 2 }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="11" cy="11" r="6" stroke={color} strokeWidth={strokeWidth} />
+    <Path d="M20 20l-4.2-4.2" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+  </Svg>
+);
+
+export const UsersGroupIcon = ({ color = '#2563EB', size = 18 }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="8" cy="8" r="3" stroke={color} strokeWidth={1.8} />
+    <Circle cx="16" cy="9" r="2.5" stroke={color} strokeWidth={1.8} />
+    <Path d="M3 18c0-2.761 2.686-5 6-5s6 2.239 6 5" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
+    <Path d="M13 18c0-1.657 1.79-3 4-3 2.21 0 4 1.343 4 3" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
+  </Svg>
+);
+
+export const ShieldIcon = ({ color = '#16A34A', size = 18 }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M12 3l7 3v6c0 5-3.5 7.5-7 9-3.5-1.5-7-4-7-9V6l7-3Z" stroke={color} strokeWidth={1.8} strokeLinejoin="round" />
+    <Path d="M9 12l2 2 4-4" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+export const UserIcon = ({ color = '#CA8A04', size = 18 }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="8" r="3.2" stroke={color} strokeWidth={1.8} />
+    <Path d="M4 20c0-3.314 3.134-6 8-6s8 2.686 8 6" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
+  </Svg>
+);
+
+export const ListCheckIcon = ({ color = '#7C3AED', size = 18 }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Rect x="4" y="5" width="16" height="14" rx="2" stroke={color} strokeWidth={1.8} />
+    <Path d="M8 9h8M8 13h5" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
+    <Path d="M15 13l2 2 3-3" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
 
 // Generic gradient badge wrapper for icons (matches navbar style)
 const GradientBadge = ({ size = 44, colors = ['#6C7DFF', '#4F46E5'], children }) => (

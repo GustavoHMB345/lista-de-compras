@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import React, { useMemo } from 'react';
+import React, { createContext, useMemo, useRef, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import Screen from './Screen';
 import SwipeNavigator from './SwipeNavigator';
@@ -15,6 +15,8 @@ import TabBar from './TabBar';
 // - overlayBottomSpacer: extra bottom space for overlaid TabBar (optional)
 // - gradientBackground: boolean to enable simple bg gradient (optional)
 // - onPrimaryAction: optional callback for the TabBar primary action (e.g., add item/list)
+export const TabBarVisibilityContext = createContext({ reportScrollY: (_y) => {} });
+
 export default function ScreensDefault({
   active,
   children,
@@ -26,8 +28,13 @@ export default function ScreensDefault({
   gradientBackground = false,
   onPrimaryAction,
   primaryActionPlacement = 'tabbar', // 'tabbar' | 'floating'
+  hideTabBarOnScroll = false,
+  forceHideTabBar = false,
 }) {
   const router = useRouter();
+  const lastOffsetY = useRef(0);
+  const [tabHidden, setTabHidden] = useState(false);
+  const MAIN_TABS = useRef(new Set(['PROFILE', 'LISTS', 'FAMILY', 'DASHBOARD']));
 
   const handleNavigate = (screen) => {
     switch (screen) {
@@ -56,6 +63,29 @@ export default function ScreensDefault({
     return 24;
   }, [overlayBottomSpacer, active]);
 
+  const handleScroll = hideTabBarOnScroll
+    ? (e) => {
+        const y = e?.nativeEvent?.contentOffset?.y || 0;
+        const dy = y - (lastOffsetY.current || 0);
+        lastOffsetY.current = y;
+        const threshold = 8;
+        if (dy > threshold && !tabHidden) setTabHidden(true);
+        else if (dy < -threshold && tabHidden) setTabHidden(false);
+      }
+    : undefined;
+
+  // Context API for children with their own scroll (e.g., FlatList) to report scrollY
+  const reportScrollY = hideTabBarOnScroll
+    ? (y) => {
+        const currentY = typeof y === 'number' ? y : 0;
+        const dy = currentY - (lastOffsetY.current || 0);
+        lastOffsetY.current = currentY;
+        const threshold = 8;
+        if (dy > threshold && !tabHidden) setTabHidden(true);
+        else if (dy < -threshold && tabHidden) setTabHidden(false);
+      }
+    : () => {};
+
   return (
     <>
       <TabBar
@@ -63,25 +93,34 @@ export default function ScreensDefault({
         onNavigate={handleNavigate}
         onAddList={primaryActionPlacement === 'tabbar' ? onPrimaryAction : undefined}
         position="bottom"
+        hidden={forceHideTabBar || (hideTabBarOnScroll && tabHidden)}
       />
-      <SwipeNavigator
-        onSwipeLeft={rightTab ? () => handleNavigate(rightTab) : undefined}
-        onSwipeRight={leftTab ? () => handleNavigate(leftTab) : undefined}
-        allowSwipeLeft={!!rightTab}
-        allowSwipeRight={!!leftTab}
-        edgeFrom="any"
-      >
-        <Screen
-          tabBarHeight={56}
-          tabBarPosition="bottom"
-          overlayTabBar
-          overlayBottomSpacer={bottomSpacer}
-          contentStyle={contentStyle}
-          scroll={scroll}
-        >
-          {children}
-        </Screen>
-      </SwipeNavigator>
+      {(() => {
+        const canSwipe = MAIN_TABS.current.has(active) && !forceHideTabBar;
+        return (
+          <SwipeNavigator
+            onSwipeLeft={canSwipe && rightTab ? () => handleNavigate(rightTab) : undefined}
+            onSwipeRight={canSwipe && leftTab ? () => handleNavigate(leftTab) : undefined}
+            allowSwipeLeft={canSwipe && !!rightTab}
+            allowSwipeRight={canSwipe && !!leftTab}
+            edgeFrom="any"
+          >
+            <Screen
+              tabBarHeight={56}
+              tabBarPosition="bottom"
+              overlayTabBar
+              overlayBottomSpacer={bottomSpacer}
+              contentStyle={contentStyle}
+              scroll={scroll}
+              onScroll={handleScroll}
+            >
+              <TabBarVisibilityContext.Provider value={{ reportScrollY }}>
+                {children}
+              </TabBarVisibilityContext.Provider>
+            </Screen>
+          </SwipeNavigator>
+        );
+      })()}
     </>
   );
 }

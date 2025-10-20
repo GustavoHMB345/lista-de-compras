@@ -237,7 +237,13 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
-      <ScreensDefault active="DASHBOARD" leftTab="FAMILY" rightTab={undefined} contentStyle={styles.scroll}>
+      <ScreensDefault
+        active="DASHBOARD"
+        leftTab="FAMILY"
+        rightTab={undefined}
+        contentStyle={styles.scroll}
+        hideTabBarOnScroll
+      >
           {/* Header + Stats */}
           <View style={[styles.card, { width: MAX_WIDTH }]}>
             <View style={{ alignItems: 'center', marginBottom: 16 }}>

@@ -153,7 +153,13 @@ function ProfileScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f0f5ff' }} edges={['top']}>
-      <ScreensDefault active="PROFILE" leftTab={undefined} rightTab="LISTS" contentStyle={profileStyles.scrollContent}>
+      <ScreensDefault
+        active="PROFILE"
+        leftTab={undefined}
+        rightTab="LISTS"
+        contentStyle={profileStyles.scrollContent}
+        hideTabBarOnScroll
+      >
           <LinearGradient
             colors={['#EFF6FF', '#E0E7FF']}
             style={[StyleSheet.absoluteFillObject, { zIndex: -1 }]}
