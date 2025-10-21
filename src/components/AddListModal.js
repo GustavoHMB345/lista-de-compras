@@ -16,7 +16,7 @@ import {
 import { Swipeable } from 'react-native-gesture-handler';
 import useFontScale from '../hooks/useFontScale';
 import Button from './Button';
-import { BackIcon, CategoryIcon } from './Icons';
+import { BackIcon, CategoryIcon, PlusIcon } from './Icons';
 
 // Categorias da LISTA (mantidas separadas das categorias de itens)
 const LIST_CATEGORIES = [
@@ -155,6 +155,21 @@ export default function AddListModal({ visible, onClose, onCreate }) {
       minWidth: 44,
       minHeight: 44,
       alignSelf: 'flex-start',
+    },
+    addProductFab: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: '#4f46e5',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginLeft: 4,
+      alignSelf: 'flex-start',
+      shadowColor: '#0B0B0B',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.18,
+      shadowRadius: 6,
+      elevation: 3,
     },
     addProductText: {
       color: 'white',
@@ -561,15 +576,16 @@ export default function AddListModal({ visible, onClose, onCreate }) {
                     keyboardType="numeric"
                     maxFontSizeMultiplier={1.2}
                   />
-                  <Button
-                    title="+"
+                  <TouchableOpacity
                     onPress={handleAddProduct}
-                    style={[
-                      styles.addProductButton,
-                      { minHeight: 44, minWidth: 44, paddingVertical: 10, paddingHorizontal: 10 },
-                    ]}
-                    textStyle={{ fontSize: 18 * fs }}
-                  />
+                    activeOpacity={0.9}
+                    accessibilityLabel="Adicionar produto"
+                    accessibilityRole="button"
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    style={styles.addProductFab}
+                  >
+                    <PlusIcon color="#FFFFFF" />
+                  </TouchableOpacity>
                 </View>
                 {!!productError && (
                   <Text

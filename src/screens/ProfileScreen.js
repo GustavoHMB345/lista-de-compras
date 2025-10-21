@@ -12,7 +12,6 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AddListModal from '../components/AddListModal';
 import Button from '../components/Button';
 import ScreensDefault from '../components/ScreensDefault';
 import { DataContext } from '../contexts/DataContext';
@@ -99,7 +98,6 @@ function ProfileScreen() {
   } = useContext(DataContext);
   const [displayName, setDisplayName] = useState(currentUser?.displayName || '');
   const [isEditing, setIsEditing] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
   const router = useRouter();
   const progress = useState(new Animated.Value(0))[0];
 
@@ -158,7 +156,6 @@ function ProfileScreen() {
         leftTab={undefined}
         rightTab="LISTS"
         contentStyle={profileStyles.scrollContent}
-        hideTabBarOnScroll
       >
           <LinearGradient
             colors={['#EFF6FF', '#E0E7FF']}
@@ -299,24 +296,6 @@ function ProfileScreen() {
             />
             <View style={{ height: 96 }} />
       </ScreensDefault>
-      <AddListModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        onCreate={(newList) => {
-          updateLists([
-            ...shoppingLists,
-            {
-              ...newList,
-              id: `list_${Date.now()}`,
-              familyId: currentUser.familyId,
-              createdAt: new Date().toISOString(),
-              status: 'active',
-              members: [currentUser.id],
-            },
-          ]);
-        }}
-      />
-      {/* TabBar movida para o topo */}
     </SafeAreaView>
   );
 }

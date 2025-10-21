@@ -3,6 +3,7 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
+import { PlusIcon } from './Icons';
 
 // Simple, solid TabBar (top or bottom). Props: active, onNavigate(screen), tint, position
 export default function TabBar({
@@ -16,34 +17,29 @@ export default function TabBar({
   const translateY = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.timing(translateY, {
-      toValue: hidden ? 80 : 0,
+      toValue: hidden ? (position === 'top' ? -80 : 80) : 0,
       duration: 180,
       easing: Easing.out(Easing.quad),
       useNativeDriver: true,
     }).start();
-  }, [hidden, translateY]);
-  const fade = translateY.interpolate({ inputRange: [0, 60, 80], outputRange: [1, 0.2, 0], extrapolate: 'clamp' });
+  }, [hidden, position, translateY]);
+  const fade = translateY.interpolate({
+    inputRange: [-80, -60, 0, 60, 80],
+    outputRange: [0, 0.2, 1, 0.2, 0],
+    extrapolate: 'clamp',
+  });
+  // Subtle pulse for the center plus based on visibility
+  const centerScale = translateY.interpolate({
+    inputRange: [-80, 0, 80],
+    outputRange: [1.03, 1.0, 1.03],
+    extrapolate: 'clamp',
+  });
   return (
     <SafeAreaView
       edges={position === 'top' ? ['top'] : ['bottom']}
       style={[styles.safe, position === 'bottom' ? styles.safeBottom : null]}
       pointerEvents={hidden ? 'none' : 'auto'}
     >
-      {/* Top fade to improve contrast when content is light under the bar */}
-      {position === 'bottom' ? (
-        <Animated.View
-          pointerEvents="none"
-          style={[styles.topFadeWrap, { transform: [{ translateY }] }]}
-        >
-          {!hidden && (
-            <LinearGradient
-              pointerEvents="none"
-              colors={["rgba(255,255,255,0)", "rgba(255,255,255,0.9)"]}
-              style={styles.topFade}
-            />
-          )}
-        </Animated.View>
-      ) : null}
       <Animated.View
         style={[
           styles.bar,
@@ -52,8 +48,7 @@ export default function TabBar({
           hidden ? styles.barHidden : null,
         ]}
       >
-        {/* Notch behind the floating action button */}
-        {typeof onAddList === 'function' ? <View style={styles.fabNotch} /> : null}
+  {/* Removed notch to keep center plus strictly circular */}
         <View style={styles.tabsRow}>
           {/* Order aligned with swipe flow: Profile → Lists → Family → Dashboard */}
           <IconTab
@@ -69,24 +64,23 @@ export default function TabBar({
             icon={(c) => <ListsIcon color={c} />}
           />
           {typeof onAddList === 'function' ? (
-            <TouchableOpacity
-              style={styles.fab}
-              activeOpacity={0.9}
-              onPress={onAddList}
-              accessibilityRole="button"
-              accessibilityLabel="Ação principal"
-            >
-              <LinearGradient
-                colors={["#4F46E5", "#2563EB"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={StyleSheet.absoluteFill}
-              />
-              <View style={styles.fabPlus}>
-                <View style={styles.plusBarV} />
-                <View style={styles.plusBarH} />
-              </View>
-            </TouchableOpacity>
+            <Animated.View style={{ alignItems: 'center', justifyContent: 'center', transform: [{ scale: centerScale }] }}>
+              <TouchableOpacity
+                style={styles.fab}
+                activeOpacity={0.9}
+                onPress={onAddList}
+                accessibilityRole="button"
+                accessibilityLabel="Ação principal"
+              >
+                <LinearGradient
+                  colors={["#4F46E5", "#2563EB"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
+                />
+                <PlusIcon color="#FFFFFF" size={20} />
+              </TouchableOpacity>
+            </Animated.View>
           ) : null}
           <IconTab
             active={active === 'FAMILY'}
@@ -166,19 +160,6 @@ const ProfileIcon = ({ color = '#6B7280' }) => (
 const styles = StyleSheet.create({
   safe: { backgroundColor: 'transparent' },
   safeBottom: { position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 50 },
-  topFadeWrap: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 56, // approximate bar height; gradient sits just above the bar
-    height: 20,
-    zIndex: 49,
-  },
-  topFade: {
-    width: '100%',
-    height: 20,
-    zIndex: 49,
-  },
   bar: {
     width: '100%',
     backgroundColor: '#FFFFFF',
@@ -190,19 +171,6 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 8,
     paddingVertical: 10,
-  },
-  fabNotch: {
-    position: 'absolute',
-    top: -18,
-    alignSelf: 'center',
-    width: 70,
-    height: 36,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    zIndex: 51,
   },
   barTop: {
     borderTopWidth: 0,
@@ -223,26 +191,14 @@ const styles = StyleSheet.create({
   },
   iconTab: { paddingHorizontal: 16, paddingVertical: 6, alignItems: 'center' },
   fab: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     marginHorizontal: 6,
-    elevation: 8,
-    shadowColor: '#0B0B0B',
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 4 },
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
-  fabPlus: {
-    width: 22,
-    height: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  plusBarV: { position: 'absolute', width: 4, height: 22, borderRadius: 2, backgroundColor: '#fff' },
-  plusBarH: { position: 'absolute', height: 4, width: 22, borderRadius: 2, backgroundColor: '#fff' },
   activeDot: {
     marginTop: 4,
     width: 6,

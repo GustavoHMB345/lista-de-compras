@@ -2,13 +2,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Animated, Dimensions, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { PlusIcon } from './Icons';
 
 const { width: __w } = Dimensions.get('window');
 const isTablet = __w >= 720;
 const ICON_SIZE = isTablet ? 40 : 36;
-const CENTER_BTN = isTablet ? 62 : 56;
-const CENTER_WRAPPER = isTablet ? 80 : 72;
 
 // Neutral gray gradients for icons
 const GRAY_ACTIVE = ['#A3A3A3', '#737373']; // neutral-400 -> neutral-500
@@ -89,28 +86,6 @@ export default function NavBar({ navigate, activeScreen, onAddList, progress }) 
         extrapolate: 'clamp',
       })
     : 1;
-  // Animações específicas do botão central "+"
-  const centerScale = progress
-    ? progress.interpolate({
-        inputRange: [-1, -0.3, 0, 0.3, 1],
-        outputRange: [1.06, 1.03, 1, 1.03, 1.06],
-        extrapolate: 'clamp',
-      })
-    : 1;
-  const haloOpacity = progress
-    ? progress.interpolate({
-        inputRange: [-1, 0, 1],
-        outputRange: [0.18, 0, 0.18],
-        extrapolate: 'clamp',
-      })
-    : 0;
-  const haloScale = progress
-    ? progress.interpolate({
-        inputRange: [-1, 0, 1],
-        outputRange: [1.2, 1, 1.2],
-        extrapolate: 'clamp',
-      })
-    : 1;
   return (
     <SafeAreaView edges={['bottom']} style={styles.navBarSafeAreaCustom}>
       <Animated.View
@@ -140,36 +115,6 @@ export default function NavBar({ navigate, activeScreen, onAddList, progress }) 
           <ListIcon active={activeScreen === 'LISTS'} />
           {activeScreen === 'LISTS' && <View style={styles.activeDot} />}
         </TouchableOpacity>
-        <View style={[styles.centerWrapper, { width: CENTER_WRAPPER, height: CENTER_WRAPPER }]}>
-          <Animated.View
-            pointerEvents="none"
-            style={[
-              styles.navBarCenterHalo,
-              { opacity: haloOpacity, transform: [{ scale: haloScale }] },
-            ]}
-          />
-          <Animated.View style={{ transform: [{ scale: centerScale }] }}>
-            <LinearGradient
-              colors={['#FFFFFF', '#FFFFFF']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={[
-                styles.navBarCenterBtnCustom,
-                { width: CENTER_BTN, height: CENTER_BTN, borderRadius: CENTER_BTN / 2 },
-              ]}
-            >
-              <TouchableOpacity
-                style={styles.centerInnerTouchable}
-                onPress={onAddList}
-                activeOpacity={0.85}
-                accessibilityLabel="Adicionar lista"
-                testID="tab-add"
-              >
-                <PlusIcon color="#111827" />
-              </TouchableOpacity>
-            </LinearGradient>
-          </Animated.View>
-        </View>
         {/* Right side: Dashboard (3), Profile (4) */}
         <TouchableOpacity
           accessibilityLabel="Dashboard"
@@ -224,37 +169,6 @@ const styles = StyleSheet.create({
     height: isTablet ? 64 : 56,
     position: 'relative',
   },
-  navBarCenterBtnCustom: {
-    width: CENTER_BTN,
-    height: CENTER_BTN,
-    borderRadius: CENTER_BTN / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#9CA3AF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 12,
-    alignSelf: 'center',
-  },
-  centerWrapper: {
-    width: CENTER_WRAPPER,
-    height: CENTER_WRAPPER,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  navBarCenterHalo: {
-    position: 'absolute',
-    width: CENTER_WRAPPER,
-    height: CENTER_WRAPPER,
-    borderRadius: CENTER_WRAPPER / 2,
-    backgroundColor: '#9CA3AF',
-    opacity: 0,
-    shadowColor: '#9CA3AF',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 20,
-  },
   iconWrap: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -269,12 +183,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
     backgroundColor: 'rgba(156,163,175,0.08)',
-  },
-  centerInnerTouchable: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: CENTER_BTN / 2,
   },
   activeDot: {
     position: 'absolute',

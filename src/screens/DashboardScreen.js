@@ -1,12 +1,12 @@
 import { useRootNavigationState, useRouter } from 'expo-router';
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Animated,
-  Dimensions,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    Animated,
+    Dimensions,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -242,7 +242,6 @@ export default function DashboardScreen() {
         leftTab="FAMILY"
         rightTab={undefined}
         contentStyle={styles.scroll}
-        hideTabBarOnScroll
       >
           {/* Header + Stats */}
           <View style={[styles.card, { width: MAX_WIDTH }]}>

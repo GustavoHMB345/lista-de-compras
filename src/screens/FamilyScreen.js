@@ -2,26 +2,26 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useContext, useMemo, useState } from 'react';
 import {
-  Alert,
-  Dimensions,
-  Modal,
-  Pressable,
-  ScrollView,
-  Share,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    Alert,
+    Dimensions,
+    Modal,
+    Pressable,
+    ScrollView,
+    Share,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../components/Button';
 import {
-  ChevronRightIcon,
-  ListCheckIcon,
-  MagnifyingGlassIcon,
-  ShieldIcon,
-  UserIcon,
-  UsersGroupIcon,
+    ChevronRightIcon,
+    ListCheckIcon,
+    MagnifyingGlassIcon,
+    ShieldIcon,
+    UserIcon,
+    UsersGroupIcon,
 } from '../components/Icons';
 import ScreensDefault from '../components/ScreensDefault';
 import { DataContext } from '../contexts/DataContext';
@@ -233,7 +233,6 @@ function FamilyScreen() {
         leftTab="LISTS"
         rightTab="DASHBOARD"
         contentStyle={familyStyles.scroll}
-        hideTabBarOnScroll
       >
         <LinearGradient
           colors={['#EFF6FF', '#E0E7FF']}
@@ -427,7 +426,6 @@ function FamilyScreen() {
       {/* New Family Modal */}
       <Modal
         transparent
-        visible={showNewFamily}
         animationType="fade"
         onRequestClose={() => setShowNewFamily(false)}
       >
