@@ -242,6 +242,7 @@ export default function DashboardScreen() {
         leftTab="FAMILY"
         rightTab={undefined}
         contentStyle={styles.scroll}
+        overlayBottomSpacer={72}
       >
           {/* Header + Stats */}
           <View style={[styles.card, { width: MAX_WIDTH }]}>
@@ -439,7 +440,7 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#f0f5ff' },
-  scroll: { alignItems: 'center', paddingBottom: 24, paddingTop: 8 },
+  scroll: { alignItems: 'center' },
   card: {
     backgroundColor: '#fff',
     borderRadius: 22,

@@ -5,13 +5,12 @@ import { Dimensions, FlatList, Platform, StyleSheet, Text, TouchableOpacity, Vie
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Chip from '../components/Chip';
 import { ListCheckIcon } from '../components/Icons';
-import ScreensDefault, { TabBarVisibilityContext } from '../components/ScreensDefault';
+import ScreensDefault from '../components/ScreensDefault';
 import { DataContext } from '../contexts/DataContext';
 
 export default function ListsScreen() {
   const router = useRouter();
   const { shoppingLists, updateLists, currentUser } = useContext(DataContext);
-  const { reportScrollY } = useContext(TabBarVisibilityContext);
   const insets = useSafeAreaInsets();
 
   const [statusFilter, setStatusFilter] = useState('active'); // 'active' | 'done' | 'all'
@@ -19,9 +18,16 @@ export default function ListsScreen() {
   const numColumns = width >= 1100 ? 3 : width >= 720 ? 2 : 1;
 
   const styles = useMemo(() => makeStyles(), []);
+  // Target final visual gap above the TabBar
+  const desiredBottomGap = 20; // px; adjust here if you want more/less space
+  const overlayBottomSpacer = useMemo(
+    () => desiredBottomGap - Math.max(20, (insets?.bottom || 0) + 16),
+    [insets?.bottom],
+  );
   const listContentStyle = useMemo(() => {
     const base = [styles.listContent, numColumns > 1 && styles.listGrid];
-    const bottomPad = Math.max(80, (insets?.bottom || 0) + 56 + 24); // TabBar(56) + extra
+  // Deixe o FlatList sem padding extra; o espaçamento final é controlado pelo Screen via overlayBottomSpacer
+  const bottomPad = 0;
     return [...base, { paddingBottom: bottomPad }];
   }, [styles, numColumns, insets]);
 
@@ -148,6 +154,7 @@ export default function ListsScreen() {
       rightTab="FAMILY"
       scroll={false}
       contentStyle={styles.content}
+      overlayBottomSpacer={overlayBottomSpacer}
   primaryActionPlacement="tabbar"
     >
       {/* Gradient background to align with previous screens */}
@@ -160,6 +167,9 @@ export default function ListsScreen() {
         keyExtractor={(item) => item.id}
         renderItem={renderCard}
         numColumns={numColumns}
+        style={{ flex: 1 }}
+        nestedScrollEnabled
+        scrollEnabled
         contentContainerStyle={listContentStyle}
         ListHeaderComponent={
           <View style={styles.headerPanel}>
@@ -178,8 +188,7 @@ export default function ListsScreen() {
             </View>
           </View>
         }
-        onScroll={(e) => reportScrollY?.(e?.nativeEvent?.contentOffset?.y || 0)}
-        scrollEventThrottle={16}
+  scrollEventThrottle={16}
         keyboardShouldPersistTaps="handled"
         bounces={Platform.OS === 'ios'}
         overScrollMode={Platform.OS === 'android' ? 'always' : undefined}
@@ -197,8 +206,8 @@ export default function ListsScreen() {
 
 const makeStyles = () =>
   StyleSheet.create({
-    content: { alignItems: 'center', paddingBottom: 16 },
-    listContent: { paddingVertical: 8, paddingBottom: 32 },
+  content: {},
+    listContent: { paddingVertical: 8 },
     listGrid: { paddingHorizontal: 8 },
     headerPanel: {
       backgroundColor: '#fff',

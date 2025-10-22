@@ -210,7 +210,7 @@ export default function SwipeNavigator({
 
   return (
     <Animated.View
-      style={{ flex: 1, opacity, transform: [{ translateX }, { scale }] }}
+      style={{ flex: 1, minHeight: 0, opacity, transform: [{ translateX }, { scale }] }}
       {...(enabled ? responder.panHandlers : {})}
     >
       {children}

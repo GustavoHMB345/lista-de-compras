@@ -2,14 +2,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useContext, useEffect, useState } from 'react';
 import {
-  Animated,
-  Dimensions,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    Animated,
+    Dimensions,
+    StyleSheet,
+    Switch,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../components/Button';
@@ -20,7 +20,7 @@ const { width } = Dimensions.get('window');
 const __fs = Math.min(1.2, Math.max(0.9, width / 390));
 const profileStyles = StyleSheet.create({
   root: { flex: 1 },
-  scrollContent: { flexGrow: 1, alignItems: 'center', paddingVertical: 24, paddingHorizontal: 12 },
+  scrollContent: { flexGrow: 1, alignItems: 'center' },
   headerWrap: { alignItems: 'center', marginBottom: 24 },
   title: { fontSize: 32 * __fs, fontWeight: '800', color: '#111827' },
   subtitle: { fontSize: 13 * __fs, color: '#6B7280', marginTop: 4 },
@@ -156,6 +156,7 @@ function ProfileScreen() {
         leftTab={undefined}
         rightTab="LISTS"
         contentStyle={profileStyles.scrollContent}
+        overlayBottomSpacer={72}
       >
           <LinearGradient
             colors={['#EFF6FF', '#E0E7FF']}

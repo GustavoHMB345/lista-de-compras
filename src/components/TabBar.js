@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useRef } from 'react';
-import { Animated, Easing, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Animated, Easing, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { PlusIcon } from './Icons';
@@ -37,8 +37,14 @@ export default function TabBar({
   return (
     <SafeAreaView
       edges={position === 'top' ? ['top'] : ['bottom']}
-      style={[styles.safe, position === 'bottom' ? styles.safeBottom : null]}
-      pointerEvents={hidden ? 'none' : 'auto'}
+      style={[
+        styles.safe,
+        position === 'bottom'
+          ? (Platform.OS === 'web' ? styles.safeBottomWeb : styles.safeBottom)
+          : null,
+      ]}
+      // Don't block scroll/touches outside the actual buttons
+      pointerEvents={hidden ? 'none' : 'box-none'}
     >
       <Animated.View
         style={[
@@ -47,6 +53,7 @@ export default function TabBar({
           { transform: [{ translateY }], opacity: fade },
           hidden ? styles.barHidden : null,
         ]}
+        pointerEvents={hidden ? 'none' : 'box-none'}
       >
   {/* Removed notch to keep center plus strictly circular */}
         <View style={styles.tabsRow}>
@@ -160,6 +167,7 @@ const ProfileIcon = ({ color = '#6B7280' }) => (
 const styles = StyleSheet.create({
   safe: { backgroundColor: 'transparent' },
   safeBottom: { position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 50 },
+  safeBottomWeb: { position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50 },
   bar: {
     width: '100%',
     backgroundColor: '#FFFFFF',

@@ -2,26 +2,26 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useContext, useMemo, useState } from 'react';
 import {
-    Alert,
-    Dimensions,
-    Modal,
-    Pressable,
-    ScrollView,
-    Share,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  Alert,
+  Dimensions,
+  Modal,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../components/Button';
 import {
-    ChevronRightIcon,
-    ListCheckIcon,
-    MagnifyingGlassIcon,
-    ShieldIcon,
-    UserIcon,
-    UsersGroupIcon,
+  ChevronRightIcon,
+  ListCheckIcon,
+  MagnifyingGlassIcon,
+  ShieldIcon,
+  UserIcon,
+  UsersGroupIcon,
 } from '../components/Icons';
 import ScreensDefault from '../components/ScreensDefault';
 import { DataContext } from '../contexts/DataContext';
@@ -31,7 +31,7 @@ const __fs = Math.min(1.2, Math.max(0.9, width / 390));
 const MAX_WIDTH = Math.min(820, width * 0.98);
 const familyStyles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#f0f5ff' },
-  scroll: { alignItems: 'center', paddingBottom: 28, paddingTop: 8 },
+  scroll: { alignItems: 'center' },
   card: {
     backgroundColor: '#fff',
     borderRadius: 22,
@@ -233,6 +233,7 @@ function FamilyScreen() {
         leftTab="LISTS"
         rightTab="DASHBOARD"
         contentStyle={familyStyles.scroll}
+        overlayBottomSpacer={72}
       >
         <LinearGradient
           colors={['#EFF6FF', '#E0E7FF']}
@@ -427,6 +428,7 @@ function FamilyScreen() {
       <Modal
         transparent
         animationType="fade"
+        visible={showNewFamily}
         onRequestClose={() => setShowNewFamily(false)}
       >
         <View style={familyStyles.modalWrap}>

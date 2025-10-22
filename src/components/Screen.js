@@ -22,7 +22,7 @@ export default function Screen({
   const Content = scroll ? ScrollView : View;
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
+      style={{ flex: 1, minHeight: 0 }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={tabBarHeight}
     >
@@ -40,7 +40,7 @@ export default function Screen({
               ]
             : undefined
         }
-        style={!scroll ? [{ paddingTop, paddingHorizontal: 16, flex: 1, paddingBottom: paddingBottomExtra }, contentStyle] : { flex: 1 }}
+        style={!scroll ? [{ paddingTop, paddingHorizontal: 16, flex: 1, minHeight: 0, paddingBottom: paddingBottomExtra }, contentStyle] : { flex: 1, minHeight: 0 }}
         onScroll={scroll ? onScroll : undefined}
         scrollEventThrottle={scroll ? 16 : undefined}
         automaticallyAdjustKeyboardInsets

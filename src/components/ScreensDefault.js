@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import React, { createContext, useContext, useMemo, useRef, useState } from 'react';
+import React, { useContext, useMemo, useRef, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { DataContext } from '../contexts/DataContext';
 import AddListModal from './AddListModal';
@@ -17,7 +17,6 @@ import TabBar from './TabBar';
 // - overlayBottomSpacer: extra bottom space for overlaid TabBar (optional)
 // - gradientBackground: boolean to enable simple bg gradient (optional)
 // - onPrimaryAction: optional callback for the TabBar primary action (e.g., add item/list)
-export const TabBarVisibilityContext = createContext({ reportScrollY: (_y) => {}, tabHidden: false });
 
 export default function ScreensDefault({
   active,
@@ -30,13 +29,10 @@ export default function ScreensDefault({
   gradientBackground = false,
   onPrimaryAction,
   primaryActionPlacement = 'tabbar', // 'tabbar' | 'floating'
-  hideTabBarOnScroll = false,
   forceHideTabBar = false,
 }) {
   const router = useRouter();
   const { uiPrefs, shoppingLists, updateLists, currentUser } = useContext(DataContext) || {};
-  const lastOffsetY = useRef(0);
-  const [tabHidden, setTabHidden] = useState(false);
   const MAIN_TABS = useRef(new Set(['PROFILE', 'LISTS', 'FAMILY', 'DASHBOARD']));
   const [showAdd, setShowAdd] = useState(false);
 
@@ -66,40 +62,7 @@ export default function ScreensDefault({
     return base;
   }, [overlayBottomSpacer, active]);
 
-  const effectiveHideOnScroll = !!hideTabBarOnScroll;
-
-  const handleScroll = effectiveHideOnScroll
-    ? (e) => {
-        const y = e?.nativeEvent?.contentOffset?.y || 0;
-        const dy = y - (lastOffsetY.current || 0);
-        lastOffsetY.current = y;
-        const threshold = 8;
-        const topReveal = 10;
-        if (y <= topReveal && tabHidden) {
-          setTabHidden(false);
-          return;
-        }
-        if (dy > threshold && !tabHidden) setTabHidden(true);
-        else if (dy < -threshold && tabHidden) setTabHidden(false);
-      }
-    : undefined;
-
-  // Context API for children with their own scroll (e.g., FlatList) to report scrollY
-  const reportScrollY = effectiveHideOnScroll
-    ? (y) => {
-        const currentY = typeof y === 'number' ? y : 0;
-        const dy = currentY - (lastOffsetY.current || 0);
-        lastOffsetY.current = currentY;
-        const threshold = 8;
-        const topReveal = 10;
-        if (currentY <= topReveal && tabHidden) {
-          setTabHidden(false);
-          return;
-        }
-        if (dy > threshold && !tabHidden) setTabHidden(true);
-        else if (dy < -threshold && tabHidden) setTabHidden(false);
-      }
-    : () => {};
+  // Hide-on-scroll removed: TabBar no longer reacts to scroll.
 
   return (
     <>
@@ -116,7 +79,7 @@ export default function ScreensDefault({
         onNavigate={handleNavigate}
           onAddList={addAction}
         position={uiPrefs?.tabBarPosition === 'top' ? 'top' : 'bottom'}
-        hidden={forceHideTabBar || (effectiveHideOnScroll && tabHidden)}
+        hidden={forceHideTabBar}
       />
         );
       })()}
@@ -128,7 +91,8 @@ export default function ScreensDefault({
             onSwipeRight={canSwipe && leftTab ? () => handleNavigate(leftTab) : undefined}
             allowSwipeLeft={canSwipe && !!rightTab}
             allowSwipeRight={canSwipe && !!leftTab}
-            edgeFrom="any"
+            edgeFrom="both"
+            verticalTolerance={8}
           >
             <Screen
               tabBarHeight={56}
@@ -137,11 +101,8 @@ export default function ScreensDefault({
               overlayBottomSpacer={bottomSpacer}
               contentStyle={contentStyle}
               scroll={scroll}
-              onScroll={handleScroll}
             >
-              <TabBarVisibilityContext.Provider value={{ reportScrollY, tabHidden }}>
-                {children}
-              </TabBarVisibilityContext.Provider>
+              {children}
             </Screen>
           </SwipeNavigator>
         );
