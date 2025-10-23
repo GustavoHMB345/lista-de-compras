@@ -1,19 +1,20 @@
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Dimensions,
-    FlatList,
-    Keyboard,
-    ScrollView,
-    Share,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  FlatList,
+  Keyboard,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -509,6 +510,7 @@ function ListDetailScreen(props) {
       onPrimaryAction={() => setModalVisible(true)}
       forceHideTabBar
     >
+      <LinearGradient colors={["#EFF6FF", "#E0E7FF"]} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: -1 }} />
       {/* Top-left Back Button (fixed below TabBar) */}
       <View
         pointerEvents="box-none"
@@ -640,6 +642,24 @@ function ListDetailScreen(props) {
                       Progresso
                     </Text>
                   </View>
+                  <View style={styles.statsRow}>
+                    <View style={[styles.statBox, { backgroundColor: palette.altSurface }]}>
+                      <Text style={{ color: palette.text, fontWeight: '700' }}>{totalCount}</Text>
+                      <Text style={{ color: palette.mutedText, fontSize: 12 }}>Total</Text>
+                    </View>
+                    <View style={[styles.statBox, { backgroundColor: palette.altSurface }]}>
+                      <Text style={{ color: '#16A34A', fontWeight: '700' }}>{purchasedCount}</Text>
+                      <Text style={{ color: palette.mutedText, fontSize: 12 }}>Concluídos</Text>
+                    </View>
+                    <View style={[styles.statBox, { backgroundColor: palette.altSurface }]}>
+                      <Text style={{ color: '#92400E', fontWeight: '700' }}>{Math.max(0, totalCount - purchasedCount)}</Text>
+                      <Text style={{ color: palette.mutedText, fontSize: 12 }}>Pendentes</Text>
+                    </View>
+                    <View style={[styles.statBox, { backgroundColor: palette.altSurface }]}> 
+                      <Text style={{ color: '#2563EB', fontWeight: '700' }}>R$ {total.toFixed(2)}</Text>
+                      <Text style={{ color: palette.mutedText, fontSize: 12 }}>Estimado</Text>
+                    </View>
+                  </View>
                   <HeaderActions
                     styles={styles}
                     isEditing={isEditingHeader}
@@ -684,7 +704,7 @@ function ListDetailScreen(props) {
                       placeholderTextColor={palette.mutedText}
                       selectionColor={palette.primary}
                     />
-                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
                       <Chip
                         label="Todos"
                         active={!showOnlyPending && !showOnlyCompleted}
@@ -845,8 +865,8 @@ function ListDetailScreen(props) {
                           pointerStripWidth: 2,
                           pointerColor: palette.primary,
                           radius: 5,
-                          pointerLabelWidth: 150,
-                          pointerLabelHeight: 88,
+                          pointerLabelWidth: __w < 380 ? 120 : 150,
+                          pointerLabelHeight: __w < 380 ? 80 : 88,
                           activatePointersOnLongPress: true,
                           pointerLabelComponent: (items) => {
                             const it = items?.[0];
@@ -959,7 +979,7 @@ function ListDetailScreen(props) {
                               paddingHorizontal: 10,
                               borderRadius: 10,
                               minHeight: 32,
-                              alignSelf: 'center',
+                              alignSelf: 'stretch',
                               backgroundColor: 'transparent',
                               borderWidth: 1,
                               borderColor: inList ? palette.danger : palette.success,
@@ -979,9 +999,19 @@ function ListDetailScreen(props) {
                     })}
                   </View>
                 </View>
-                <Button variant="dark" title="Concluir Lista" onPress={handleArchiveList} />
+                <Button
+                  variant="dark"
+                  title="Concluir Lista"
+                  onPress={handleArchiveList}
+                  style={{ width: '100%', maxWidth: MAX_CARD_WIDTH, alignSelf: 'center' }}
+                />
                 <View style={{ height: 8 }} />
-                <Button variant="danger" title="Excluir Lista" onPress={deleteList} />
+                <Button
+                  variant="danger"
+                  title="Excluir Lista"
+                  onPress={deleteList}
+                  style={{ width: '100%', maxWidth: MAX_CARD_WIDTH, alignSelf: 'center' }}
+                />
                 {/* Spacer to avoid bottom buttons being covered by overlaid TabBar */}
                 <View
                   style={{
@@ -1071,7 +1101,7 @@ function ListDetailScreen(props) {
 }
 export default ListDetailScreen;
 
-const MAX_CARD_WIDTH = Math.min(900, __w * 0.98);
+const MAX_CARD_WIDTH = Math.min(1200, __w * 0.995);
 // eslint: removed unused __compact/CONTENT_EXTRA_TOP
 
 // Item categories (emoji + names) inspired by the Tailwind reference
@@ -1112,15 +1142,15 @@ const makeDetailStyles = (palette) =>
     scrollContent: { alignItems: 'center', paddingBottom: 32, paddingHorizontal: 8 },
     card: {
       backgroundColor: palette.card,
-      borderRadius: 20,
-      padding: 16,
-      marginBottom: 18,
-      width: '96%',
+      borderRadius: __w < 380 ? 16 : 20,
+      padding: __w < 380 ? 12 : 16,
+      marginBottom: __w < 380 ? 14 : 18,
+      width: '100%',
       maxWidth: MAX_CARD_WIDTH,
   shadowColor: '#0B0B0B',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 12,
+      shadowOffset: { width: 0, height: __w < 380 ? 3 : 4 },
+      shadowOpacity: __w < 380 ? 0.08 : 0.1,
+      shadowRadius: __w < 380 ? 10 : 12,
       elevation: 6,
     },
     cardTitle: {
@@ -1131,9 +1161,9 @@ const makeDetailStyles = (palette) =>
     },
     headerInput: {
       backgroundColor: palette.card,
-      borderRadius: 12,
-      paddingHorizontal: 14,
-      paddingVertical: 12,
+      borderRadius: __w < 380 ? 10 : 12,
+      paddingHorizontal: __w < 380 ? 12 : 14,
+      paddingVertical: __w < 380 ? 10 : 12,
       color: palette.text,
       borderWidth: 1,
       borderColor: palette.border,
@@ -1171,7 +1201,7 @@ const makeDetailStyles = (palette) =>
       fontWeight: 'bold',
     },
     sectionTitle: {
-      width: '96%',
+      width: '100%',
       maxWidth: MAX_CARD_WIDTH,
       fontSize: 18 * __fs,
       fontWeight: 'bold',
@@ -1220,11 +1250,12 @@ const makeDetailStyles = (palette) =>
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: palette.card,
-      borderRadius: 16,
-      padding: 14,
-      width: '96%',
+      borderRadius: __w < 380 ? 14 : 16,
+      paddingVertical: __w < 380 ? 10 : 12,
+      paddingHorizontal: __w < 380 ? 12 : 14,
+      width: '100%',
       maxWidth: MAX_CARD_WIDTH,
-      marginBottom: 10,
+      marginBottom: __w < 380 ? 8 : 10,
   shadowColor: '#0B0B0B',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.06,
@@ -1271,8 +1302,8 @@ const makeDetailStyles = (palette) =>
       opacity: 0.6,
     },
     itemName: {
-      fontSize: 16 * __fs,
-      fontWeight: 'bold',
+      fontSize: 15 * __fs,
+      fontWeight: '700',
       color: palette.text,
     },
     itemNamePurchased: {
@@ -1280,16 +1311,23 @@ const makeDetailStyles = (palette) =>
       color: palette.mutedText,
     },
     itemSubText: {
-      color: palette.mutedText,
-      marginTop: 2,
-      fontSize: 14 * __fs,
+      display: 'none',
     },
     metaRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 8,
-      marginTop: 6,
+      gap: 6,
+      marginTop: 4,
     },
+    categoryPill: {
+      backgroundColor: palette.altSurface,
+      borderRadius: 999,
+      paddingVertical: 4,
+      paddingHorizontal: 8,
+      borderWidth: 1,
+      borderColor: palette.border,
+    },
+    categoryPillText: { color: palette.mutedText, fontSize: 12 * __fs, fontWeight: '600' },
     qtyBox: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -1300,8 +1338,8 @@ const makeDetailStyles = (palette) =>
     qtyBtn: {
       paddingHorizontal: 12,
       paddingVertical: 8,
-      minWidth: 36,
-      minHeight: 36,
+      minWidth: 40,
+      minHeight: 40,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -1362,10 +1400,12 @@ const makeDetailStyles = (palette) =>
       flexDirection: 'row',
       flexWrap: 'wrap',
       gap: 12,
+      justifyContent: 'space-between',
     },
     memberAvatarBox: {
       alignItems: 'center',
-      width: 96,
+      width: __w < 420 ? '48%' : 96,
+      flexGrow: __w < 420 ? 1 : 0,
     },
     memberAvatar: {
       width: 40,
@@ -1428,13 +1468,16 @@ const makeDetailStyles = (palette) =>
       flexDirection: 'row',
       flexWrap: 'wrap',
       gap: 12,
+      justifyContent: 'space-between',
     },
     statBox: {
       backgroundColor: palette.altSurface,
       borderRadius: 12,
       paddingVertical: 10,
       paddingHorizontal: 12,
-      minWidth: 90,
+      minWidth: __w < 420 ? 0 : 90,
+      flexGrow: __w < 420 ? 1 : 0,
+      flexBasis: __w < 420 ? '48%' : 'auto',
     },
     statLabel: { color: palette.mutedText },
     statValue: { color: palette.text, fontWeight: '700', marginTop: 2 },

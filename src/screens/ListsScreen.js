@@ -1,8 +1,11 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useContext, useMemo, useState } from 'react';
-import { Dimensions, FlatList, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, FlatList, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+// AddListModal removed from this screen; creation is handled by TabBar primary action
+// Button removed along with header CTA
 import Chip from '../components/Chip';
 import { ListCheckIcon } from '../components/Icons';
 import ScreensDefault from '../components/ScreensDefault';
@@ -10,75 +13,47 @@ import { DataContext } from '../contexts/DataContext';
 
 export default function ListsScreen() {
   const router = useRouter();
-  const { shoppingLists, updateLists, currentUser } = useContext(DataContext);
+  const { shoppingLists, updateLists } = useContext(DataContext);
   const insets = useSafeAreaInsets();
 
   const [statusFilter, setStatusFilter] = useState('active'); // 'active' | 'done' | 'all'
-  const { width } = Dimensions.get('window');
-  const numColumns = width >= 1100 ? 3 : width >= 720 ? 2 : 1;
+  // Modal removed; rely on TabBar centered plus for creation
+  // Força organização vertical (uma coluna) em qualquer largura
+  const numColumns = 1;
 
   const styles = useMemo(() => makeStyles(), []);
-  // Target final visual gap above the TabBar
-  const desiredBottomGap = 20; // px; adjust here if you want more/less space
+  const desiredBottomGap = 5; // px; limite de respiro no final do scroll
+  const baselineBottom = Math.max(20, (insets?.bottom || 0) + 16);
+  // Neutraliza o padding inferior do container da casca, para que o respiro fique dentro do conteúdo da FlatList
   const overlayBottomSpacer = useMemo(
-    () => desiredBottomGap - Math.max(20, (insets?.bottom || 0) + 16),
-    [insets?.bottom],
+    () => -baselineBottom,
+    [baselineBottom],
+  );
+  // Centralização: single column centraliza cards; grid centraliza a linha e aplica espaçamento consistente
+  const columnWrapperStyle = useMemo(
+    () => (numColumns > 1 ? { maxWidth: 1200, alignSelf: 'center', columnGap: 12, rowGap: 12 } : undefined),
+    [numColumns],
   );
   const listContentStyle = useMemo(() => {
-    const base = [styles.listContent, numColumns > 1 && styles.listGrid];
-  // Deixe o FlatList sem padding extra; o espaçamento final é controlado pelo Screen via overlayBottomSpacer
-  const bottomPad = 0;
+    const base = [
+      styles.listContent,
+      numColumns > 1 && styles.listGrid,
+      numColumns === 1 ? { alignItems: 'center' } : null,
+    ].filter(Boolean);
+    // Aplique o espaçamento final na própria FlatList para que faça parte do conteúdo rolável
+    // Garantir gap visível de 5px entre o último card e o topo da TabBar:
+    // paddingBottom = alturaTabBar(56) + safe-area-bottom + desiredGap
+    const TAB_HEIGHT = 76;
+    const bottomPad = TAB_HEIGHT + (insets?.bottom || 0) + desiredBottomGap;
     return [...base, { paddingBottom: bottomPad }];
-  }, [styles, numColumns, insets]);
+  }, [styles, numColumns, insets?.bottom, desiredBottomGap]);
 
-  const formatDate = useCallback((iso) => {
-    if (!iso) return '—';
-    try {
-      const d = new Date(iso);
-      return d.toLocaleDateString();
-    } catch (_e) {
-      return String(iso).slice(0, 10);
-    }
+  const inferPriority = useCallback((pending) => {
+    if (pending >= 10) return { key: 'high', label: 'Alta', bg: '#FEE2E2', text: '#B91C1C', border: '#FECACA' };
+    if (pending >= 5) return { key: 'medium', label: 'Média', bg: '#FEF3C7', text: '#92400E', border: '#FDE68A' };
+    return { key: 'low', label: 'Baixa', bg: '#DCFCE7', text: '#166534', border: '#BBF7D0' };
   }, []);
 
-  const getCounts = useCallback((list) => {
-    const items = Array.isArray(list?.items) ? list.items : [];
-    let total = items.length;
-    let completed = 0;
-    for (const it of items) if (it.isPurchased || it.done || it.completed || it.checked) completed += 1;
-    return { total, completed };
-  }, []);
-
-  const getPriority = useCallback(
-    (list) => {
-      const { total, completed } = getCounts(list);
-      const pending = Math.max(0, total - completed);
-      if (pending >= 10) return 'high';
-      if (pending === 0 && total > 0) return 'low';
-      return 'medium';
-    },
-    [getCounts],
-  );
-
-  const sortedLists = useMemo(() => {
-    const arr = (shoppingLists || []).slice();
-    // Partition by completion
-    const withCounts = arr.map((l) => {
-      const { total, completed } = getCounts(l);
-      const pending = Math.max(0, total - completed);
-      return { l, total, completed, pending };
-    });
-    const active = withCounts.filter((x) => !(x.total > 0 && x.completed === x.total));
-    const done = withCounts.filter((x) => x.total > 0 && x.completed === x.total);
-    // Sort active by pending desc, then createdAt desc
-    active.sort((a, b) => (b.pending - a.pending) || (new Date(b.l.createdAt || 0) - new Date(a.l.createdAt || 0)));
-    // Sort done by createdAt desc
-    done.sort((a, b) => new Date(b.l.createdAt || 0) - new Date(a.l.createdAt || 0));
-    const merged = statusFilter === 'active' ? active : statusFilter === 'done' ? done : [...active, ...done];
-    return merged.map((x) => x.l);
-  }, [shoppingLists, getCounts, statusFilter]);
-
-  // Date helpers (pt-BR short)
   const formatShort = useCallback((iso) => {
     if (!iso) return '—';
     try {
@@ -88,6 +63,29 @@ export default function ListsScreen() {
     }
   }, []);
 
+  const getCounts = useCallback((list) => {
+    const items = list?.items || [];
+    const total = items.length;
+    const completed = items.filter((it) => it.isPurchased).length;
+    return { total, completed };
+  }, []);
+
+  const sortedLists = useMemo(() => {
+    let arr = shoppingLists || [];
+    if (statusFilter === 'active') {
+      arr = arr.filter((l) => {
+        const { total, completed } = getCounts(l);
+        return !(total > 0 && completed === total);
+      });
+    } else if (statusFilter === 'done') {
+      arr = arr.filter((l) => {
+        const { total, completed } = getCounts(l);
+        return total > 0 && completed === total;
+      });
+    }
+    return arr;
+  }, [shoppingLists, statusFilter, getCounts]);
+
   const renderCard = useCallback(
     ({ item, index }) => {
       const { total, completed } = getCounts(item);
@@ -95,7 +93,7 @@ export default function ListsScreen() {
       const isCompleted = total > 0 && completed === total;
       const pending = Math.max(0, total - completed);
       const barColor = isCompleted ? '#16A34A' : pending >= 5 ? '#F59E0B' : '#3B82F6';
-      // Last purchase date (max purchasedAt among items) or createdAt as context
+  const priority = inferPriority(pending);
       let lastPurchase = null;
       (item.items || []).forEach((it) => {
         if (it.purchasedAt) {
@@ -106,45 +104,102 @@ export default function ListsScreen() {
       const contextLine = lastPurchase
         ? `Última compra: ${formatShort(new Date(lastPurchase).toISOString())}`
         : `Criada em ${formatShort(item.createdAt)}`;
-      const highlight = statusFilter === 'active' && !isCompleted && index === 0; // destaque primeira ativa
+      const highlight = statusFilter === 'active' && !isCompleted && index === 0;
+
+      const renderLeftActions = (progress, dragX) => {
+        const scale = dragX.interpolate({ inputRange: [0, 80], outputRange: [0.6, 1], extrapolate: 'clamp' });
+        const opacity = progress.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] });
+        return (
+          <Animated.View style={[styles.swipeActionLeft, { transform: [{ scale }], opacity }]}> 
+            <Text style={styles.swipeActionText}>{isCompleted ? 'Reabrir' : 'Concluir'}</Text>
+          </Animated.View>
+        );
+      };
+      const renderRightActions = (progress, dragX) => {
+        const scale = dragX.interpolate({ inputRange: [-80, 0], outputRange: [1, 0.6], extrapolate: 'clamp' });
+        const opacity = progress.interpolate({ inputRange: [0, 1], outputRange: [1, 0.3] });
+        return (
+          <Animated.View style={[styles.swipeActionRight, { transform: [{ scale }], opacity }]}> 
+            <Text style={styles.swipeActionText}>Excluir</Text>
+          </Animated.View>
+        );
+      };
+
       return (
-        <TouchableOpacity
-          activeOpacity={0.92}
-          onPress={() => router.push({ pathname: '/list-detail', params: { id: item.id } })}
-          style={[styles.card, numColumns > 1 && styles.cardGrid, highlight && styles.cardHighlight]}
+        <Swipeable
+          renderLeftActions={renderLeftActions}
+          renderRightActions={renderRightActions}
+          leftThreshold={28}
+          rightThreshold={28}
+          friction={1.2}
+          overshootFriction={6}
+          onSwipeableOpen={(dir) => {
+            if (dir === 'left') {
+              const now = new Date().toISOString();
+              const targetDone = !isCompleted;
+              updateLists(
+                shoppingLists.map((l) =>
+                  l.id === item.id
+                    ? {
+                        ...l,
+                        items: (l.items || []).map((it) => ({
+                          ...it,
+                          isPurchased: targetDone ? true : false,
+                          purchasedAt: targetDone ? (it.purchasedAt || now) : undefined,
+                        })),
+                      }
+                    : l,
+                ),
+              );
+            }
+            if (dir === 'right') {
+              updateLists(shoppingLists.filter((l) => l.id !== item.id));
+            }
+          }}
         >
-          <View style={styles.cardHeaderRow}>
-            <Text style={styles.cardTitle} numberOfLines={2}>
-              {item.name || 'Sem nome'}
-            </Text>
-          </View>
-          <Text style={styles.subline}>
-            {isCompleted ? `${completed} itens concluídos` : `${pending} itens pendentes`}
-          </Text>
-          {!isCompleted && (
-            <View style={styles.progressTrack}>
-              <View style={[styles.progressBar, { width: `${pct}%`, backgroundColor: barColor }]} />
+          <TouchableOpacity
+            activeOpacity={0.92}
+            onPress={() => router.push({ pathname: '/list-detail', params: { id: item.id } })}
+            style={[styles.card, numColumns > 1 && styles.cardGrid, highlight && styles.cardHighlight]}
+          >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <View style={styles.cardHeaderRow}>
+                <Text style={styles.cardTitle} numberOfLines={2}>
+                  {item.name || 'Sem nome'}
+                </Text>
+              </View>
             </View>
-          )}
-          <Text style={styles.captionLine}>{contextLine}</Text>
-          <View style={styles.bottomRow}>
-            <Text
-              style={[styles.statusText, isCompleted ? styles.statusDone : styles.statusPending]}
-            >
-              {isCompleted ? '✓ Concluída' : 'Em andamento'}
+            <Text style={styles.subline}>
+              {isCompleted ? `${completed} itens concluídos` : `${pending} itens pendentes`}
             </Text>
-            <TouchableOpacity
-              onPress={() => router.push({ pathname: '/list-detail', params: { id: item.id } })}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.link}>Ver detalhes →</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
+            {!isCompleted && (
+              <View style={styles.progressTrack}>
+                <View style={[styles.progressBar, { width: `${pct}%`, backgroundColor: barColor }]} />
+              </View>
+            )}
+            <Text style={styles.captionLine}>{contextLine}</Text>
+            <View style={styles.bottomRow}>
+              <View style={styles.bottomLeftRow}>
+                <Text style={[styles.statusText, isCompleted ? styles.statusDone : styles.statusPending]}>
+                  {isCompleted ? '✓ Concluída' : 'Em andamento'}
+                </Text>
+                <View style={[styles.priorityPill, { backgroundColor: priority.bg, borderColor: priority.border }]}>
+                  <Text style={[styles.priorityPillText, { color: priority.text }]}>{priority.label}</Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={() => router.push({ pathname: '/list-detail', params: { id: item.id } })}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.link}>Ver detalhes →</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Swipeable>
       );
     },
-    [getCounts, numColumns, router, formatShort, statusFilter],
+    [getCounts, numColumns, router, formatShort, statusFilter, updateLists, shoppingLists],
   );
 
   return (
@@ -155,32 +210,30 @@ export default function ListsScreen() {
       scroll={false}
       contentStyle={styles.content}
       overlayBottomSpacer={overlayBottomSpacer}
-  primaryActionPlacement="tabbar"
+      primaryActionPlacement="tabbar"
     >
-      {/* Gradient background to align with previous screens */}
-      <LinearGradient
-        colors={['#EFF6FF', '#E0E7FF']}
-        style={[StyleSheet.absoluteFillObject, { zIndex: -1 }]}
-      />
+      <LinearGradient colors={["#EFF6FF", "#E0E7FF"]} style={[StyleSheet.absoluteFillObject, { zIndex: -1 }]} />
       <FlatList
         data={sortedLists}
         keyExtractor={(item) => item.id}
         renderItem={renderCard}
         numColumns={numColumns}
         style={{ flex: 1 }}
+        columnWrapperStyle={columnWrapperStyle}
         nestedScrollEnabled
         scrollEnabled
         contentContainerStyle={listContentStyle}
         ListHeaderComponent={
           <View style={styles.headerPanel}>
-            <View style={{ alignItems: 'center', marginBottom: 8 }}>
-              <View style={styles.badgeWrap}>
-                <ListCheckIcon color="#7C3AED" />
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <View style={{ alignItems: 'center', flex: 1 }}>
+                <View style={styles.badgeWrap}>
+                  <ListCheckIcon color="#7C3AED" />
+                </View>
+                <Text style={styles.pageTitle}>Minhas Listas</Text>
+                <Text style={styles.pageSubtitle}>Todas as suas listas de compras</Text>
               </View>
-              <Text style={styles.pageTitle}>Minhas Listas</Text>
-              <Text style={styles.pageSubtitle}>Organize suas compras</Text>
             </View>
-            {/* Removed inline 'Nova Lista' button in favor of floating FAB */}
             <View style={styles.filtersRow}>
               <Chip label="Ativas" active={statusFilter === 'active'} onPress={() => setStatusFilter('active')} />
               <Chip label="Concluídas" active={statusFilter === 'done'} onPress={() => setStatusFilter('done')} />
@@ -188,7 +241,7 @@ export default function ListsScreen() {
             </View>
           </View>
         }
-  scrollEventThrottle={16}
+        scrollEventThrottle={16}
         keyboardShouldPersistTaps="handled"
         bounces={Platform.OS === 'ios'}
         overScrollMode={Platform.OS === 'android' ? 'always' : undefined}
@@ -215,8 +268,8 @@ const makeStyles = () =>
       padding: 16,
       marginTop: 4,
       marginBottom: 10,
-      width: '96%',
-      maxWidth: 1100,
+      width: '100%',
+      maxWidth: 1200,
       shadowColor: '#0B0B0B',
       shadowOffset: { width: 0, height: 3 },
       shadowOpacity: 0.06,
@@ -240,15 +293,15 @@ const makeStyles = () =>
     pageSubtitle: { fontSize: 13, color: '#6B7280', marginTop: 4 },
     card: {
       backgroundColor: '#fff',
-      borderRadius: 18,
+      borderRadius: 20,
       paddingHorizontal: 16,
       paddingVertical: 20,
       borderWidth: 1,
       borderColor: '#E5E7EB',
-      width: '96%',
-      maxWidth: 1100,
+      width: '100%',
+      maxWidth: 1200,
       alignSelf: 'center',
-      marginVertical: 12,
+      marginVertical: 10,
       minHeight: 160,
       shadowColor: '#0B0B0B',
       shadowOffset: { width: 0, height: 3 },
@@ -262,6 +315,25 @@ const makeStyles = () =>
       shadowRadius: 10,
       elevation: 3,
     },
+    swipeActionLeft: {
+      width: 88,
+      marginVertical: 10,
+      marginLeft: 8,
+      borderRadius: 16,
+      backgroundColor: '#2563EB',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    swipeActionRight: {
+      width: 88,
+      marginVertical: 10,
+      marginRight: 8,
+      borderRadius: 16,
+      backgroundColor: '#EF4444',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    swipeActionText: { color: '#fff', fontWeight: '700', fontSize: 13 },
     cardGrid: {
       flex: 1,
       marginHorizontal: 8,
@@ -269,11 +341,14 @@ const makeStyles = () =>
     },
     cardHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     cardTitle: { fontSize: 16, fontWeight: '700', color: '#111827', flex: 1, paddingRight: 8 },
+  priorityPill: { borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999 },
+  priorityPillText: { fontSize: 11, fontWeight: '700' },
     subline: { color: '#6B7280', fontSize: 12, marginTop: 8 },
     progressTrack: { backgroundColor: '#E5E7EB', height: 8, borderRadius: 4, overflow: 'hidden', marginTop: 8 },
     progressBar: { height: 8, borderRadius: 4 },
     captionLine: { color: '#9CA3AF', fontSize: 11, marginTop: 6 },
     bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
+  bottomLeftRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     statusText: { fontSize: 12, fontWeight: '600' },
     statusDone: { color: '#16A34A' },
     statusPending: { color: '#6B7280' },

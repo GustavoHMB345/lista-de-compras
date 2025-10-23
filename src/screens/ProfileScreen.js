@@ -2,14 +2,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useContext, useEffect, useState } from 'react';
 import {
-    Animated,
-    Dimensions,
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Animated,
+  Dimensions,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../components/Button';
@@ -295,7 +295,7 @@ function ProfileScreen() {
               onPress={logout}
               style={profileStyles.logoutButton}
             />
-            <View style={{ height: 96 }} />
+            <View style={{ height: 6 }} />
       </ScreensDefault>
     </SafeAreaView>
   );

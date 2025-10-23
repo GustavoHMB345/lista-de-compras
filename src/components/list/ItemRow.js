@@ -73,12 +73,17 @@ function ItemRow({
         <View style={{ flex: 1, paddingRight: 8 }}>
           <Text
             style={[styles.itemName, item.isPurchased && styles.itemNamePurchased]}
-            numberOfLines={2}
+            numberOfLines={1}
+            ellipsizeMode="tail"
           >
             {item.name}
           </Text>
-          <Text style={styles.itemSubText}>{categoryName}</Text>
           <View style={styles.metaRow}>
+            <View style={styles.categoryPill}>
+              <Text style={styles.categoryPillText} numberOfLines={1}>
+                {categoryName}
+              </Text>
+            </View>
             <View style={styles.qtyBox}>
               <TouchableOpacity
                 disabled={!canEdit}
