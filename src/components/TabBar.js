@@ -23,6 +23,9 @@ export default function TabBar({
       useNativeDriver: true,
     }).start();
   }, [hidden, position, translateY]);
+
+  // Note: To also color the Android system navigation bar, install expo-navigation-bar
+  // and set the background/button style at app level or here.
   const fade = translateY.interpolate({
     inputRange: [-80, -60, 0, 60, 80],
     outputRange: [0, 0.2, 1, 0.2, 0],
@@ -166,8 +169,8 @@ const ProfileIcon = ({ color = '#6B7280' }) => (
 
 const styles = StyleSheet.create({
   safe: { backgroundColor: 'transparent' },
-  safeBottom: { position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 50 },
-  safeBottomWeb: { position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50 },
+  safeBottom: { position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 50, backgroundColor: '#FFFFFF' },
+  safeBottomWeb: { position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50, backgroundColor: '#FFFFFF' },
   bar: {
     width: '100%',
     backgroundColor: '#FFFFFF',

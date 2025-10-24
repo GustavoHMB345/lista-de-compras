@@ -1,12 +1,12 @@
 import { useRootNavigationState, useRouter } from 'expo-router';
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
-    Animated,
-    Dimensions,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Animated,
+  Dimensions,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -25,6 +25,7 @@ export default function DashboardScreen() {
   const [period, setPeriod] = useState('weekly'); // weekly | monthly | yearly
   const [monthRange] = useState(6);
   const [scope, setScope] = useState('user'); // 'user' | 'family'
+  const [measuredCardH, setMeasuredCardH] = useState(null);
 
   useEffect(() => {
     if (!loading && !currentUser && rootNavigation?.key) {
@@ -242,10 +243,18 @@ export default function DashboardScreen() {
         leftTab="FAMILY"
         rightTab={undefined}
         contentStyle={styles.scroll}
-        overlayBottomSpacer={72}
+  overlayBottomSpacer={0}
+        scrollEndFromCardHeight={
+          measuredCardH
+            ? { cardHeight: measuredCardH, factor: 0.5, gap: 12, min: 24, max: 52 }
+            : { cardHeight: 220, factor: 0.5, gap: 12, min: 24, max: 52 }
+        }
       >
           {/* Header + Stats */}
-          <View style={[styles.card, { width: MAX_WIDTH }]}>
+          <View
+            style={[styles.card, { width: MAX_WIDTH }]}
+            onLayout={!measuredCardH ? (e) => setMeasuredCardH(Math.round(e.nativeEvent.layout.height)) : undefined}
+          >
             <View style={{ alignItems: 'center', marginBottom: 16 }}>
               <Text style={styles.emoji}>📊</Text>
               <Text style={styles.title}>Dashboard</Text>

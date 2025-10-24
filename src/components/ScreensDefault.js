@@ -2,21 +2,12 @@ import { useRouter } from 'expo-router';
 import React, { useContext, useMemo, useRef, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { DataContext } from '../contexts/DataContext';
-import AddListModal from './AddListModal';
+import { EVENTS, on } from '../navigation/EventBus';
 import Screen from './Screen';
+import SimpleAddListModal from './SimpleAddListModal';
 import SwipeNavigator from './SwipeNavigator';
 import TabBar from './TabBar';
 
-// Default shell for app screens: bottom overlaid TabBar + fluid swipe navigation (edgeFrom="any").
-// Props:
-// - active: 'PROFILE' | 'LISTS' | 'FAMILY' | 'DASHBOARD'
-// - children: content of the screen
-// - leftTab: tab id when swiping RIGHT (navigate to the left screen)
-// - rightTab: tab id when swiping LEFT (navigate to the right screen)
-// - scroll, contentStyle: forwarded to Screen
-// - overlayBottomSpacer: extra bottom space for overlaid TabBar (optional)
-// - gradientBackground: boolean to enable simple bg gradient (optional)
-// - onPrimaryAction: optional callback for the TabBar primary action (e.g., add item/list)
 
 export default function ScreensDefault({
   active,
@@ -26,6 +17,9 @@ export default function ScreensDefault({
   scroll = true,
   contentStyle,
   overlayBottomSpacer,
+  scrollEndFromCardHeight,
+  // Optional per-screen control: how far scroll can push under the overlaid TabBar
+  scrollEndUnderlay,
   gradientBackground = false,
   onPrimaryAction,
   primaryActionPlacement = 'tabbar', // 'tabbar' | 'floating'
@@ -35,6 +29,10 @@ export default function ScreensDefault({
   const { uiPrefs, shoppingLists, updateLists, currentUser } = useContext(DataContext) || {};
   const MAIN_TABS = useRef(new Set(['PROFILE', 'LISTS', 'FAMILY', 'DASHBOARD']));
   const [showAdd, setShowAdd] = useState(false);
+  React.useEffect(() => {
+    const off = on(EVENTS.OPEN_ADD_LIST_MODAL, () => setShowAdd(true));
+    return off;
+  }, []);
 
   const handleNavigate = (screen) => {
     switch (screen) {
@@ -55,12 +53,26 @@ export default function ScreensDefault({
     }
   };
 
-  // Provide a sensible default spacer per screen when not provided
+  // Default spacer: with overlaid TabBar we keep the extra bottom spacer at 0 by default
   const bottomSpacer = useMemo(() => {
     if (typeof overlayBottomSpacer === 'number') return overlayBottomSpacer;
-    const base = active === 'DASHBOARD' ? 16 : active === 'FAMILY' ? 32 : 24;
-    return base;
+    return 0;
   }, [overlayBottomSpacer, active]);
+
+  // Provide per-screen default underlay values when no dynamic card-height logic is provided
+  // and no explicit scrollEndUnderlay is passed by the caller.
+  const effectiveScrollEndUnderlay = useMemo(() => {
+    if (typeof scrollEndUnderlay === 'number') return scrollEndUnderlay; // explicit override
+    // If dynamic behavior is provided by the screen, don't force a default underlay.
+    if (scrollEndFromCardHeight && typeof scrollEndFromCardHeight === 'object') return undefined;
+    const defaults = {
+      LISTS: 22,
+      FAMILY: 30,
+      DASHBOARD: 36,
+      PROFILE: 24,
+    };
+    return defaults[active] ?? undefined;
+  }, [scrollEndUnderlay, scrollEndFromCardHeight, active]);
 
   // Hide-on-scroll removed: TabBar no longer reacts to scroll.
 
@@ -99,6 +111,8 @@ export default function ScreensDefault({
               tabBarPosition={uiPrefs?.tabBarPosition === 'top' ? 'top' : 'bottom'}
               overlayTabBar
               overlayBottomSpacer={bottomSpacer}
+              scrollEndUnderlay={effectiveScrollEndUnderlay}
+              scrollEndFromCardHeight={scrollEndFromCardHeight}
               contentStyle={contentStyle}
               scroll={scroll}
             >
@@ -108,21 +122,21 @@ export default function ScreensDefault({
         );
       })()}
       {/* Global Add List modal for main tabs */}
-      <AddListModal
+      <SimpleAddListModal
         visible={showAdd}
         onClose={() => setShowAdd(false)}
-        onCreate={(newList) => {
-          const next = [
-            ...(shoppingLists || []),
-            {
-              ...newList,
-              id: `list_${Date.now()}`,
-              familyId: currentUser?.familyId,
-              createdAt: new Date().toISOString(),
-              status: 'active',
-              members: currentUser ? [currentUser.id] : [],
-            },
-          ];
+        onCreate={({ name, priority }) => {
+          const newEntry = {
+            id: `list_${Date.now()}`,
+            name,
+            priority: priority || 'medium',
+            items: [],
+            familyId: currentUser?.familyId,
+            createdAt: new Date().toISOString(),
+            status: 'active',
+            members: currentUser ? [currentUser.id] : [],
+          };
+          const next = [...(shoppingLists || []), newEntry];
           updateLists?.(next);
           setShowAdd(false);
         }}

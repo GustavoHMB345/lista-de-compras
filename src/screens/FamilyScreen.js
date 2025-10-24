@@ -37,7 +37,7 @@ const familyStyles = StyleSheet.create({
     borderRadius: 22,
     padding: 18,
     shadowColor: '#0B0B0B',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 4,
@@ -130,6 +130,7 @@ function FamilyScreen() {
   const [detailsFamily, setDetailsFamily] = useState(null);
   const [manageFamily, setManageFamily] = useState(null);
   const [famSearch, setFamSearch] = useState('');
+  const [measuredFamilyCardH, setMeasuredFamilyCardH] = useState(null);
 
   const myFamilies = useMemo(
     () => (!currentUser ? [] : families.filter((f) => (f.members || []).includes(currentUser.id))),
@@ -233,7 +234,12 @@ function FamilyScreen() {
         leftTab="LISTS"
         rightTab="DASHBOARD"
         contentStyle={familyStyles.scroll}
-        overlayBottomSpacer={72}
+  overlayBottomSpacer={0}
+        scrollEndFromCardHeight={
+          measuredFamilyCardH
+            ? { cardHeight: measuredFamilyCardH, factor: 0.5, gap: 12, min: 24, max: 52 }
+            : { cardHeight: 160, factor: 0.5, gap: 12, min: 24, max: 52 }
+        }
       >
         <LinearGradient
           colors={['#EFF6FF', '#E0E7FF']}
@@ -338,7 +344,7 @@ function FamilyScreen() {
                 gradientPreset="primary"
               />
             </View>
-            {filteredFamilies.map((f) => {
+            {filteredFamilies.map((f, idx) => {
               const isOwner = f.owner === currentUser?.id;
               const mems = familyMembers(f);
               const activeCount = shoppingLists.filter((l) => {
@@ -352,7 +358,11 @@ function FamilyScreen() {
                 return !completed;
               }).length;
               return (
-                <View key={f.id} style={familyStyles.familyCard}>
+                <View
+                  key={f.id}
+                  style={[familyStyles.familyCard, idx === 0 ? { minHeight: 200 } : null]}
+                  onLayout={!measuredFamilyCardH && idx === 0 ? (e) => setMeasuredFamilyCardH(Math.round(e.nativeEvent.layout.height)) : undefined}
+                >
                   {isOwner && (
                     <View style={familyStyles.badge}>
                       <Text style={familyStyles.badgeText}>👑 Admin</Text>
@@ -602,7 +612,7 @@ function ManageMembersModal({
               Você é admin
             </Text>
           )}
-          <ScrollView style={{ maxHeight: 300, marginTop: 8 }}>
+          <ScrollView style={{ maxHeight: 200, marginTop: 8 }}>
             {sortedUsers.map((u) => {
               const isMember = (family.members || []).includes(u.id);
               const isOwner = family.owner === u.id;

@@ -2,14 +2,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useContext, useEffect, useState } from 'react';
 import {
-  Animated,
-  Dimensions,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    Animated,
+    Dimensions,
+    StyleSheet,
+    Switch,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../components/Button';
@@ -23,7 +23,7 @@ const profileStyles = StyleSheet.create({
   scrollContent: { flexGrow: 1, alignItems: 'center' },
   headerWrap: { alignItems: 'center', marginBottom: 24 },
   title: { fontSize: 32 * __fs, fontWeight: '800', color: '#111827' },
-  subtitle: { fontSize: 13 * __fs, color: '#6B7280', marginTop: 4 },
+  subtitle: { fontSize: 13 * __fs, color: '#6B7280', marginTop: 5 },
   card: {
     width: '96%',
     maxWidth: 820,
@@ -95,9 +95,11 @@ function ProfileScreen() {
     uiPrefs,
     toggleTheme,
     toggleTabBarPosition,
+    resetDemoData,
   } = useContext(DataContext);
   const [displayName, setDisplayName] = useState(currentUser?.displayName || '');
   const [isEditing, setIsEditing] = useState(false);
+  const [measuredCardH, setMeasuredCardH] = useState(null);
   const router = useRouter();
   const progress = useState(new Animated.Value(0))[0];
 
@@ -156,7 +158,7 @@ function ProfileScreen() {
         leftTab={undefined}
         rightTab="LISTS"
         contentStyle={profileStyles.scrollContent}
-        overlayBottomSpacer={72}
+  overlayBottomSpacer={0}
       >
           <LinearGradient
             colors={['#EFF6FF', '#E0E7FF']}
@@ -168,7 +170,10 @@ function ProfileScreen() {
             </View>
 
             {/* Preferências rápidas: Tema e Posição da TabBar com toggles */}
-            <View style={profileStyles.card}>
+            <View
+              style={profileStyles.card}
+              onLayout={!measuredCardH ? (e) => setMeasuredCardH(Math.round(e.nativeEvent.layout.height)) : undefined}
+            >
               <Text style={profileStyles.sectionTitle}>Preferências</Text>
               <View>
                 <View style={profileStyles.prefRow}>
@@ -289,13 +294,26 @@ function ProfileScreen() {
               })()}
             </View>
 
+            <View style={profileStyles.card}>
+              <Text style={profileStyles.sectionTitle}>Dados de Demonstração</Text>
+              <Text style={{ color: '#6B7280', marginBottom: 10 }}>
+                Recarregue os dados de exemplo para visualizar o protótipo completo nas telas.
+              </Text>
+              <Button
+                variant="light"
+                title="Resetar Demo"
+                onPress={resetDemoData}
+                accessibilityLabel="Limpar dados e recarregar exemplo"
+              />
+            </View>
+
             <Button
               variant="danger"
               title="Sair da Conta"
               onPress={logout}
               style={profileStyles.logoutButton}
             />
-            <View style={{ height: 6 }} />
+            <View style={{ height: 60 }} />
       </ScreensDefault>
     </SafeAreaView>
   );

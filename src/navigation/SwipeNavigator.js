@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Dimensions, FlatList, View } from 'react-native';
 import DashboardScreen from '../screens/DashboardScreen';
 import FamilyScreen from '../screens/FamilyScreen';
 import ListsScreen from '../screens/ListsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import { EVENTS, on } from './EventBus';
 
 const { width } = Dimensions.get('window');
 
@@ -24,6 +25,22 @@ export default function SwipeNavigator() {
     const idx = Math.round(e.nativeEvent.contentOffset.x / width);
     setActiveIndex(idx);
   };
+
+  // Listen for tab navigation requests
+  useEffect(() => {
+    const unsubscribe = on(EVENTS.NAVIGATE_TAB, (tabKey) => {
+      const idx = screens.findIndex((s) => s.key === tabKey);
+      if (idx >= 0 && flatListRef.current) {
+        try {
+          flatListRef.current.scrollToIndex({ index: idx, animated: true });
+          setActiveIndex(idx);
+        } catch (e) {
+          // scrollToIndex can throw if item not measured yet; fallback silently
+        }
+      }
+    });
+    return unsubscribe;
+  }, []);
 
   return (
     <View style={{ flex: 1, backgroundColor: '#23232B' }}>

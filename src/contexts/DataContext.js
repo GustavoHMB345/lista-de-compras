@@ -70,11 +70,100 @@ export const DataProvider = ({ children }) => {
       if (!families.some((f) => f.id === testFamily.id)) {
         families = [testFamily, ...families];
       }
+      // Seed demo shopping lists with items and prices if none exist
+      const seedIfEmpty = (parsedLists) => {
+        if (parsedLists && parsedLists.length > 0) return parsedLists;
+        const ownerId = testUser.id;
+        const famId = testFamily.id;
+        const daysAgo = (n) => {
+          const d = new Date();
+          d.setDate(d.getDate() - n);
+          return d.toISOString();
+        };
+        const mkItem = (name, category, price, days, purchased = true) => ({
+          id: `item_${name}_${days}_${Math.random().toString(36).slice(2,8)}`,
+          name,
+          category,
+          price,
+          isPurchased: !!purchased,
+          completed: !!purchased,
+          done: !!purchased,
+          checked: !!purchased,
+          purchasedAt: purchased ? daysAgo(days) : undefined,
+          createdAt: daysAgo(days + 1),
+          addedBy: ownerId,
+        });
+        const list = (id, name, priority, items) => ({
+          id,
+          name,
+          priority,
+          familyId: famId,
+          createdAt: daysAgo(40),
+          items,
+        });
+        // Two completed lists and one active to feed both scopes
+        const L1 = list('list_demo_1', 'Compras da Semana', 'medium', [
+          mkItem('Arroz', 'outros', 22.9, 2, true),
+          mkItem('Feijão', 'outros', 9.5, 3, true),
+          mkItem('Frango', 'carnes', 27.9, 4, true),
+          mkItem('Leite', 'laticinios', 6.9, 5, true),
+          mkItem('Maçã', 'frutas', 4.1, 6, true),
+        ]);
+        const L2 = list('list_demo_2', 'Churrasco', 'high', [
+          mkItem('Carvão', 'outros', 18.9, 9, true),
+          mkItem('Carne Bovina', 'carnes', 69.9, 10, true),
+          mkItem('Linguiça', 'carnes', 24.5, 12, true),
+          mkItem('Refrigerante', 'bebidas', 9.9, 14, true),
+          mkItem('Pão de Alho', 'paes', 12.5, 15, true),
+        ]);
+        const L3 = list('list_demo_3', 'Farmácia', 'low', [
+          mkItem('Analgésico', 'outros', 14.9, 1, true),
+          mkItem('Curativo', 'outros', 7.9, 1, false),
+          mkItem('Vitaminas', 'outros', 29.9, 0, false),
+        ]);
+        // Monthly spread + expensive items for visuals
+        const L4 = list('list_demo_4', 'Supermercado do Mês', 'medium', [
+          mkItem('Azeite Importado 500ml', 'outros', 49.9, 20, true),
+          mkItem('Café Gourmet 1kg', 'outros', 79.9, 27, true),
+          mkItem('Salmão 1kg', 'carnes', 89.9, 34, true),
+          mkItem('Queijo Parmesão', 'laticinios', 38.5, 41, true),
+          mkItem('Vinho Tinto', 'bebidas', 59.9, 48, true),
+        ]);
+        const L5 = list('list_demo_5', 'Hortifruti', 'low', [
+          mkItem('Manga', 'frutas', 6.9, 55, true),
+          mkItem('Morango', 'frutas', 12.9, 52, true),
+          mkItem('Abacate', 'frutas', 8.9, 50, true),
+          mkItem('Cenoura', 'vegetais', 4.5, 45, true),
+        ]);
+        const L6 = list('list_demo_6', 'Padaria & Café', 'medium', [
+          mkItem('Café Moído 500g', 'outros', 24.9, 7, true),
+          mkItem('Pão Italiano', 'paes', 11.9, 13, true),
+          mkItem('Croissant', 'paes', 9.5, 19, false),
+        ]);
+        // Older months to fill monthly view
+        const L7 = list('list_demo_7', 'Estoque Mensal Antigo', 'low', [
+          mkItem('Açúcar 5kg', 'outros', 22.0, 65, true),
+          mkItem('Café Gourmet 1kg', 'outros', 79.9, 95, true),
+          mkItem('Filé Mignon 1kg', 'carnes', 99.9, 125, true),
+        ]);
+        return [L1, L2, L3, L4, L5, L6, L7];
+      };
+
+      const shoppingListsRaw = seedIfEmpty(parsed?.shoppingLists || []);
+      // Normalize legacy lists: ensure priority is valid and items is an array
+      const validPriorities = new Set(['high', 'medium', 'low']);
+      const shoppingLists = (shoppingListsRaw || []).map((l) => ({
+        ...l,
+        priority: validPriorities.has(l?.priority) ? l.priority : 'low',
+        items: Array.isArray(l?.items) ? l.items : [],
+      }));
+
       setData((prev) => ({
         ...prev,
         ...parsed,
         users,
         families,
+        shoppingLists,
       }));
     } catch (e) {
       console.error('Failed to load data.', e);
@@ -95,6 +184,17 @@ export const DataProvider = ({ children }) => {
       await AsyncStorage.setItem('@SuperLista:data', jsonValue);
     } catch (e) {
       console.error('Failed to save data.', e);
+    }
+  };
+
+  // Reset demo data: clear storage and reload with seed
+  const resetDemoData = async () => {
+    try {
+      setLoading(true);
+      await AsyncStorage.removeItem('@SuperLista:data');
+      await loadData();
+    } catch (e) {
+      console.error('Failed to reset demo data.', e);
     }
   };
 
@@ -246,6 +346,80 @@ export const DataProvider = ({ children }) => {
     saveData(newData);
   };
 
+  // Item-level helpers for lists
+  const addItemToList = (listId, item) => {
+    const lists = (data.shoppingLists || []).map((l) => {
+      if (String(l.id) !== String(listId)) return l;
+      const items = Array.isArray(l.items) ? l.items.slice() : [];
+      const nowIso = new Date().toISOString();
+      const newItem = {
+        id: item?.id || `item_${Date.now()}`,
+        name: item?.name || 'Item',
+        category: item?.category || 'outros',
+        price: typeof item?.price === 'number' ? item.price : null,
+        isPurchased: false,
+        done: false,
+        completed: false,
+        checked: false,
+        createdAt: nowIso,
+        addedBy: data.currentUser?.id,
+      };
+      return { ...l, items: [newItem, ...items] };
+    });
+    updateLists(lists);
+  };
+
+  const updateItemInList = (listId, itemId, patch) => {
+    const lists = (data.shoppingLists || []).map((l) => {
+      if (String(l.id) !== String(listId)) return l;
+      const items = (l.items || []).map((it) =>
+        String(it.id) === String(itemId) ? { ...it, ...patch } : it,
+      );
+      return { ...l, items };
+    });
+    updateLists(lists);
+  };
+
+  const removeItemFromList = (listId, itemId) => {
+    const lists = (data.shoppingLists || []).map((l) => {
+      if (String(l.id) !== String(listId)) return l;
+      const items = (l.items || []).filter((it) => String(it.id) !== String(itemId));
+      return { ...l, items };
+    });
+    updateLists(lists);
+  };
+
+  const toggleItemCompleted = (listId, itemId) => {
+    const lists = (data.shoppingLists || []).map((l) => {
+      if (String(l.id) !== String(listId)) return l;
+      const items = (l.items || []).map((it) => {
+        if (String(it.id) !== String(itemId)) return it;
+        const nextDone = !(it.isPurchased || it.done || it.completed || it.checked);
+        return {
+          ...it,
+          isPurchased: nextDone,
+          done: nextDone,
+          completed: nextDone,
+          checked: nextDone,
+          purchasedAt: nextDone ? new Date().toISOString() : undefined,
+        };
+      });
+      return { ...l, items };
+    });
+    updateLists(lists);
+  };
+
+  const clearCompletedInList = (listId) => {
+    const lists = (data.shoppingLists || []).map((l) => {
+      if (String(l.id) !== String(listId)) return l;
+      const items = (l.items || []).filter(
+        (it) => !(it.isPurchased || it.done || it.completed || it.checked),
+      );
+      return { ...l, items };
+    });
+    updateLists(lists);
+  };
+
   const updateFamilies = (newFamilies) => {
     const newData = { ...data, families: newFamilies };
     saveData(newData);
@@ -269,6 +443,13 @@ export const DataProvider = ({ children }) => {
         updateLists,
         updateFamilies,
         updateUsers,
+  resetDemoData,
+  // list item helpers
+  addItemToList,
+  updateItemInList,
+  removeItemFromList,
+  toggleItemCompleted,
+  clearCompletedInList,
         // UI prefs
         uiPrefs: data.uiPrefs,
         setTheme,

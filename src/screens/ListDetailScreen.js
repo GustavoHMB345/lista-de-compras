@@ -1,1505 +1,1084 @@
-import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Dimensions,
-  FlatList,
-  Keyboard,
-  ScrollView,
-  Share,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { LineChart } from 'react-native-gifted-charts';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-// Context & components
-import AddListModal from '../components/AddListModal';
-import Button from '../components/Button';
-import Chip from '../components/Chip';
-import { BackIcon, CategoryIcon } from '../components/Icons';
-import AddItemCard from '../components/list/AddItemCard';
-import HeaderActions from '../components/list/HeaderActions';
-import ItemRow from '../components/list/ItemRow';
-import ScreensDefault from '../components/ScreensDefault';
+import { Feather } from '@expo/vector-icons';
+import { Picker } from '@react-native-picker/picker';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
+import { Alert, FlatList, Modal, Platform, ScrollView, StatusBar, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+// Certifique-se de que o caminho para seus dados mockados está correto
 import { DataContext } from '../contexts/DataContext';
-import { useAppTheme } from '../hooks/useAppTheme';
-import { aggregatePriceHistory, filterByRange } from '../utils/prices';
+import { categories, generateListItems, mockShoppingLists } from '../data';
 
-// --- Fallback globals (in case __w / __fs not injected) ---
-const { width: __DEVICE_WIDTH } = Dimensions.get('window');
+// --- Componente: Item da Lista (Layout Melhorado) ---
 
-// @ts-ignore
-const __w = typeof globalThis !== 'undefined' && globalThis.__w ? globalThis.__w : __DEVICE_WIDTH;
+const ListItem = ({ item, onToggle, onRemove, onEditPrice, compact }) => {
+  const category = categories[item.category] || categories.outros;
 
-// @ts-ignore
-const __fs = typeof globalThis !== 'undefined' && globalThis.__fs ? globalThis.__fs : 1;
+  return (
+    // O estilo 'compact' agora aplica flexWrap no card principal
+    <View style={[styles.itemCard, compact && styles.itemCardCompact]}>
+      <Switch
+        value={item.completed}
+        onValueChange={onToggle}
+        thumbColor={item.completed ? '#10B981' : '#f4f3f4'}
+        trackColor={{ false: '#E5E7EB', true: '#A7F3D0' }}
+        style={styles.itemSwitch}
+      />
+      <View style={[styles.itemEmojiContainer, { backgroundColor: category.gradient[0] }]}>
+        <Text style={styles.itemEmoji}>{category.emoji}</Text>
+      </View>
 
-// Main screen component
-function ListDetailScreen(props) {
-  const insets = useSafeAreaInsets();
-  const { palette } = useAppTheme();
-  const styles = useMemo(() => makeDetailStyles(palette), [palette]);
-  const router = useRouter();
-  const params = useLocalSearchParams?.() || {};
-  // Aceita 'id' (padrão) ou legado 'listId'
-  const fallbackId = props?.route?.params?.id || props?.route?.params?.listId;
-  const listId = params.id || params.listId || fallbackId;
-  const { shoppingLists, updateLists, currentUser, families, loading, users, uiPrefs } =
-    useContext(DataContext);
+      {/* Coluna Principal: Nome e Preço */}
+      <View style={styles.itemInfo}>
+        <Text style={[styles.itemName, item.completed && styles.itemNameCompleted]}>
+          {item.name}
+        </Text>
+        <Text style={[styles.itemPrice, !item.price && styles.itemPriceEmpty]}>
+          {item.price ? `R$ ${item.price.toFixed(2)}` : 'Sem preço'}
+        </Text>
+      </View>
 
-  const list = shoppingLists.find((l) => l.id === listId);
-  const family = families.find((f) => f.id === currentUser?.familyId);
-  // family.members pode ser array de IDs; resolvemos para objetos de usuário
-  const familyMembers = useMemo(() => {
-    const memberIds = Array.isArray(family?.members) ? family.members : [];
-    return memberIds.map((id) => (users || []).find((u) => u.id === id)).filter(Boolean);
-  }, [family?.members, users]);
-
-  // Header edit state
-  const [isEditingHeader, setIsEditingHeader] = useState(false);
-  const [editedName, setEditedName] = useState(list?.name || '');
-  const [editedDesc, setEditedDesc] = useState(list?.desc || list?.description || '');
-
-  // Add item form state
-  const [newItemName, setNewItemName] = useState('');
-  const [newItemQty, setNewItemQty] = useState('1');
-  const [newItemPrice, setNewItemPrice] = useState('');
-  const [newItemCategory, setNewItemCategory] = useState('all');
-
-  // Filters
-  const [query, setQuery] = useState('');
-  const [showOnlyPending, setShowOnlyPending] = useState(false);
-  const [showOnlyCompleted, setShowOnlyCompleted] = useState(false);
-  const [categoryFilter, setCategoryFilter] = useState('all');
-
-  // Price edit
-  const [editingPriceId, setEditingPriceId] = useState(null);
-  const [editingPriceText, setEditingPriceText] = useState('');
-
-  // Price history selection & range filtering
-  const [selectedPriceItem, setSelectedPriceItem] = useState('');
-  const [historyRange] = useState('all'); // all | 7d | 30d | 6m
-  // compareRange removed
-
-  const [modalVisible, setModalVisible] = useState(false);
-  const [recentlyDeleted, setRecentlyDeleted] = useState(null); // {item,listId,timeoutId}
-  const undoTimer = useRef(null);
-
-  const progress = useRef(0); // placeholder if SwipeNavigator expects ref
-  const [tabHeight] = useState(56);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
-
-  // Raise bottom overlays when keyboard is visible (Android/iOS)
-  useEffect(() => {
-    const onShow = (e) => setKeyboardHeight(e?.endCoordinates?.height || 0);
-    const onHide = () => setKeyboardHeight(0);
-    const s = Keyboard.addListener('keyboardDidShow', onShow);
-    const h = Keyboard.addListener('keyboardDidHide', onHide);
-    return () => {
-      s.remove();
-      h.remove();
-    };
-  }, []);
-
-  const canEdit = true; // adjust auth logic if needed
-
-  const items = useMemo(() => {
-    if (!list) return [];
-    return (list.items || [])
-      .filter((it) => {
-        if (query && !it.name.toLowerCase().includes(query.toLowerCase())) return false;
-        if (showOnlyPending && it.isPurchased) return false;
-        if (showOnlyCompleted && !it.isPurchased) return false;
-        if (categoryFilter !== 'all' && it.category !== categoryFilter) return false;
-        return true;
-      })
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [list, query, showOnlyPending, showOnlyCompleted, categoryFilter]);
-
-  const { total, purchasedCount, totalCount } = useMemo(() => {
-    const arr = list?.items || [];
-    let _total = 0;
-    let _purchased = 0;
-    for (const it of arr) {
-      const price = Number(it.price) || 0;
-      const qty = parseInt(it.quantity) || 1;
-      if (it.isPurchased) _purchased += 1;
-      _total += price * qty;
-    }
-    return { total: _total, purchasedCount: _purchased, totalCount: arr.length };
-  }, [list?.items]);
-
-  // Available item names (lowercase unique) based on current list and its snapshots
-  const availablePriceItems = useMemo(() => {
-    const set = new Set();
-    const collect = (arr = []) => {
-      arr.forEach((it) => {
-        const n = String(it.name || '')
-          .trim()
-          .toLowerCase();
-        if (n) set.add(n);
-        if (Array.isArray(it.priceHistory))
-          it.priceHistory.forEach(() => {
-            if (n) set.add(n);
-          });
-      });
-    };
-    collect(list?.items || []);
-    return Array.from(set).filter(Boolean).sort();
-  }, [list?.items]);
-
-  const effectiveSelectedItem = selectedPriceItem || availablePriceItems[0] || '';
-
-  // Aggregate price history with snapshots (unit & total daily averages) + range filter
-  const basePriceRows = useMemo(() => {
-    if (!effectiveSelectedItem) return [];
-    return aggregatePriceHistory(list?.items || [], effectiveSelectedItem);
-  }, [list?.items, effectiveSelectedItem]);
-
-  const priceData = useMemo(
-    () => filterByRange(basePriceRows, historyRange),
-    [basePriceRows, historyRange],
+      {/* Coluna da Direita: Categoria e Ações */}
+      <View style={[styles.itemRightColumn, compact && styles.itemRightColumnCompact]}>
+        <Text style={styles.itemCategory}>{category.name}</Text>
+        <View style={styles.itemActions}>
+          <TouchableOpacity onPress={onEditPrice} style={styles.actionButton}>
+            <Feather name="edit-2" size={16} color="#3B82F6" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onRemove} style={styles.actionButton}>
+            <Feather name="trash-2" size={16} color="#EF4444" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
   );
-  // compareData removed (unused after removing compareSummary)
+};
 
-  // compareSummary removed (unused)
+// --- Componente: Chip de Filtro de Categoria ---
 
-  const priceTrend = useMemo(() => {
-    if (priceData.length < 2) return null;
-    const last = priceData[priceData.length - 1].value;
-    const prev = priceData[priceData.length - 2].value;
-    if (prev === 0) return null;
-    const diff = last - prev;
-    const pct = (diff / prev) * 100;
-    return { diff, pct, up: diff > 0 };
-  }, [priceData]);
+const CategoryFilterChip = ({
+  catKey,
+  name,
+  emoji,
+  count,
+  isActive,
+  onPress,
+  styleConfig,
+}) => {
+  if (count === 0 && catKey !== 'all') return null;
+  const labelStyles = [styles.chipLabel, isActive && styles.chipLabelActive];
+  const countWrapStyles = [styles.chipCount, isActive && styles.chipCountActive];
+  const countTextStyles = [styles.chipCountText, isActive && styles.chipCountTextActive];
 
-  // Actions
-  const handleShare = useCallback(() => {
-    Share.share({ message: `Lista: ${list?.name} (Total R$ ${total.toFixed(2)})` });
-  }, [list?.name, total]);
-  const beginEditHeader = useCallback(() => setIsEditingHeader(true), []);
-  const saveEditHeader = useCallback(() => {
-    setIsEditingHeader(false);
-    if (!list) return;
-    const updatedLists = shoppingLists.map((l) =>
-      l.id === list.id ? { ...l, name: editedName || l.name, desc: editedDesc } : l,
-    );
-    updateLists(updatedLists);
-  }, [list, shoppingLists, editedName, editedDesc, updateLists]);
-  const markAllPurchased = useCallback(() => {
-    if (!list) return;
-    const now = new Date().toISOString();
-    const updatedLists = shoppingLists.map((l) =>
-      l.id === list.id
-        ? {
-            ...l,
-            items: (l.items || []).map((it) => ({ ...it, isPurchased: true, purchasedAt: now })),
-          }
-        : l,
-    );
-    updateLists(updatedLists);
-  }, [list, shoppingLists, updateLists]);
-  const clearCompleted = useCallback(() => {
-    if (!list) return;
-    const updatedLists = shoppingLists.map((l) =>
-      l.id === list.id ? { ...l, items: (l.items || []).filter((it) => !it.isPurchased) } : l,
-    );
-    updateLists(updatedLists);
-  }, [list, shoppingLists, updateLists]);
-  // UPDATED: snapshot initial price if provided
-  const handleAddItem = useCallback(() => {
-    if (!list || !newItemName.trim()) return;
-    const priceNum = Number(newItemPrice) || 0;
-    const now = new Date().toISOString();
-    const newIt = {
-      id: `item_${Date.now()}`,
-      name: newItemName.trim(),
-      quantity: newItemQty || '1',
-      price: priceNum,
-      category: newItemCategory === 'all' ? 'outros' : newItemCategory,
-      isPurchased: false,
-      createdAt: now,
-      priceHistory:
-        priceNum > 0
-          ? [
-              {
-                id: `ph_${Date.now()}`,
-                ts: now,
-                price: priceNum,
-                quantity: parseInt(newItemQty) || 1,
-              },
-            ]
-          : [],
-    };
-    const updatedLists = shoppingLists.map((l) =>
-      l.id === list.id ? { ...l, items: [...(l.items || []), newIt] } : l,
-    );
-    updateLists(updatedLists);
-    setNewItemName('');
-    setNewItemQty('1');
-    setNewItemPrice('');
-  }, [list, newItemName, newItemPrice, newItemQty, newItemCategory, shoppingLists, updateLists]);
-  const startEditPrice = useCallback((id, price) => {
-    setEditingPriceId(id);
-    setEditingPriceText(price ? String(price) : '');
-  }, []);
-  // UPDATED: add snapshot when price changes
-  const saveEditPrice = useCallback(
-    (id) => {
-      if (!list) return;
-      const newPrice = Number(editingPriceText) || 0;
-      const now = new Date().toISOString();
-      const updatedLists = shoppingLists.map((l) =>
-        l.id === list.id
-          ? {
-              ...l,
-              items: (l.items || []).map((it) => {
-                if (it.id !== id) return it;
-                const current = Number(it.price) || 0;
-                if (current !== newPrice && newPrice > 0) {
-                  const historyArr = Array.isArray(it.priceHistory) ? it.priceHistory : [];
-                  return {
-                    ...it,
-                    price: newPrice,
-                    priceHistory: [
-                      ...historyArr,
-                      {
-                        id: `ph_${Date.now()}`,
-                        ts: now,
-                        price: newPrice,
-                        quantity: parseInt(it.quantity) || 1,
-                      },
-                    ],
-                  };
-                }
-                return { ...it, price: newPrice };
-              }),
-            }
-          : l,
-      );
-      updateLists(updatedLists);
-      setEditingPriceId(null);
-      setEditingPriceText('');
-    },
-    [list, editingPriceText, shoppingLists, updateLists],
-  );
-  const incQty = useCallback(
-    (id) => {
-      if (!list) return;
-      updateLists(
-        shoppingLists.map((l) =>
-          l.id === list.id
-            ? {
-                ...l,
-                items: (l.items || []).map((it) =>
-                  it.id === id ? { ...it, quantity: String((parseInt(it.quantity) || 1) + 1) } : it,
-                ),
-              }
-            : l,
-        ),
-      );
-    },
-    [list, shoppingLists, updateLists],
-  );
-
-  const decQty = useCallback(
-    (id) => {
-      if (!list) return;
-      updateLists(
-        shoppingLists.map((l) =>
-          l.id === list.id
-            ? {
-                ...l,
-                items: (l.items || []).map((it) =>
-                  it.id === id
-                    ? { ...it, quantity: String(Math.max(1, (parseInt(it.quantity) || 1) - 1)) }
-                    : it,
-                ),
-              }
-            : l,
-        ),
-      );
-    },
-    [list, shoppingLists, updateLists],
-  );
-
-  const handleTogglePurchased = useCallback(
-    (id) => {
-      if (!list) return;
-      const now = new Date().toISOString();
-      updateLists(
-        shoppingLists.map((l) =>
-          l.id === list.id
-            ? {
-                ...l,
-                items: (l.items || []).map((it) =>
-                  it.id === id
-                    ? {
-                        ...it,
-                        isPurchased: !it.isPurchased,
-                        purchasedAt: !it.isPurchased ? now : it.purchasedAt,
-                      }
-                    : it,
-                ),
-              }
-            : l,
-        ),
-      );
-    },
-    [list, shoppingLists, updateLists],
-  );
-
-  const handleDeleteItem = useCallback(
-    (id) => {
-      if (!list) return;
-      const target = (list.items || []).find((it) => it.id === id);
-      if (!target) return;
-      const updated = shoppingLists.map((l) =>
-        l.id === list.id ? { ...l, items: (l.items || []).filter((it) => it.id !== id) } : l,
-      );
-      updateLists(updated);
-      if (undoTimer.current) clearTimeout(undoTimer.current);
-      const timeoutId = setTimeout(() => {
-        setRecentlyDeleted(null);
-        undoTimer.current = null;
-      }, 6000);
-      undoTimer.current = timeoutId;
-      setRecentlyDeleted({ item: target, listId: list.id, timeoutId });
-    },
-    [list, shoppingLists, updateLists],
-  );
-
-  const undoDelete = () => {
-    if (!recentlyDeleted) return;
-    const { item, listId, timeoutId } = recentlyDeleted;
-    if (timeoutId) clearTimeout(timeoutId);
-    updateLists(
-      shoppingLists.map((l) =>
-        l.id === listId
-          ? { ...l, items: [...(l.items || []), item].sort((a, b) => a.name.localeCompare(b.name)) }
-          : l,
-      ),
-    );
-    setRecentlyDeleted(null);
-  };
-  const handleMemberToggle = (memberId) => {
-    if (!list) return;
-    const isOn = list.members.includes(memberId);
-    const updated = shoppingLists.map((l) =>
-      l.id === list.id
-        ? {
-            ...l,
-            members: isOn ? l.members.filter((i) => i !== memberId) : [...l.members, memberId],
-          }
-        : l,
-    );
-    updateLists(updated);
-  };
-  const handleArchiveList = () => {
-    if (!list) return;
-    const now = new Date().toISOString();
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    updateLists(
-      shoppingLists.map((l) =>
-        l.id === list.id
-          ? {
-              ...l,
-              items: (l.items || []).map((it) => ({
-                ...it,
-                isPurchased: true,
-                purchasedAt: it.purchasedAt || now,
-              })),
-            }
-          : l,
-      ),
-    );
-    // Navega imediatamente para a tela de listas
-    router.replace('/lists');
-  };
-  const deleteList = () => {
-    if (!list) return;
-    Alert.alert('Excluir', 'Tem certeza?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Excluir',
-        style: 'destructive',
-        onPress: () => {
-          updateLists(shoppingLists.filter((l) => l.id !== list.id));
-          router.push('/lists');
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      style={[
+        styles.categoryChip,
+        isActive && styles.categoryChipActive,
+        {
+          minHeight: styleConfig.chipHeight,
+          paddingVertical: styleConfig.chipPadV,
+          paddingHorizontal: styleConfig.chipPadH,
         },
-      },
-    ]);
-  };
-  const handleNavigate = (tab) => {
-    if (tab === 'LISTS') router.push('/lists');
-    if (tab === 'PROFILE') router.push('/profile');
-    if (tab === 'DASHBOARD') router.push('/dashboard');
-  };
+      ]}
+    >
+      {catKey !== 'all' ? <Text style={styles.chipEmoji}>{emoji}</Text> : null}
+      <Text
+        style={[
+          labelStyles,
+          {
+            maxWidth: styleConfig.labelMaxWidth,
+            flexShrink: 1,
+            fontSize: styleConfig.chipLabelSize,
+            lineHeight: styleConfig.chipLabelSize + 4,
+          },
+        ]}
+        numberOfLines={1}
+        ellipsizeMode="tail"
+      >
+        {catKey !== 'all' ? name : 'Todas'}
+      </Text>
+      <View style={countWrapStyles}>
+        <Text style={[countTextStyles, { fontSize: styleConfig.chipCountSize }]}>
+          {count}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+};
 
-  // Conteúdo quando lista não encontrada ou ainda carregando
-  const renderEmptyOrLoading = () => (
-    <View style={[styles.centered, { paddingTop: 12, backgroundColor: palette.bg }]}>
-      {loading ? (
-        <>
-          <ActivityIndicator size="large" color={palette.primary} />
-          <Text style={[styles.emptyText, { color: palette.mutedText, marginTop: 12 }]}>
-            Carregando dados...
+// --- Componente: Cabeçalho da Lista ---
+
+const ListHeaderCard = ({ list, stats, onGoBack, onClearCompleted }) => {
+  return (
+    <View style={styles.headerCard}>
+      <View style={styles.headerRow}>
+        <TouchableOpacity onPress={onGoBack} style={styles.backBtn}>
+          <Feather name="arrow-left" size={20} color="#6B7280" />
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.headerTitle}>{list.name}</Text>
+          <Text style={styles.headerSubtitle}>Gerencie seus itens de compra</Text>
+        </View>
+        <View style={styles.headerActions}>
+          <TouchableOpacity onPress={() => {}} style={styles.headerIconBtn}>
+            <Feather name="share-2" size={18} color="#2563EB" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onClearCompleted} style={styles.headerIconBtn}>
+            <Feather name="check-circle" size={18} color="#10B981" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <View style={{ marginTop: 8 }}>
+        <View style={styles.progressTopRow}>
+          <Text style={styles.progressLabel}>Progresso da Lista</Text>
+          <Text style={styles.progressText}>
+            {stats.completed} de {stats.total} itens
           </Text>
-        </>
+        </View>
+        <View style={styles.progressBg}>
+          <View style={[styles.progressFill, { width: `${stats.percentage}%` }]} />
+        </View>
+      </View>
+
+      <View style={styles.statsGrid}>
+        <View style={[styles.statBox, { backgroundColor: '#EEF2FF' }]}>
+          <Text style={styles.statValue}>{stats.total}</Text>
+          <Text style={styles.statLabel}>Total</Text>
+        </View>
+        <View style={[styles.statBox, { backgroundColor: '#ECFDF5' }]}>
+          <Text style={[styles.statValue, { color: '#16A34A' }]}>{stats.completed}</Text>
+          <Text style={styles.statLabel}>Concluídos</Text>
+        </View>
+        <View style={[styles.statBox, { backgroundColor: '#FEF3C7' }]}>
+          <Text style={[styles.statValue, { color: '#92400E' }]}>{stats.pending}</Text>
+          <Text style={styles.statLabel}>Pendentes</Text>
+        </View>
+        <View style={[styles.statBox, { backgroundColor: '#E0F2FE' }]}>
+          <Text style={[styles.statValue, { color: '#2563EB' }]}>
+            R$ {stats.totalPrice.toFixed(2)}
+          </Text>
+          <Text style={styles.statLabel}>Estimado</Text>
+        </View>
+      </View>
+    </View>
+  );
+};
+
+// --- Componente: Card de Adicionar Item (Refatorado para alinhamento) ---
+
+const AddItemCard = ({
+  isFormVisible,
+  setIsFormVisible,
+  itemName,
+  setItemName,
+  itemCategory,
+  setItemCategory,
+  itemPrice,
+  setItemPrice,
+  onAddItem,
+  isWide,
+  btnHeight,
+  btnTextSize,
+}) => {
+  return (
+    <View style={styles.addCard}>
+      <View style={styles.addCardHeader}>
+        <View style={styles.addGlyph}>
+          <Text style={{ color: '#fff' }}>➕</Text>
+        </View>
+        <Text style={styles.addTitle}>Adicionar Item</Text>
+        <TouchableOpacity onPress={() => setIsFormVisible((v) => !v)}>
+          <Feather
+            name={isFormVisible ? 'chevron-up' : 'chevron-down'}
+            size={18}
+            color="#6B7280"
+          />
+        </TouchableOpacity>
+      </View>
+      {isFormVisible &&
+        (isWide ? (
+          <View style={{ marginTop: 10 }}>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {/* MUDANÇA: Aplicado height: btnHeight */}
+              <TextInput
+                style={[styles.input, { flex: 1, height: btnHeight }]}
+                placeholder="Nome do item..."
+                value={itemName}
+                onChangeText={setItemName}
+              />
+              {/* MUDANÇA: Aplicado height: btnHeight ao wrapper */}
+              <View style={[styles.priceWrap, { width: 130, height: btnHeight }]}>
+                <Text style={styles.pricePrefix}>R$</Text>
+                {/* MUDANÇA: Usado priceTextInput, sem borda/padding extra */}
+                <TextInput
+                  style={styles.priceTextInput}
+                  placeholder="Preço"
+                  keyboardType="numeric"
+                  value={itemPrice}
+                  onChangeText={setItemPrice}
+                />
+              </View>
+            </View>
+            <View
+              style={{
+                flexDirection: 'row',
+                gap: 8,
+                marginTop: 8,
+                alignItems: 'stretch',
+              }}
+            >
+              <View style={[styles.pickerWrap, { flex: 1, height: btnHeight }]}>
+                <Picker
+                  selectedValue={itemCategory}
+                  onValueChange={(v) => setItemCategory(v)}
+                  style={[styles.picker, { height: btnHeight }]}
+                >
+                  <Picker.Item label="Categoria" value="" />
+                  {Object.entries(categories).map(([key, cfg]) => (
+                    <Picker.Item key={key} label={`${cfg.emoji} ${cfg.name}`} value={key} />
+                  ))}
+                </Picker>
+              </View>
+              <TouchableOpacity
+                style={[styles.addButton, { width: 140, minHeight: btnHeight }]}
+                onPress={onAddItem}
+              >
+                <Feather name="plus" size={20} color="#fff" />
+                <Text
+                  style={[
+                    styles.addButtonText,
+                    { fontSize: btnTextSize, lineHeight: btnTextSize + 4 },
+                  ]}
+                >
+                  Adicionar
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.addFormGrid}>
+            {/* MUDANÇA: Aplicado height: btnHeight */}
+            <TextInput
+              style={[styles.input, { height: btnHeight }]}
+              placeholder="Nome do item..."
+              value={itemName}
+              onChangeText={setItemName}
+            />
+            <View style={[styles.pickerWrap, { height: btnHeight }]}>
+              <Picker
+                selectedValue={itemCategory}
+                onValueChange={(v) => setItemCategory(v)}
+                style={[styles.picker, { height: btnHeight }]}
+              >
+                <Picker.Item label="Categoria" value="" />
+                {Object.entries(categories).map(([key, cfg]) => (
+                  <Picker.Item key={key} label={`${cfg.emoji} ${cfg.name}`} value={key} />
+                ))}
+              </Picker>
+            </View>
+            {/* MUDANÇA: Aplicado height: btnHeight ao wrapper */}
+            <View style={[styles.priceWrap, { height: btnHeight }]}>
+              <Text style={styles.pricePrefix}>R$</Text>
+              {/* MUDANÇA: Usado priceTextInput */}
+              <TextInput
+                style={styles.priceTextInput}
+                placeholder="Preço"
+                keyboardType="numeric"
+                value={itemPrice}
+                onChangeText={setItemPrice}
+              />
+            </View>
+            <TouchableOpacity
+              style={[styles.addButton, { minHeight: btnHeight }]}
+              onPress={onAddItem}
+            >
+              <Feather name="plus" size={16} color="#fff" />
+              <Text
+                style={[
+                  styles.addButtonText,
+                  { fontSize: btnTextSize, lineHeight: btnTextSize + 4 },
+                ]}
+              >
+                Adicionar
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+    </View>
+  );
+};
+
+// --- Componente: Card da Lista de Itens ---
+
+const ItemsListCard = ({
+  items,
+  searchTerm,
+  setSearchTerm,
+  sortBy,
+  setSortBy,
+  categoryFilter,
+  setCategoryFilter,
+  categoryCounts,
+  onToggleItem,
+  onRemoveItem,
+  onEditPrice,
+  isNarrow,
+  sortWidth,
+  chipStyleConfig,
+}) => {
+  return (
+    <View style={styles.itemsCard}>
+      {/* Search and Sort (com estilos de alinhamento corrigidos) */}
+      <View style={styles.listTopBar}>
+        <View style={[styles.searchWrap, isNarrow && { marginRight: 6, paddingHorizontal: 8 }]}>
+          <Feather name="search" size={14} color="#9CA3AF" style={{ marginRight: 6 }} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Buscar..."
+            value={searchTerm}
+            onChangeText={setSearchTerm}
+          />
+        </View>
+        <View style={[styles.sortWrap, { width: sortWidth }]}>
+          <Picker
+            selectedValue={sortBy}
+            onValueChange={(v) => setSortBy(v)}
+            style={[styles.sortPicker, { width: sortWidth }]}
+          >
+            <Picker.Item label="A-Z" value="name" />
+            <Picker.Item label="Categoria" value="category" />
+            <Picker.Item label="Preço" value="price" />
+            <Picker.Item label="Status" value="status" />
+          </Picker>
+        </View>
+      </View>
+
+      {/* Category Chips */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chipsRow}
+      >
+        <CategoryFilterChip
+          catKey="all"
+          name="Todas"
+          emoji="📋"
+          count={categoryCounts.all || 0}
+          isActive={categoryFilter === 'all'}
+          onPress={() => setCategoryFilter('all')}
+          styleConfig={chipStyleConfig}
+        />
+        {Object.entries(categories).map(([key, cfg]) => (
+          <CategoryFilterChip
+            key={key}
+            catKey={key}
+            name={cfg.name}
+            emoji={cfg.emoji}
+            count={categoryCounts[key] || 0}
+            isActive={categoryFilter === key}
+            onPress={() => setCategoryFilter(key)}
+            styleConfig={chipStyleConfig}
+          />
+        ))}
+      </ScrollView>
+
+      {/* Items */}
+      {items.length === 0 ? (
+        <View style={styles.emptyItems}>
+          <View style={styles.emptyGlyph}>
+            <Text style={{ fontSize: 22 }}>🛒</Text>
+          </View>
+          <Text style={styles.emptyTitle}>Lista vazia</Text>
+          <Text style={styles.emptySubtitle}>Comece adicionando alguns itens à sua lista</Text>
+        </View>
       ) : (
-        <>
-          <Text style={[styles.emptyText, { color: palette.mutedText }]}>
-            Lista não encontrada.
-          </Text>
-          <Text
-            style={[styles.emptyText, { color: palette.mutedText, marginTop: 8, fontSize: 12 }]}
-          >
-            Debug id: {String(listId || '—')}
-          </Text>
-          <Text
-            style={[styles.emptyText, { color: palette.mutedText, marginTop: 4, fontSize: 12 }]}
-          >
-            Listas: {shoppingLists.length}
-          </Text>
-        </>
+        <FlatList
+          data={items}
+          keyExtractor={(it) => it.id.toString()}
+          renderItem={({ item }) => (
+            <ListItem
+              item={item}
+              onToggle={() => onToggleItem(item.id)}
+              onRemove={() => onRemoveItem(item.id)}
+              onEditPrice={() => onEditPrice(item)}
+              compact={isNarrow}
+            />
+          )}
+          contentContainerStyle={{ padding: 12 }}
+        />
       )}
     </View>
   );
-
-  // Espaçamento extra superior (colunas removidas: sempre vertical)
-  const contentExtraTop = __w < 420 ? 12 : __w < 760 ? 24 : 40;
-
-  // Savings indicator including explicit snapshots; diff = ultimo snapshot - preço atual (positivo => economia)
-  const itemSavingsMap = useMemo(() => {
-    const map = {};
-    (list?.items || []).forEach((it) => {
-      // normalize name (unused key removed to silence lint)
-      const snapshots = [];
-      // snapshots only from this list's item history
-      if (Array.isArray(it.priceHistory))
-        it.priceHistory.forEach((ph) => snapshots.push({ ts: ph.ts, price: Number(ph.price) }));
-      snapshots.sort((a, b) => new Date(a.ts) - new Date(b.ts));
-      const last = snapshots[snapshots.length - 1];
-      const current = Number(it.price) || 0;
-      if (last && current > 0) {
-        const diff = last.price - current;
-        if (Math.abs(diff) > 0.009) {
-          const pct = last.price !== 0 ? (diff / last.price) * 100 : 0;
-          map[it.id] = { diff, last: last.price, pct };
-        }
-      }
-    });
-    return map;
-  }, [list?.items]);
-
-  return (
-    <ScreensDefault
-      active="LISTS"
-      leftTab="LISTS"
-      rightTab="PROFILE"
-      scroll={false}
-      contentStyle={{ paddingHorizontal: 0 }}
-      onPrimaryAction={() => setModalVisible(true)}
-      forceHideTabBar
-    >
-      <LinearGradient colors={["#EFF6FF", "#E0E7FF"]} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: -1 }} />
-      {/* Top-left Back Button (fixed below TabBar) */}
-      <View
-        pointerEvents="box-none"
-        style={{ position: 'absolute', left: 0, right: 0, top: 0, zIndex: 65 }}
-      >
-        <TouchableOpacity
-          accessibilityLabel="Voltar"
-          accessibilityRole="button"
-          onPress={() => {
-            if (typeof router?.canGoBack === 'function' && router.canGoBack()) router.back();
-            else router.push('/lists');
-          }}
-          activeOpacity={0.8}
-          style={[
-            styles.backButton,
-            {
-              top: (tabHeight || 56) + 8,
-              left: Math.max(12, (insets?.left || 0) + 12),
-            },
-          ]}
-        >
-          <BackIcon />
-        </TouchableOpacity>
-      </View>
-      
-        {!list ? (
-          renderEmptyOrLoading()
-        ) : (
-          <FlatList
-            style={[styles.container, { backgroundColor: palette.bg }]}
-            contentContainerStyle={[
-              styles.scrollContent,
-              {
-                // Screen already adds top padding for tabBarHeight + insets.
-                // Keep only extra top spacing for header area here.
-                paddingTop: contentExtraTop,
-                // Add bottom padding so focused rows/inputs stay above the keyboard
-                paddingBottom: Math.max(
-                  32,
-                  (insets?.bottom || 0) + (keyboardHeight ? keyboardHeight + 24 : 32),
-                ),
-              },
-            ]}
-            data={items}
-            keyExtractor={(item) => item.id}
-            numColumns={1}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            automaticallyAdjustKeyboardInsets
-            ListHeaderComponent={
-              <>
-                <View style={[styles.card, { backgroundColor: palette.card }]}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <CategoryIcon type={list.category || 'outros'} size={44} neutral />
-                    <View style={{ marginLeft: 12, flex: 1 }}>
-                      {isEditingHeader ? (
-                        <>
-                          <TextInput
-                            value={editedName}
-                            onChangeText={setEditedName}
-                            style={[
-                              styles.headerInput,
-                              styles.headerNameInput,
-                              {
-                                backgroundColor: palette.card,
-                                borderColor: palette.border,
-                                color: palette.text,
-                              },
-                            ]}
-                            placeholder="Nome da lista"
-                            placeholderTextColor={palette.mutedText}
-                            selectionColor={palette.primary}
-                          />
-                          <TextInput
-                            value={editedDesc}
-                            onChangeText={setEditedDesc}
-                            style={[
-                              styles.headerInput,
-                              styles.headerDescInput,
-                              {
-                                backgroundColor: palette.card,
-                                borderColor: palette.border,
-                                color: palette.text,
-                              },
-                            ]}
-                            placeholder="Descrição (opcional)"
-                            multiline
-                            numberOfLines={3}
-                            textAlignVertical="top"
-                            placeholderTextColor={palette.mutedText}
-                            selectionColor={palette.primary}
-                          />
-                        </>
-                      ) : (
-                        <>
-                          <Text style={[styles.cardTitle, { color: palette.text }]}>
-                            {list.name}
-                          </Text>
-                          {!!(list.desc || list.description) && (
-                            <Text style={{ color: palette.mutedText }}>
-                              {list.desc || list.description}
-                            </Text>
-                          )}
-                        </>
-                      )}
-                    </View>
-                    <View style={{ alignItems: 'flex-end' }}>
-                      <Text style={{ color: palette.text, fontWeight: 'bold' }}>
-                        R$ {total.toFixed(2)}
-                      </Text>
-                      <Text style={{ color: palette.mutedText, fontSize: 12 }}>
-                        {purchasedCount}/{totalCount} comprados
-                      </Text>
-                    </View>
-                  </View>
-                  <View style={styles.progressBarWrap}>
-                    <View style={[styles.progressBarBg, { backgroundColor: palette.border }]}>
-                      <View
-                        style={[
-                          styles.progressBarFill,
-                          {
-                            width: `${totalCount ? (purchasedCount / totalCount) * 100 : 0}%`,
-                            backgroundColor: palette.primary,
-                          },
-                        ]}
-                      />
-                    </View>
-                    <Text style={[styles.progressText, { color: palette.mutedText }]}>
-                      Progresso
-                    </Text>
-                  </View>
-                  <View style={styles.statsRow}>
-                    <View style={[styles.statBox, { backgroundColor: palette.altSurface }]}>
-                      <Text style={{ color: palette.text, fontWeight: '700' }}>{totalCount}</Text>
-                      <Text style={{ color: palette.mutedText, fontSize: 12 }}>Total</Text>
-                    </View>
-                    <View style={[styles.statBox, { backgroundColor: palette.altSurface }]}>
-                      <Text style={{ color: '#16A34A', fontWeight: '700' }}>{purchasedCount}</Text>
-                      <Text style={{ color: palette.mutedText, fontSize: 12 }}>Concluídos</Text>
-                    </View>
-                    <View style={[styles.statBox, { backgroundColor: palette.altSurface }]}>
-                      <Text style={{ color: '#92400E', fontWeight: '700' }}>{Math.max(0, totalCount - purchasedCount)}</Text>
-                      <Text style={{ color: palette.mutedText, fontSize: 12 }}>Pendentes</Text>
-                    </View>
-                    <View style={[styles.statBox, { backgroundColor: palette.altSurface }]}> 
-                      <Text style={{ color: '#2563EB', fontWeight: '700' }}>R$ {total.toFixed(2)}</Text>
-                      <Text style={{ color: palette.mutedText, fontSize: 12 }}>Estimado</Text>
-                    </View>
-                  </View>
-                  <HeaderActions
-                    styles={styles}
-                    isEditing={isEditingHeader}
-                    onShare={handleShare}
-                    onSave={saveEditHeader}
-                    onEdit={beginEditHeader}
-                    onMarkAll={markAllPurchased}
-                    onClearCompleted={clearCompleted}
-                  />
-                </View>
-                {canEdit && (
-                  <AddItemCard
-                    styles={styles}
-                    newItemName={newItemName}
-                    setNewItemName={setNewItemName}
-                    newItemQty={newItemQty}
-                    setNewItemQty={setNewItemQty}
-                    newItemPrice={newItemPrice}
-                    setNewItemPrice={setNewItemPrice}
-                    newItemCategory={newItemCategory}
-                    setNewItemCategory={setNewItemCategory}
-                    itemCategories={itemCategories}
-                    onAdd={handleAddItem}
-                  />
-                )}
-                <View style={[styles.card, { backgroundColor: palette.card, paddingBottom: 8 }]}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <TextInput
-                      style={[
-                        styles.input,
-                        {
-                          flex: 1,
-                          marginRight: 8,
-                          backgroundColor: palette.card,
-                          borderColor: palette.border,
-                          color: palette.text,
-                        },
-                      ]}
-                      placeholder="Buscar item..."
-                      value={query}
-                      onChangeText={setQuery}
-                      placeholderTextColor={palette.mutedText}
-                      selectionColor={palette.primary}
-                    />
-                    <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-                      <Chip
-                        label="Todos"
-                        active={!showOnlyPending && !showOnlyCompleted}
-                        onPress={() => {
-                          setShowOnlyPending(false);
-                          setShowOnlyCompleted(false);
-                        }}
-                      />
-                      <Chip
-                        label="Pendentes"
-                        active={showOnlyPending}
-                        onPress={() => {
-                          setShowOnlyPending(true);
-                          setShowOnlyCompleted(false);
-                        }}
-                      />
-                      <Chip
-                        label="Concluídos"
-                        active={showOnlyCompleted}
-                        onPress={() => {
-                          setShowOnlyPending(false);
-                          setShowOnlyCompleted(true);
-                        }}
-                      />
-                    </View>
-                  </View>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{ paddingVertical: 8 }}
-                  >
-                    <Chip
-                      label="Todas"
-                      emoji="📋"
-                      active={categoryFilter === 'all'}
-                      onPress={() => setCategoryFilter('all')}
-                    />
-                    {Object.entries(itemCategories).map(([key, cfg]) => (
-                      <Chip
-                        key={key}
-                        label={cfg.name}
-                        emoji={cfg.emoji}
-                        active={categoryFilter === key}
-                        onPress={() => setCategoryFilter(key)}
-                      />
-                    ))}
-                  </ScrollView>
-                </View>
-                <Text style={[styles.sectionTitle, { color: palette.text }]}>Itens da Lista</Text>
-              </>
-            }
-            renderItem={({ item }) => (
-              <ItemRow
-                item={item}
-                styles={styles}
-                canEdit={canEdit}
-                onEditPrice={startEditPrice}
-                onDelete={handleDeleteItem}
-                onToggle={handleTogglePurchased}
-                editingPriceId={editingPriceId}
-                editingPriceText={editingPriceText}
-                setEditingPriceText={setEditingPriceText}
-                saveEditPrice={saveEditPrice}
-                incQty={incQty}
-                decQty={decQty}
-                categoryName={itemCategories[item.category]?.name || 'Outros'}
-                savingInfo={itemSavingsMap[item.id]}
-              />
-            )}
-            ListFooterComponent={
-              <>
-                <View style={[styles.card, { backgroundColor: palette.card }]}>
-                  <Text style={[styles.cardTitle, { color: palette.text }]}>
-                    Histórico de Preços
-                  </Text>
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      flexWrap: 'wrap',
-                      gap: 8,
-                      marginBottom: 8,
-                      alignItems: 'center',
-                    }}
-                  >
-                    <Text style={{ color: palette.text, fontWeight: '600' }}>
-                      {
-                        {
-                          all: 'Tudo',
-                          '7d': 'Últimos 7 dias',
-                          '30d': 'Últimos 30 dias',
-                          '6m': 'Últimos 6 meses',
-                        }[historyRange]
-                      }
-                    </Text>
-                  </View>
-                  {!!priceTrend && (
-                    <Text
-                      style={{
-                        color: priceTrend.up ? palette.danger : palette.success,
-                        fontWeight: '600',
-                        marginBottom: 6,
-                      }}
-                    >
-                      {priceTrend.up ? '▲' : '▼'} {Math.abs(priceTrend.diff).toFixed(2)} (
-                      {priceTrend.pct.toFixed(1)}%) vs ponto anterior
-                    </Text>
-                  )}
-                  {availablePriceItems.length > 0 ? (
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={{ paddingVertical: 4 }}
-                    >
-                      {availablePriceItems.map((name) => (
-                        <Chip
-                          key={name}
-                          label={name}
-                          active={effectiveSelectedItem === name}
-                          onPress={() => setSelectedPriceItem(name)}
-                        />
-                      ))}
-                    </ScrollView>
-                  ) : (
-                    <Text style={[styles.emptyText, { color: palette.mutedText }]}>
-                      Nenhum item com preço registrado.
-                    </Text>
-                  )}
-                  {priceData.length > 0 ? (
-                    <>
-                      <LineChart
-                        data={priceData}
-                        isAnimated
-                        curved={priceData.length > 1}
-                        areaChart
-                        startFillColor="rgba(59,130,246,0.25)"
-                        endFillColor="rgba(59,130,246,0.05)"
-                        startOpacity={0.9}
-                        endOpacity={0.05}
-                        hideDataPoints={false}
-                        dataPointsColor={palette.primary}
-                        yAxisTextStyle={{ color: palette.text, fontSize: 10 * __fs }}
-                        xAxisLabelTextStyle={{
-                          color: palette.mutedText,
-                          fontSize: 10 * __fs,
-                          transform: [{ translateY: 4 }],
-                        }}
-                        noOfSections={4}
-                        spacing={Math.max(
-                          42,
-                          (MAX_CARD_WIDTH - 80) / Math.max(6, priceData.length + 1),
-                        )}
-                        initialSpacing={24}
-                        focusEnabled
-                        showStripOnFocus={priceData.length > 1}
-                        pointerConfig={{
-                          pointerStripUptoDataPoint: true,
-                          pointerStripColor: 'rgba(59,130,246,0.35)',
-                          pointerStripWidth: 2,
-                          pointerColor: palette.primary,
-                          radius: 5,
-                          pointerLabelWidth: __w < 380 ? 120 : 150,
-                          pointerLabelHeight: __w < 380 ? 80 : 88,
-                          activatePointersOnLongPress: true,
-                          pointerLabelComponent: (items) => {
-                            const it = items?.[0];
-                            if (!it) return null;
-                            return (
-                              <View
-                                style={{
-                                  backgroundColor: palette.tooltipBg,
-                                  paddingVertical: 6,
-                                  paddingHorizontal: 10,
-                                  borderRadius: 10,
-                                }}
-                              >
-                                <Text style={{ color: '#93C5FD', fontSize: 11, fontWeight: '600' }}>
-                                  {it.label}
-                                </Text>
-                                <Text
-                                  style={{
-                                    color: palette.text,
-                                    fontSize: 13,
-                                    fontWeight: '700',
-                                    marginTop: 2,
-                                  }}
-                                >
-                                  Unit: R$ {Number(it.unitAvg ?? it.value).toFixed(2)}
-                                </Text>
-                                <Text
-                                  style={{
-                                    color: '#FCD34D',
-                                    fontSize: 12,
-                                    fontWeight: '600',
-                                    marginTop: 2,
-                                  }}
-                                >
-                                  Total: R$ {Number(it.totalAvg ?? 0).toFixed(2)}
-                                </Text>
-                              </View>
-                            );
-                          },
-                        }}
-                      />
-                      {priceData.length === 1 && (
-                        <Text
-                          style={[styles.emptyText, { color: palette.mutedText, marginTop: 8 }]}
-                        >
-                          Adicione outra alteração de preço para ver tendência.
-                        </Text>
-                      )}
-                    </>
-                  ) : (
-                    <Text style={[styles.emptyText, { color: palette.mutedText }]}>
-                      Nenhum registro de preço ainda.
-                    </Text>
-                  )}
-                  {priceData.length > 0 && (
-                    <View style={{ marginTop: 10 }}>
-                      {priceData.map((p, idx) => (
-                        <View key={idx} style={{ paddingVertical: 6 }}>
-                          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                            <Text style={{ color: palette.mutedText }}>
-                              {new Date(p.date).toLocaleDateString()}
-                            </Text>
-                            <Text style={{ color: palette.primary, fontWeight: '700' }}>
-                              Unit R$ {p.unitAvg.toFixed(2)}
-                            </Text>
-                          </View>
-                          <Text
-                            style={{
-                              color: palette.warning,
-                              fontSize: 12,
-                              fontWeight: '600',
-                              textAlign: 'right',
-                            }}
-                          >
-                            Total médio R$ {p.totalAvg.toFixed(2)}
-                          </Text>
-                        </View>
-                      ))}
-                    </View>
-                  )}
-                </View>
-                <View style={[styles.card, { backgroundColor: palette.card }]}>
-                  <Text style={[styles.cardTitle, { color: palette.text }]}>Membros na Lista</Text>
-                  <View style={styles.membersRow}>
-                    {familyMembers.length === 0 && (
-                      <Text style={[styles.emptyText, { color: palette.mutedText }]}>
-                        Nenhum membro encontrado.
-                      </Text>
-                    )}
-                    {familyMembers.map((member) => {
-                      const initial = (member?.displayName || member?.email || '?')
-                        .slice(0, 1)
-                        .toUpperCase();
-                      const inList =
-                        Array.isArray(list.members) && list.members.includes(member.id);
-                      return (
-                        <View key={member.id} style={styles.memberAvatarBox}>
-                          <View style={[styles.memberAvatar, { backgroundColor: palette.primary }]}>
-                            <Text style={styles.memberAvatarText}>{initial}</Text>
-                          </View>
-                          <Text style={[styles.memberName, { color: palette.text }]}>
-                            {member.displayName || member.email}
-                          </Text>
-                          <Button
-                            title={inList ? 'Remover' : 'Adicionar'}
-                            variant="light"
-                            onPress={() => handleMemberToggle(member.id)}
-                            style={{
-                              paddingVertical: 6,
-                              paddingHorizontal: 10,
-                              borderRadius: 10,
-                              minHeight: 32,
-                              alignSelf: 'stretch',
-                              backgroundColor: 'transparent',
-                              borderWidth: 1,
-                              borderColor: inList ? palette.danger : palette.success,
-                            }}
-                            textStyle={{
-                              fontSize: 12 * __fs,
-                              color: inList ? palette.danger : palette.success,
-                              fontWeight: '600',
-                            }}
-                            testID={`memberToggle-${member.id}`}
-                            accessibilityLabel={`${inList ? 'Remover' : 'Adicionar'} membro ${
-                              member.displayName || member.email
-                            }`}
-                          />
-                        </View>
-                      );
-                    })}
-                  </View>
-                </View>
-                <Button
-                  variant="dark"
-                  title="Concluir Lista"
-                  onPress={handleArchiveList}
-                  style={{ width: '100%', maxWidth: MAX_CARD_WIDTH, alignSelf: 'center' }}
-                />
-                <View style={{ height: 8 }} />
-                <Button
-                  variant="danger"
-                  title="Excluir Lista"
-                  onPress={deleteList}
-                  style={{ width: '100%', maxWidth: MAX_CARD_WIDTH, alignSelf: 'center' }}
-                />
-                {/* Spacer to avoid bottom buttons being covered by overlaid TabBar */}
-                <View
-                  style={{
-                    height: Math.max(
-                      24,
-                      (insets?.bottom || 0) + (tabHeight || 56) + (keyboardHeight ? keyboardHeight : 0),
-                    ),
-                  }}
-                />
-              </>
-            }
-            showsVerticalScrollIndicator={false}
-            bounces
-            overScrollMode="always"
-          />
-        )}
-      <AddListModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        onCreate={(newList) => {
-          updateLists([
-            ...shoppingLists,
-            {
-              ...newList,
-              id: `list_${Date.now()}`,
-              familyId: currentUser?.familyId,
-              createdAt: new Date().toISOString(),
-              status: 'active',
-              members: currentUser ? [currentUser.id] : [],
-            },
-          ]);
-        }}
-      />
-      {recentlyDeleted && (
-        <View
-          style={[
-            styles.snackbar,
-            {
-              backgroundColor: palette.snackbarBg,
-              bottom: Math.max(
-                24,
-                (insets?.bottom || 0) + 12,
-                // If keyboard is visible, push snackbar above it
-                keyboardHeight ? keyboardHeight + 12 : 0,
-              ),
-            },
-          ]}
-          pointerEvents="box-none"
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-            <Text style={styles.snackbarText}>Item removido</Text>
-            <Button
-              variant="light"
-              title="DESFAZER"
-              onPress={undoDelete}
-              style={{
-                backgroundColor: 'transparent',
-                borderWidth: 0,
-                paddingVertical: 6,
-                paddingHorizontal: 8,
-                minHeight: 0,
-              }}
-              textStyle={{ color: palette.primary, fontSize: 14 * __fs, fontWeight: '700' }}
-              testID="snackbarUndo"
-              accessibilityLabel="Desfazer remoção"
-            />
-          </View>
-          <Button
-            variant="light"
-            title="×"
-            onPress={() => setRecentlyDeleted(null)}
-            style={{
-              backgroundColor: 'transparent',
-              borderWidth: 0,
-              paddingLeft: 12,
-              paddingVertical: 6,
-              minHeight: 0,
-            }}
-            textStyle={{ color: '#fff', fontSize: 16 * __fs, fontWeight: '700' }}
-            testID="snackbarClose"
-            accessibilityLabel="Fechar alerta"
-          />
-        </View>
-      )}
-    </ScreensDefault>
-  );
-}
-export default ListDetailScreen;
-
-const MAX_CARD_WIDTH = Math.min(1200, __w * 0.995);
-// eslint: removed unused __compact/CONTENT_EXTRA_TOP
-
-// Item categories (emoji + names) inspired by the Tailwind reference
-const itemCategories = {
-  frutas: { name: 'Frutas', emoji: '🍎' },
-  vegetais: { name: 'Vegetais', emoji: '🥕' },
-  carnes: { name: 'Carnes', emoji: '🥩' },
-  laticinios: { name: 'Laticínios', emoji: '🥛' },
-  paes: { name: 'Pães', emoji: '🍞' },
-  bebidas: { name: 'Bebidas', emoji: '🥤' },
-  limpeza: { name: 'Limpeza', emoji: '🧽' },
-  higiene: { name: 'Higiene', emoji: '🧴' },
-  outros: { name: 'Outros', emoji: '📦' },
 };
 
-const makeDetailStyles = (palette) =>
-  StyleSheet.create({
-    root: { flex: 1, backgroundColor: palette.bg },
-    tabHolder: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 60 },
-    backButton: {
-      position: 'absolute',
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: palette.card,
-      borderWidth: 1,
-      borderColor: palette.border,
-  shadowColor: '#0B0B0B',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.12,
-      shadowRadius: 6,
-      elevation: 2,
-    },
-    container: { flex: 1, backgroundColor: palette.bg },
-    // Usa constante de espaçamento configurável
-    scrollContent: { alignItems: 'center', paddingBottom: 32, paddingHorizontal: 8 },
-    card: {
-      backgroundColor: palette.card,
-      borderRadius: __w < 380 ? 16 : 20,
-      padding: __w < 380 ? 12 : 16,
-      marginBottom: __w < 380 ? 14 : 18,
-      width: '100%',
-      maxWidth: MAX_CARD_WIDTH,
-  shadowColor: '#0B0B0B',
-      shadowOffset: { width: 0, height: __w < 380 ? 3 : 4 },
-      shadowOpacity: __w < 380 ? 0.08 : 0.1,
-      shadowRadius: __w < 380 ? 10 : 12,
-      elevation: 6,
-    },
-    cardTitle: {
-      fontSize: 20 * __fs,
-      fontWeight: 'bold',
-      color: palette.text,
-      marginBottom: 10,
-    },
-    headerInput: {
-      backgroundColor: palette.card,
-      borderRadius: __w < 380 ? 10 : 12,
-      paddingHorizontal: __w < 380 ? 12 : 14,
-      paddingVertical: __w < 380 ? 10 : 12,
-      color: palette.text,
-      borderWidth: 1,
-      borderColor: palette.border,
-    },
-    headerNameInput: { fontSize: 18 * __fs, fontWeight: '700' },
-    headerDescInput: { marginTop: 8, minHeight: 72 },
-    inputRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 12,
-      gap: 10,
-    },
-    input: {
-      backgroundColor: palette.card,
-      borderRadius: 12,
-      paddingHorizontal: 14,
-      paddingVertical: 12,
-      marginBottom: 10,
-      borderWidth: 1,
-      borderColor: palette.border,
-      fontSize: 15 * __fs,
-      color: palette.text,
-    },
-    addButton: {
-      backgroundColor: palette.primary,
-      borderRadius: 12,
-      paddingVertical: 12,
-      alignItems: 'center',
-      alignSelf: 'flex-start',
-      minHeight: 44,
-      paddingHorizontal: 14,
-    },
-    addButtonText: {
-      color: '#fff',
-      fontWeight: 'bold',
-    },
-    sectionTitle: {
-      width: '100%',
-      maxWidth: MAX_CARD_WIDTH,
-      fontSize: 18 * __fs,
-      fontWeight: 'bold',
-      color: palette.text,
-      marginBottom: 10,
-    },
-    progressBarWrap: {
-      marginTop: 12,
-    },
-    progressBarBg: {
-      width: '100%',
-      height: 10,
-      backgroundColor: palette.border,
-      borderRadius: 999,
-      overflow: 'hidden',
-    },
-    progressBarFill: {
-      height: '100%',
-      backgroundColor: palette.primary,
-    },
-    progressText: {
-      color: palette.mutedText,
-      marginTop: 6,
-    },
-    actionsRow: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 8,
-      marginTop: 12,
-    },
-    actionChip: {
-      borderWidth: 1,
-      borderColor: palette.border,
-      paddingVertical: 10,
-      paddingHorizontal: 14,
-      borderRadius: 12,
-      backgroundColor: palette.card,
-      minHeight: 44,
-      alignSelf: 'flex-start',
-    },
-    actionChipText: {
-      color: palette.text,
-      fontWeight: '600',
-    },
-    itemCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: palette.card,
-      borderRadius: __w < 380 ? 14 : 16,
-      paddingVertical: __w < 380 ? 10 : 12,
-      paddingHorizontal: __w < 380 ? 12 : 14,
-      width: '100%',
-      maxWidth: MAX_CARD_WIDTH,
-      marginBottom: __w < 380 ? 8 : 10,
-  shadowColor: '#0B0B0B',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.06,
-      shadowRadius: 6,
-      elevation: 2,
-    },
-    swipeActionLeft: {
-      width: 88,
-      marginVertical: 5,
-      marginLeft: 8,
-      borderRadius: 16,
-      backgroundColor: palette.primary,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    swipeActionRight: {
-      width: 88,
-      marginVertical: 5,
-      marginRight: 8,
-      borderRadius: 16,
-      backgroundColor: palette.danger,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    swipeActionText: { color: '#fff', fontWeight: '700', fontSize: 13 },
-    checkWrap: {
-      marginRight: 10,
-    },
-    checkCircle: {
-      width: 28,
-      height: 28,
-      borderRadius: 14,
-      borderWidth: 2,
-      borderColor: palette.border,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: palette.card,
-    },
-    checkCircleOn: {
-      backgroundColor: palette.success,
-      borderColor: palette.success,
-    },
-    itemCardPurchased: {
-      opacity: 0.6,
-    },
-    itemName: {
-      fontSize: 15 * __fs,
-      fontWeight: '700',
-      color: palette.text,
-    },
-    itemNamePurchased: {
-      textDecorationLine: 'line-through',
-      color: palette.mutedText,
-    },
-    itemSubText: {
-      display: 'none',
-    },
-    metaRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-      marginTop: 4,
-    },
-    categoryPill: {
-      backgroundColor: palette.altSurface,
-      borderRadius: 999,
-      paddingVertical: 4,
-      paddingHorizontal: 8,
-      borderWidth: 1,
-      borderColor: palette.border,
-    },
-    categoryPillText: { color: palette.mutedText, fontSize: 12 * __fs, fontWeight: '600' },
-    qtyBox: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: palette.altSurface,
-      borderRadius: 10,
-      overflow: 'hidden',
-    },
-    qtyBtn: {
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      minWidth: 40,
-      minHeight: 40,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    qtyBtnText: {
-      fontSize: 18 * __fs,
-      color: palette.text,
-    },
-    qtyValue: {
-      minWidth: 26,
-      textAlign: 'center',
-      fontWeight: '700',
-      color: palette.text,
-    },
-    pricePill: {
-      backgroundColor: palette.altSurface,
-      borderRadius: 999,
-      paddingVertical: 6,
-      paddingHorizontal: 12,
-      borderWidth: 1,
-      borderColor: palette.border,
-    },
-    itemTotal: {
-      marginLeft: 8,
-      backgroundColor: palette.altSurface,
-      borderColor: palette.success,
-      borderWidth: 1,
-      paddingVertical: 6,
-      paddingHorizontal: 10,
-      borderRadius: 999,
-    },
-    itemTotalText: { color: palette.success, fontWeight: '700' },
-    savingBadge: { paddingVertical: 4, paddingHorizontal: 8, borderRadius: 8, marginLeft: 4 },
-    savingPos: {
-      backgroundColor: palette.altSurface,
-      borderWidth: 1,
-      borderColor: palette.success,
-    },
-    savingNeg: { backgroundColor: palette.altSurface, borderWidth: 1, borderColor: palette.danger },
-    savingBadgeText: { fontSize: 11 * __fs, fontWeight: '700', color: palette.text },
-    priceText: {
-      color: palette.primary,
-      fontWeight: '700',
-    },
-    priceEditRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    pricePrefix: { color: palette.mutedText, marginRight: 4 },
-    priceInput: {
-      minWidth: 72,
-      paddingVertical: 0,
-      paddingHorizontal: 0,
-      color: palette.text,
-      fontSize: 15 * __fs,
-    },
-    priceSave: { color: palette.success, fontWeight: '700', marginLeft: 6 },
-    membersRow: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 12,
-      justifyContent: 'space-between',
-    },
-    memberAvatarBox: {
-      alignItems: 'center',
-      width: __w < 420 ? '48%' : 96,
-      flexGrow: __w < 420 ? 1 : 0,
-    },
-    memberAvatar: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: 6,
-    },
-    memberAvatarText: {
-      color: '#fff',
-      fontWeight: 'bold',
-    },
-    memberName: {
-      fontSize: 12 * __fs,
-      color: palette.text,
-      marginBottom: 6,
-    },
-    memberButton: {
-      borderRadius: 10,
-      paddingVertical: 6,
-      paddingHorizontal: 10,
-    },
-    memberButtonAdd: {
-      backgroundColor: 'transparent',
-    },
-    memberButtonRemove: {
-      backgroundColor: 'transparent',
-    },
-    memberButtonText: {
-      fontSize: 12 * __fs,
-      color: palette.text,
-    },
-    archiveButton: {
-      backgroundColor: '#111827',
-      borderRadius: 14,
-      paddingVertical: 12,
-      paddingHorizontal: 16,
-      alignItems: 'center',
-      alignSelf: 'flex-start',
-      minHeight: 46,
-      marginBottom: 24,
-    },
-    archiveButtonText: {
-      color: '#fff',
-      fontWeight: 'bold',
-      fontSize: 15 * __fs,
-    },
-    centered: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: palette.bg,
-    },
-    emptyText: {
-      color: palette.mutedText,
-      fontSize: 14 * __fs,
-    },
-    statsRow: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 12,
-      justifyContent: 'space-between',
-    },
-    statBox: {
-      backgroundColor: palette.altSurface,
-      borderRadius: 12,
-      paddingVertical: 10,
-      paddingHorizontal: 12,
-      minWidth: __w < 420 ? 0 : 90,
-      flexGrow: __w < 420 ? 1 : 0,
-      flexBasis: __w < 420 ? '48%' : 'auto',
-    },
-    statLabel: { color: palette.mutedText },
-    statValue: { color: palette.text, fontWeight: '700', marginTop: 2 },
-    // chip styles now centralized via Chip component
-    snackbar: {
-      position: 'absolute',
-      left: 16,
-      right: 16,
-      bottom: 24,
-      backgroundColor: palette.snackbarBg,
-      paddingVertical: 12,
-      paddingHorizontal: 18,
-      borderRadius: 14,
-      flexDirection: 'row',
-      alignItems: 'center',
-  shadowColor: '#0B0B0B',
-      shadowOpacity: 0.2,
-      shadowRadius: 8,
-      elevation: 6,
-    },
-    snackbarText: { color: '#fff', fontSize: 14 * __fs, fontWeight: '500' },
-    snackbarUndo: { color: palette.primary, fontSize: 14 * __fs, fontWeight: '700' },
-  });
+// --- Componente: Modal de Edição de Preço ---
 
-// CategoryChip was replaced by the centralized Chip component
+const PriceEditModal = ({
+  visible,
+  onClose,
+  onSubmit,
+  item,
+  value,
+  setValue,
+}) => {
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: 'rgba(0,0,0,0.4)',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 16,
+        }}
+      >
+        <View
+          style={{
+            backgroundColor: '#fff',
+            width: '100%',
+            maxWidth: 360,
+            borderRadius: 14,
+            padding: 16,
+          }}
+        >
+          <Text style={{ fontWeight: '700', fontSize: 16, color: '#111827' }}>
+            Editar Preço
+          </Text>
+          <Text style={{ color: '#6B7280', marginTop: 4 }}>
+            Item: {item?.name || ''}
+          </Text>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              marginTop: 12,
+              borderWidth: 1,
+              borderColor: '#E5E7EB',
+              borderRadius: 10,
+              paddingHorizontal: 10,
+            }}
+          >
+            <Text style={{ color: '#9CA3AF' }}>R$</Text>
+            <TextInput
+              autoFocus
+              keyboardType="numeric"
+              placeholder="0,00"
+              style={{ flex: 1, height: 44, marginLeft: 8 }}
+              value={value}
+              onChangeText={setValue}
+            />
+          </View>
+          <View style={{ flexDirection: 'row', marginTop: 12, gap: 8 }}>
+            <TouchableOpacity
+              onPress={onClose}
+              style={{
+                flex: 1,
+                backgroundColor: '#E5E7EB',
+                paddingVertical: 10,
+                borderRadius: 10,
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ color: '#374151', fontWeight: '600' }}>Cancelar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={onSubmit}
+              style={{
+                flex: 1,
+                backgroundColor: '#2563EB',
+                paddingVertical: 10,
+                borderRadius: 10,
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ color: '#fff', fontWeight: '700' }}>Salvar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+// --- Componente: Tela Principal (Contêiner) ---
+
+const ListDetailScreen = ({ route, navigation }) => {
+  const { listId } = route.params;
+  const { width } = useWindowDimensions();
+  const isWide = width >= 420;
+  const isNarrow = width < 380;
+  const sortWidth = width < 360 ? 110 : 130;
+
+  // Responsive sizing
+  const chipStyleConfig = {
+    chipHeight: width < 360 ? 34 : 36,
+    chipPadV: width < 360 ? 8 : 10,
+    chipPadH: width < 360 ? 12 : 14,
+    chipLabelSize: width < 360 ? 13 : 14,
+    chipCountSize: width < 360 ? 11 : 12,
+    labelMaxWidth: Math.floor(width * (width < 360 ? 0.5 : 0.6)),
+  };
+  const btnHeight = width < 360 ? 44 : 48;
+  const btnTextSize = width < 360 ? 15 : 16;
+
+  const [list, setList] = useState(null);
+  const [items, setItems] = useState([]);
+  const {
+    shoppingLists,
+    addItemToList,
+    updateItemInList,
+    removeItemFromList,
+    toggleItemCompleted,
+    clearCompletedInList,
+  } = useContext(DataContext) || {};
+
+  // Estado do formulário
+  const [isFormVisible, setIsFormVisible] = useState(false);
+  const [itemName, setItemName] = useState('');
+  const [itemCategory, setItemCategory] = useState('');
+  const [itemPrice, setItemPrice] = useState('');
+
+  // Estado dos filtros
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('name');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+
+  // Modal de preço (fallback Android)
+  const [priceModalVisible, setPriceModalVisible] = useState(false);
+  const [priceEditItem, setPriceEditItem] = useState(null);
+  const [priceEditValue, setPriceEditValue] = useState('');
+
+  // Carregar dados da lista (primeiro tenta mocks para compatibilidade; fallback para contexto)
+  useEffect(() => {
+    let foundList = mockShoppingLists.find((l) => l.id === listId);
+    if (!foundList && Array.isArray(shoppingLists)) {
+      foundList = shoppingLists.find((l) => String(l.id) === String(listId));
+    }
+    if (foundList) {
+      setList(foundList);
+      if (Array.isArray(foundList.items)) {
+        // Normaliza itens do contexto para a forma esperada nesta tela
+        const mapped = foundList.items.map((it, idx) => ({
+          id: it.id || `${foundList.id}-${idx + 1}`,
+          name: it.name || 'Item',
+          category: it.category || 'outros',
+          price: typeof it.price === 'number' ? it.price : null,
+          completed: !!(it.isPurchased || it.done || it.completed || it.checked),
+          dateAdded: it.createdAt || new Date().toISOString(),
+          listId: foundList.id,
+        }));
+        setItems(mapped);
+      } else {
+        setItems(generateListItems(foundList));
+      }
+    }
+  }, [listId, shoppingLists]);
+
+  // Lógica de Filtro e Ordenação
+  const filteredAndSortedItems = useMemo(() => {
+    let filtered = [...items];
+
+    if (categoryFilter !== 'all') {
+      filtered = filtered.filter((item) => item.category === categoryFilter);
+    }
+
+    if (searchTerm.trim() !== '') {
+      filtered = filtered.filter((item) =>
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()),
+      );
+    }
+
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'price':
+          return (b.price || 0) - (a.price || 0);
+        case 'category':
+          return (categories[a.category]?.name || '').localeCompare(
+            categories[b.category]?.name || '',
+          );
+        case 'status':
+          return a.completed === b.completed ? 0 : a.completed ? 1 : -1;
+        case 'name':
+        default:
+          return a.name.localeCompare(b.name);
+      }
+    });
+
+    return filtered;
+  }, [items, categoryFilter, searchTerm, sortBy]);
+
+  // Estatísticas
+  const stats = useMemo(() => {
+    const total = items.length;
+    const completed = items.filter((item) => item.completed).length;
+    const pending = total - completed;
+    const totalPrice = items.reduce((sum, item) => sum + (item.price || 0), 0);
+    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+    return { total, completed, pending, totalPrice, percentage };
+  }, [items]);
+
+  const categoryCounts = useMemo(() => {
+    const counts = { all: items.length };
+    items.forEach((item) => {
+      counts[item.category] = (counts[item.category] || 0) + 1;
+    });
+    return counts;
+  }, [items]);
+
+  // --- Funções de Handler ---
+
+  const handleAddItem = () => {
+    if (itemName.trim() === '') {
+      Alert.alert('Erro', 'Por favor, insira o nome do item.');
+      return;
+    }
+    const priceNum = itemPrice.trim() ? parseFloat(itemPrice) : null;
+    if (Array.isArray(shoppingLists)) {
+      addItemToList?.(listId, { name: itemName, category: itemCategory || 'outros', price: isNaN(priceNum) ? null : priceNum });
+    }
+    // Optimistic local update
+    const newItem = {
+      id: `tmp_${Date.now()}`,
+      name: itemName,
+      category: itemCategory || 'outros',
+      price: isNaN(priceNum) ? null : priceNum,
+      completed: false,
+      dateAdded: new Date().toISOString(),
+      listId,
+    };
+    setItems([newItem, ...items]);
+    setItemName('');
+    setItemCategory('');
+    setItemPrice('');
+  };
+
+  const handleToggleItem = (itemId) => {
+    toggleItemCompleted?.(listId, itemId);
+    setItems(items.map((item) => (item.id === itemId ? { ...item, completed: !item.completed } : item)));
+  };
+
+  const handleRemoveItem = (itemId) => {
+    removeItemFromList?.(listId, itemId);
+    setItems(items.filter((item) => item.id !== itemId));
+  };
+
+  const handleClearCompleted = () => {
+    if (stats.completed === 0) return;
+    Alert.alert(
+      'Limpar Concluídos',
+      `Remover ${stats.completed} itens concluídos da lista?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Remover',
+          style: 'destructive',
+          onPress: () => {
+            clearCompletedInList?.(listId);
+            setItems(items.filter((item) => !item.completed));
+          },
+        },
+      ],
+    );
+  };
+
+  const handleEditPrice = (item) => {
+    if (Platform.OS === 'ios' && typeof Alert.prompt === 'function') {
+      Alert.prompt(
+        'Editar Preço',
+        `Insira o novo preço para "${item.name}":`,
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          {
+            text: 'Salvar',
+            onPress: (newPrice) => {
+              const price = parseFloat(newPrice);
+              updateItemInList?.(listId, item.id, { price: isNaN(price) ? null : price });
+              setItems(items.map((i) => (i.id === item.id ? { ...i, price: isNaN(price) ? null : price } : i)));
+            },
+          },
+        ],
+        'plain-text',
+        item.price ? item.price.toString() : '',
+        'numeric',
+      );
+    } else {
+      setPriceEditItem(item);
+      setPriceEditValue(item.price ? String(item.price) : '');
+      setPriceModalVisible(true);
+    }
+  };
+
+  const handleSubmitPriceModal = () => {
+    const price = parseFloat(priceEditValue);
+    if (priceEditItem) {
+      updateItemInList?.(listId, priceEditItem.id, { price: isNaN(price) ? null : price });
+      setItems(items.map((i) => (i.id === priceEditItem.id ? { ...i, price: isNaN(price) ? null : price } : i)));
+    }
+    setPriceModalVisible(false);
+    setPriceEditItem(null);
+  };
+
+  // --- Renderização ---
+
+  if (!list) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={{ color: '#6B7280' }}>Carregando...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
+
+      <ListHeaderCard
+        list={list}
+        stats={stats}
+        onGoBack={() => navigation.goBack()}
+        onClearCompleted={handleClearCompleted}
+      />
+
+      <AddItemCard
+        isFormVisible={isFormVisible}
+        setIsFormVisible={setIsFormVisible}
+        itemName={itemName}
+        setItemName={setItemName}
+        itemCategory={itemCategory}
+        setItemCategory={setItemCategory}
+        itemPrice={itemPrice}
+        setItemPrice={setItemPrice}
+        onAddItem={handleAddItem}
+        isWide={isWide}
+        btnHeight={btnHeight}
+        btnTextSize={btnTextSize}
+      />
+
+      <ItemsListCard
+        items={filteredAndSortedItems}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
+        categoryFilter={categoryFilter}
+        setCategoryFilter={setCategoryFilter}
+        categoryCounts={categoryCounts}
+        onToggleItem={handleToggleItem}
+        onRemoveItem={handleRemoveItem}
+        onEditPrice={handleEditPrice}
+        isNarrow={isNarrow}
+        sortWidth={sortWidth}
+        chipStyleConfig={chipStyleConfig}
+      />
+
+      <PriceEditModal
+        visible={priceModalVisible}
+        onClose={() => setPriceModalVisible(false)}
+        onSubmit={handleSubmitPriceModal}
+        item={priceEditItem}
+        value={priceEditValue}
+        setValue={setPriceEditValue}
+      />
+    </SafeAreaView>
+  );
+};
+
+// --- Estilos (com correções de alinhamento) ---
+
+// MUDANÇA: Criado um estilo base para todos os campos de entrada
+const inputContainerBase = {
+  borderWidth: 1,
+  borderColor: '#D1D5DB',
+  borderRadius: 12,
+  backgroundColor: '#F9FAFB',
+};
+
+const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: '#F9FAFB' },
+
+  // ... (Estilos do HeaderCard - Sem mudanças) ...
+  headerCard: {
+    backgroundColor: '#fff',
+    margin: 12,
+    borderRadius: 16,
+    padding: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  headerRow: { flexDirection: 'row', alignItems: 'center' },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F3F4F6',
+    marginRight: 10,
+  },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: '#1F2937', lineHeight: 24 },
+  headerSubtitle: { color: '#6B7280', marginTop: 2, fontSize: 12, lineHeight: 16 },
+  headerActions: { flexDirection: 'row', marginLeft: 8 },
+  headerIconBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 10,
+    backgroundColor: '#EFF6FF',
+    marginLeft: 6,
+  },
+  progressTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  progressLabel: { color: '#374151', fontSize: 12, fontWeight: '600' },
+  progressText: { color: '#6B7280', fontSize: 12 },
+  progressBg: {
+    height: 10,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 999,
+    overflow: 'hidden',
+    marginTop: 6,
+  },
+  progressFill: { height: 10, backgroundColor: '#3B82F6' },
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
+  statBox: { flexBasis: '48%', borderRadius: 12, paddingVertical: 8, paddingHorizontal: 12 },
+  statValue: { fontWeight: '800', color: '#111827' },
+  statLabel: { color: '#6B7280', fontSize: 12 },
+
+  // Estilos do AddCard
+  addCard: {
+    backgroundColor: '#fff',
+    marginHorizontal: 12,
+    borderRadius: 16,
+    padding: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  addCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  addGlyph: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: '#6366F1',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  addTitle: { fontWeight: '700', color: '#111827' },
+  addFormGrid: { marginTop: 10, gap: 8 },
+  
+  // MUDANÇA: 'input' usa o estilo base e define o padding e alinhamento
+  input: {
+    ...inputContainerBase,
+    paddingHorizontal: 12,
+    textAlignVertical: 'center', // Mantém para centralizar
+    // Removido paddingVertical e lineHeight, a altura será definida por 'btnHeight' no JSX
+  },
+  // MUDANÇA: 'pickerWrap' usa o estilo base
+  pickerWrap: {
+    ...inputContainerBase,
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+    // Altura definida por 'btnHeight' no JSX
+  },
+  // Ajuste de baseline no Android para centralizar o texto do Picker
+  picker: { marginTop: Platform.OS === 'android' ? -8 : 0 }, // Estilo do picker em si
+  
+  // MUDANÇA: 'priceWrap' usa o estilo base
+  priceWrap: {
+    ...inputContainerBase,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    // Altura definida por 'btnHeight' no JSX
+  },
+  pricePrefix: { color: '#9CA3AF' },
+  // MUDANÇA: Novo estilo para o TextInput de preço (sem borda/bg)
+  priceTextInput: {
+    flex: 1,
+    marginLeft: 6,
+    textAlignVertical: 'center',
+    // Removemos o paddingVertical para deixar o alinhamento do wrapper funcionar
+  },
+  
+  addButton: {
+    flexDirection: 'row',
+    backgroundColor: '#2563EB',
+    paddingVertical: 10,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    marginLeft: 6,
+    textAlignVertical: 'center',
+    includeFontPadding: false,
+  },
+
+  // Estilos do ItemsListCard
+  itemsCard: {
+    backgroundColor: '#fff',
+    margin: 12,
+    borderRadius: 16,
+    paddingVertical: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 3,
+    flex: 1,
+  },
+  listTopBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    marginBottom: 8,
+  },
+  searchWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    height: 40,
+    flex: 1,
+    marginRight: 8,
+  },
+  // MUDANÇA: Removido 'paddingVertical: 0' para corrigir alinhamento no Android
+  searchInput: {
+    flex: 1,
+    textAlignVertical: 'center', // Mantido
+  },
+  sortWrap: {
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    height: 40,
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+  },
+  sortPicker: { height: 40, width: 130, marginTop: Platform.OS === 'android' ? -8 : 0 },
+  chipsRow: { paddingHorizontal: 14, paddingTop: 4, paddingBottom: 10, gap: 10 },
+  categoryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    backgroundColor: '#F3F4F6',
+    minHeight: 36,
+  },
+  categoryChipActive: { backgroundColor: '#2563EB' },
+  chipEmoji: { marginRight: 8, textAlignVertical: 'center' },
+  chipLabel: {
+    color: '#111827',
+    fontWeight: '600',
+    fontSize: 14,
+    lineHeight: 18,
+    textAlignVertical: 'center',
+    includeFontPadding: false,
+  },
+  chipLabelActive: { color: '#FFFFFF' },
+  chipCount: {
+    marginLeft: 10,
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+  chipCountActive: { backgroundColor: 'rgba(255,255,255,0.3)' },
+  chipCountText: {
+    fontSize: 12,
+    color: '#1F2937',
+    textAlignVertical: 'center',
+    includeFontPadding: false,
+  },
+  chipCountTextActive: { color: '#FFFFFF' },
+
+  // Estilos do Empty State
+  emptyItems: { alignItems: 'center', padding: 16 },
+  emptyGlyph: {
+    width: 64,
+    height: 64,
+    borderRadius: 999,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  emptyTitle: { fontWeight: '600', color: '#1F2937' },
+  emptySubtitle: { color: '#6B7280', fontSize: 12, marginTop: 2 },
+
+  // Estilos do ListItem (Refatorado)
+  itemCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 10,
+    marginVertical: 6,
+  },
+  itemCardCompact: {
+    flexWrap: 'wrap',
+    paddingBottom: 12,
+  },
+  itemSwitch: { marginRight: 8 },
+  itemEmojiContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  itemEmoji: { color: '#fff', fontSize: 18 },
+  itemInfo: {
+    flex: 1,
+    marginRight: 8,
+  },
+  itemName: { fontWeight: '700', color: '#111827', lineHeight: 18, marginBottom: 2 },
+  itemNameCompleted: { textDecorationLine: 'line-through', color: '#9CA3AF' },
+  itemPrice: { color: '#059669', fontWeight: '700', fontSize: 12 },
+  itemPriceEmpty: { color: '#9CA3AF', fontWeight: '600', fontSize: 12 },
+  itemRightColumn: {
+    alignItems: 'flex-end',
+  },
+  itemRightColumnCompact: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 6,
+    alignItems: 'center',
+  },
+  itemCategory: { color: '#6B7280', fontSize: 12, marginBottom: 6 },
+  itemActions: {
+    flexDirection: 'row',
+  },
+  actionButton: {
+    padding: 6,
+    marginLeft: 8,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+  },
+});
+
+export default ListDetailScreen;
