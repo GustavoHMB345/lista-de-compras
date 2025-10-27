@@ -2,18 +2,19 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useContext, useEffect, useState } from 'react';
 import {
-    Animated,
-    Dimensions,
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Animated,
+  Dimensions,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../components/Button';
 import ScreensDefault from '../components/ScreensDefault';
+import { useTheme } from '../components/theme';
 import { DataContext } from '../contexts/DataContext';
 
 const { width } = Dimensions.get('window');
@@ -93,10 +94,10 @@ function ProfileScreen() {
     shoppingLists,
     updateLists,
     uiPrefs,
-    toggleTheme,
     toggleTabBarPosition,
     resetDemoData,
   } = useContext(DataContext);
+  const { scheme, schemeOverride, tokens: t, setSchemeOverride } = useTheme();
   const [displayName, setDisplayName] = useState(currentUser?.displayName || '');
   const [isEditing, setIsEditing] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
@@ -121,16 +122,16 @@ function ProfileScreen() {
   const handleNavigate = (screen) => {
     switch (screen) {
       case 'DASHBOARD':
-        router.push('/dashboard');
+        router.replace('/dashboard');
         break;
       case 'LISTS':
-        router.push('/lists');
+        router.replace('/lists');
         break;
       case 'FAMILY':
-        router.push('/family');
+        router.replace('/family');
         break;
       case 'PROFILE':
-        router.push('/profile');
+        router.replace('/profile');
         break;
       default:
         break;
@@ -144,16 +145,16 @@ function ProfileScreen() {
           flex: 1,
           justifyContent: 'center',
           alignItems: 'center',
-          backgroundColor: '#f0f5ff',
+          backgroundColor: t.background,
         }}
       >
-        <Text style={{ color: '#111827', fontSize: 16 }}>Carregando perfil...</Text>
+        <Text style={{ color: t.text, fontSize: 16 }}>Carregando perfil...</Text>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f0f5ff' }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.background }} edges={['top']}>
       <ScreensDefault
         active="PROFILE"
         leftTab={undefined}
@@ -161,48 +162,82 @@ function ProfileScreen() {
         contentStyle={profileStyles.scrollContent}
   overlayBottomSpacer={0}
       >
-          <LinearGradient
-            colors={['#EFF6FF', '#E0E7FF']}
-            style={[StyleSheet.absoluteFillObject, { zIndex: -1 }]}
-          />
+          {scheme === 'light' ? (
+            <LinearGradient
+              colors={['#EFF6FF', '#E0E7FF']}
+              style={[StyleSheet.absoluteFillObject, { zIndex: -1 }]}
+            />
+          ) : null}
             <View style={profileStyles.headerWrap}>
-              <Text style={profileStyles.title}>👤 Minha Conta</Text>
-              <Text style={profileStyles.subtitle}>Gerencie seu perfil e preferências</Text>
+              <Text style={[profileStyles.title, { color: t.text }]}>👤 Minha Conta</Text>
+              <Text style={[profileStyles.subtitle, { color: t.muted }]}>Gerencie seu perfil e preferências</Text>
             </View>
 
             {/* Preferências rápidas: Tema e Posição da TabBar com toggles */}
             <View
-              style={profileStyles.card}
+              style={[profileStyles.card, { backgroundColor: t.card }]}
               onLayout={!measuredCardH ? (e) => setMeasuredCardH(Math.round(e.nativeEvent.layout.height)) : undefined}
             >
-              <Text style={profileStyles.sectionTitle}>Preferências</Text>
+              <Text style={[profileStyles.sectionTitle, { color: t.text }]}>Preferências</Text>
               <View>
-                <View style={profileStyles.prefRow}>
-                  <Text style={{ color: '#374151', fontSize: 14 * __fs }}>
-                    {uiPrefs?.theme === 'dark' ? '🌙' : '☀️'} Modo Escuro
-                  </Text>
-                  <Switch
-                    value={uiPrefs?.theme === 'dark'}
-                    onValueChange={toggleTheme}
-                    trackColor={{ false: '#D1D5DB', true: '#93C5FD' }}
-                    thumbColor={uiPrefs?.theme === 'dark' ? '#2563EB' : '#FFFFFF'}
-                    accessibilityLabel="Alternar modo escuro"
-                  />
+                <View style={{ paddingVertical: 8 }}>
+                  <Text style={{ color: t.text, fontSize: 14 * __fs, marginBottom: 8 }}>Tema</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    {[ 
+                      { key: 'light', label: 'Claro', icon: '☀️' },
+                      { key: 'dark', label: 'Escuro', icon: '🌙' },
+                      { key: 'system', label: 'Sistema', icon: '⚙️' },
+                    ].map((opt) => {
+                      const active = schemeOverride === opt.key;
+                      return (
+                        <TouchableOpacity
+                          key={opt.key}
+                          onPress={() => setSchemeOverride(opt.key)}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Selecionar tema ${opt.label}`}
+                          accessibilityState={{ selected: active }}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          style={{
+                            paddingVertical: 8,
+                            paddingHorizontal: 12,
+                            borderRadius: 999,
+                            borderWidth: 1,
+                            backgroundColor: active ? t.primary : t.chipBg,
+                            borderColor: active ? t.primary : t.border,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              // In dark mode, make inactive text a touch brighter for contrast on chipBg
+                              color: active
+                                ? t.onPrimary
+                                : (scheme === 'dark' ? 'rgba(255,255,255,0.92)' : t.text),
+                              fontWeight: active ? '700' : '600',
+                              letterSpacing: 0.2,
+                              fontSize: 13 * __fs,
+                            }}
+                          >
+                            {opt.icon} {opt.label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
                 </View>
                 <View style={profileStyles.prefRow}>
-                  <Text style={{ color: '#374151', fontSize: 14 * __fs }}>⬆️ TabBar no topo</Text>
+                  <Text style={{ color: t.text, fontSize: 14 * __fs }}>⬆️ TabBar no topo</Text>
                   <Switch
                     value={uiPrefs?.tabBarPosition === 'top'}
                     onValueChange={toggleTabBarPosition}
-                    trackColor={{ false: '#D1D5DB', true: '#93C5FD' }}
-                    thumbColor={uiPrefs?.tabBarPosition === 'top' ? '#2563EB' : '#FFFFFF'}
+                    trackColor={{ false: t.border, true: '#93C5FD' }}
+                    thumbColor={uiPrefs?.tabBarPosition === 'top' ? '#2563EB' : t.card}
                     accessibilityLabel="Alternar posição da TabBar para topo"
                   />
                 </View>
               </View>
             </View>
 
-            <View style={profileStyles.card}>
+            <View style={[profileStyles.card, { backgroundColor: t.card }]}>
               <View style={profileStyles.avatarBox}>
                 <View style={profileStyles.avatar}>
                   <Text style={profileStyles.avatarText}>
@@ -210,13 +245,13 @@ function ProfileScreen() {
                   </Text>
                 </View>
                 <View style={profileStyles.userMeta}>
-                  <Text style={profileStyles.name}>{displayName}</Text>
-                  <Text style={profileStyles.email}>{currentUser.email || ''}</Text>
+                  <Text style={[profileStyles.name, { color: t.text }]}>{displayName}</Text>
+                  <Text style={[profileStyles.email, { color: t.muted }]}>{currentUser.email || ''}</Text>
                 </View>
                 {!isEditing && (
                   <TouchableOpacity
                     onPress={() => setIsEditing(true)}
-                    style={profileStyles.editIconBtn}
+                    style={[profileStyles.editIconBtn, { backgroundColor: t.chipBg }]}
                     activeOpacity={0.85}
                     accessibilityLabel="Editar nome de exibição"
                     accessibilityRole="button"
@@ -225,16 +260,16 @@ function ProfileScreen() {
                   </TouchableOpacity>
                 )}
               </View>
-              <Text style={profileStyles.label}>Nome de Exibição</Text>
+              <Text style={[profileStyles.label, { color: t.muted }]}>Nome de Exibição</Text>
               {isEditing ? (
                 <View style={profileStyles.inputRow}>
                   <TextInput
-                    style={profileStyles.input}
+                    style={[profileStyles.input, { backgroundColor: t.inputBg, borderColor: t.border, color: t.text }]}
                     value={displayName}
                     onChangeText={setDisplayName}
                     placeholder="Seu nome"
-                    placeholderTextColor="#9CA3AF"
-                    selectionColor="#2563EB"
+                    placeholderTextColor={t.muted}
+                    selectionColor={t.primary}
                   />
                   <Button
                     onPress={handleUpdateProfile}
@@ -246,13 +281,13 @@ function ProfileScreen() {
                 </View>
               ) : (
                 <View style={profileStyles.inputRow}>
-                  <Text style={profileStyles.displayName}>{displayName}</Text>
+                  <Text style={[profileStyles.displayName, { color: t.text }]}>{displayName}</Text>
                 </View>
               )}
             </View>
 
-            <View style={profileStyles.card}>
-              <Text style={profileStyles.sectionTitle}>Resumo</Text>
+            <View style={[profileStyles.card, { backgroundColor: t.card }]}>
+              <Text style={[profileStyles.sectionTitle, { color: t.text }]}>Resumo</Text>
               {(() => {
                 const familyLists = shoppingLists.filter(
                   (l) => l.familyId === currentUser.familyId,
@@ -272,32 +307,32 @@ function ProfileScreen() {
                     <View style={profileStyles.infoRow}>
                       <View style={profileStyles.infoLeft}>
                         <Text style={{ fontSize: 14 }}>📋</Text>
-                        <Text style={profileStyles.infoLabel}>Listas Totais</Text>
+                        <Text style={[profileStyles.infoLabel, { color: t.muted }]}>Listas Totais</Text>
                       </View>
-                      <Text style={profileStyles.infoValue}>{total}</Text>
+                      <Text style={[profileStyles.infoValue, { color: t.text }]}>{total}</Text>
                     </View>
                     <View style={profileStyles.infoRow}>
                       <View style={profileStyles.infoLeft}>
                         <Text style={{ fontSize: 14 }}>⏳</Text>
-                        <Text style={profileStyles.infoLabel}>Listas Ativas</Text>
+                        <Text style={[profileStyles.infoLabel, { color: t.muted }]}>Listas Ativas</Text>
                       </View>
-                      <Text style={profileStyles.infoValue}>{active}</Text>
+                      <Text style={[profileStyles.infoValue, { color: t.text }]}>{active}</Text>
                     </View>
                     <View style={profileStyles.infoRow}>
                       <View style={profileStyles.infoLeft}>
                         <Text style={{ fontSize: 14 }}>✔️</Text>
-                        <Text style={profileStyles.infoLabel}>Listas Concluídas</Text>
+                        <Text style={[profileStyles.infoLabel, { color: t.muted }]}>Listas Concluídas</Text>
                       </View>
-                      <Text style={profileStyles.infoValue}>{completed}</Text>
+                      <Text style={[profileStyles.infoValue, { color: t.text }]}>{completed}</Text>
                     </View>
                   </>
                 );
               })()}
             </View>
 
-            <View style={profileStyles.card}>
-              <Text style={profileStyles.sectionTitle}>Dados de Demonstração</Text>
-              <Text style={{ color: '#6B7280', marginBottom: 10 }}>
+            <View style={[profileStyles.card, { backgroundColor: t.card }]}>
+              <Text style={[profileStyles.sectionTitle, { color: t.text }]}>Dados de Demonstração</Text>
+              <Text style={{ color: t.muted, marginBottom: 10 }}>
                 Recarregue os dados de exemplo para visualizar o protótipo completo nas telas.
               </Text>
               <Button

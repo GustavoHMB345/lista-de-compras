@@ -1,5 +1,6 @@
 import { KeyboardAvoidingView, Platform, ScrollView, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from './theme';
 
 export default function Screen({
   children,
@@ -17,6 +18,7 @@ export default function Screen({
 }) {
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
+  const { tokens } = useTheme();
   // Reduce extra top padding slightly for tighter layout
   const paddingTop = (tabBarPosition === 'top' ? tabBarHeight : 0) + insets.top + 4;
   // If overlayTabBar is true, do NOT add tabBarHeight to bottom padding so content can scroll under the bar
@@ -62,7 +64,7 @@ export default function Screen({
   const Content = scroll ? ScrollView : View;
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, minHeight: 0 }}
+      style={{ flex: 1, minHeight: 0, backgroundColor: tokens.background }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={tabBarHeight}
     >
@@ -76,12 +78,13 @@ export default function Screen({
                   // ensure content clears bottom safe area and bottom tab bar
                   paddingBottom: paddingBottomExtra,
                   minHeight: minContentHeight,
+                  backgroundColor: tokens.background,
                 },
                 contentStyle,
               ]
             : undefined
         }
-        style={!scroll ? [{ paddingTop, paddingHorizontal: 16, flex: 1, minHeight: 0, paddingBottom: paddingBottomExtra }, contentStyle] : { flex: 1, minHeight: 0 }}
+        style={!scroll ? [{ paddingTop, paddingHorizontal: 16, flex: 1, minHeight: 0, paddingBottom: paddingBottomExtra, backgroundColor: tokens.background }, contentStyle] : { flex: 1, minHeight: 0, backgroundColor: tokens.background }}
         onScroll={scroll ? onScroll : undefined}
         scrollEventThrottle={scroll ? 16 : undefined}
         automaticallyAdjustKeyboardInsets

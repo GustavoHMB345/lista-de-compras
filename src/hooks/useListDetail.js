@@ -270,7 +270,7 @@ export function useListDetail(listId) {
   const deleteList = useCallback(() => {
     if (!list) return;
     updateLists?.(shoppingLists.filter((l) => l.id !== list.id));
-    router.push('/lists');
+    router.replace('/lists');
   }, [list, shoppingLists, updateLists, router]);
 
   return {

@@ -4,6 +4,7 @@ import React, { useContext, useState } from 'react';
 import { Alert, FlatList, Modal, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ScreensDefault from '../components/ScreensDefault';
+import { useTheme } from '../components/theme';
 import { DataContext } from '../contexts/DataContext';
 import { getPriorityLabel, priorityColors } from '../data';
 import { emit, EVENTS } from '../navigation/EventBus';
@@ -11,6 +12,7 @@ import ListDetailScreen from './ListDetailScreen';
 
 // Componente Card de Lista
 const ListCard = ({ list, onSelect, onDelete, onEdit, onLayout }) => {
+  const { tokens: t, scheme } = useTheme();
   const total = Array.isArray(list.items) ? list.items.length : Number(list.items || 0);
   const doneCount = Array.isArray(list.items)
     ? list.items.filter((it) => it.isPurchased || it.done || it.completed || it.checked).length
@@ -21,9 +23,9 @@ const ListCard = ({ list, onSelect, onDelete, onEdit, onLayout }) => {
   const priorityStyle = priorityColors[priorityKey] || priorityColors.low;
 
   return (
-    <View style={styles.listCard} onLayout={onLayout}>
+    <View style={[styles.listCard, { backgroundColor: t.card, borderColor: t.border }]} onLayout={onLayout}>
       <View style={styles.listCardHeader}>
-        <Text style={styles.listCardTitle}>{list.name}</Text>
+        <Text style={[styles.listCardTitle, { color: t.text }]}>{list.name}</Text>
         <View style={styles.listCardActions}>
           <TouchableOpacity onPress={onEdit} style={{ padding: 4 }}>
             <Feather name="edit-2" size={16} color="#3B82F6" />
@@ -46,7 +48,7 @@ const ListCard = ({ list, onSelect, onDelete, onEdit, onLayout }) => {
         </Text>
       </View>
 
-      <Text style={styles.listCardSubtitle}>
+      <Text style={[styles.listCardSubtitle, { color: t.muted }]}>
         {total} itens • {completionPercentage}% concluído
       </Text>
       <View style={styles.progressBarContainer}>
@@ -62,7 +64,7 @@ const ListCard = ({ list, onSelect, onDelete, onEdit, onLayout }) => {
       </View>
 
       <View style={styles.listCardFooter}>
-        <Text style={styles.listCardStatus}>{isCompleted ? '✓ Concluída' : 'Em andamento'}</Text>
+        <Text style={[styles.listCardStatus, { color: t.muted }]}>{isCompleted ? '✓ Concluída' : 'Em andamento'}</Text>
         <TouchableOpacity onPress={onSelect}>
           <Text style={styles.listCardDetailsBtn}>Ver detalhes →</Text>
         </TouchableOpacity>
@@ -73,6 +75,7 @@ const ListCard = ({ list, onSelect, onDelete, onEdit, onLayout }) => {
 
 // Componente Tela Principal
 const ListScreen = () => {
+  const { tokens: t, scheme } = useTheme();
   const { shoppingLists, updateLists } = useContext(DataContext);
   const [showDetail, setShowDetail] = useState(false);
   const [selectedListId, setSelectedListId] = useState(null);
@@ -98,8 +101,8 @@ const ListScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: t.background }]}>
+      <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={t.background} />
 
       <ScreensDefault
         active="LISTS"
@@ -132,12 +135,12 @@ const ListScreen = () => {
             />
           )}
           ListHeaderComponent={
-            <View style={styles.headerContainer}>
+            <View style={[styles.headerContainer, { backgroundColor: t.card }]}>
               <View style={styles.headerIcon}>
                 <Text style={{ fontSize: 40 }}>📋</Text>
               </View>
-              <Text style={styles.headerTitle}>Minhas Listas</Text>
-              <Text style={styles.headerSubtitle}>Todas as suas listas de compras</Text>
+              <Text style={[styles.headerTitle, { color: t.text }]}>Minhas Listas</Text>
+              <Text style={[styles.headerSubtitle, { color: t.muted }]}>Todas as suas listas de compras</Text>
               <TouchableOpacity style={styles.primaryButton} onPress={() => emit(EVENTS.OPEN_ADD_LIST_MODAL)}>
                 <Feather name="plus" size={20} color="white" />
                 <Text style={styles.primaryButtonText}>Nova Lista</Text>
@@ -147,8 +150,8 @@ const ListScreen = () => {
           ListEmptyComponent={
             <View style={styles.emptyStateContainer}>
               <Text style={styles.emptyStateEmoji}>📝</Text>
-              <Text style={styles.emptyStateTitle}>Nenhuma lista encontrada</Text>
-              <Text style={styles.emptyStateSubtitle}>Crie sua primeira lista de compras!</Text>
+              <Text style={[styles.emptyStateTitle, { color: t.text }]}>Nenhuma lista encontrada</Text>
+              <Text style={[styles.emptyStateSubtitle, { color: t.muted }]}>Crie sua primeira lista de compras!</Text>
               <TouchableOpacity style={styles.primaryButton} onPress={() => emit(EVENTS.OPEN_ADD_LIST_MODAL)}>
                 <Text style={styles.primaryButtonText}>Criar Lista</Text>
               </TouchableOpacity>

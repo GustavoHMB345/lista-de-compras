@@ -4,6 +4,7 @@ import { useContext, useState } from 'react';
 import { Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Button from '../components/Button';
 import Screen from '../components/Screen';
+import { useTheme } from '../components/theme';
 import { DataContext } from '../contexts/DataContext';
 
 const { width } = Dimensions.get('window');
@@ -11,6 +12,7 @@ const __fs = Math.min(1.2, Math.max(0.9, width / 390));
 
 export default function SignInScreen() {
   const { login } = useContext(DataContext);
+  const { tokens: t, scheme } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -33,18 +35,17 @@ export default function SignInScreen() {
   };
 
   return (
-    <LinearGradient colors={['#3B82F6', '#8B5CF6']} style={styles.container}>
-      <Screen
-        scroll={false}
-        contentStyle={{
-          paddingTop: 0,
-          paddingHorizontal: 0,
-          flex: 1,
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      >
-        <View style={styles.card}>
+    <Screen
+      scroll={false}
+      contentStyle={{
+        paddingTop: 0,
+        paddingHorizontal: 0,
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
+      <View style={[styles.card, { backgroundColor: t.card }]}>
           <View style={styles.headerWrap}>
             <LinearGradient
               colors={['#6C7DFF', '#4F46E5']}
@@ -54,16 +55,16 @@ export default function SignInScreen() {
             >
               <Text style={styles.badgeGlyph}>🔑</Text>
             </LinearGradient>
-            <Text style={styles.title}>Entrar</Text>
-            <Text style={styles.subtitle}>Acesse suas listas e histórico</Text>
+            <Text style={[styles.title, { color: t.text }]}>Entrar</Text>
+            <Text style={[styles.subtitle, { color: t.muted }]}>Acesse suas listas e histórico</Text>
           </View>
           <View style={styles.inputBox}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={[styles.label, { color: t.text }]}>Email</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: t.inputBg, borderColor: t.border, color: t.text }]}
               placeholder="voce@email.com"
-              placeholderTextColor="#9CA3AF"
-              selectionColor="#2563EB"
+              placeholderTextColor={t.muted}
+              selectionColor={t.primary}
               autoCapitalize="none"
               autoCorrect={false}
               keyboardType="email-address"
@@ -75,12 +76,12 @@ export default function SignInScreen() {
             />
           </View>
           <View style={styles.inputBox}>
-            <Text style={styles.label}>Senha</Text>
+            <Text style={[styles.label, { color: t.text }]}>Senha</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: t.inputBg, borderColor: t.border, color: t.text }]}
               placeholder="••••••••"
-              placeholderTextColor="#9CA3AF"
-              selectionColor="#2563EB"
+              placeholderTextColor={t.muted}
+              selectionColor={t.primary}
               secureTextEntry
               textContentType="password"
               value={password}
@@ -92,51 +93,51 @@ export default function SignInScreen() {
           </View>
           <View style={styles.forgotRow}>
             <TouchableOpacity onPress={() => router.push('/reset-password')} activeOpacity={0.8}>
-              <Text style={styles.forgot}>Esqueci minha senha</Text>
+              <Text style={[styles.forgot, { color: t.primary }]}>Esqueci minha senha</Text>
             </TouchableOpacity>
           </View>
-          {!!error && <Text style={styles.error}>{error}</Text>}
-          <Button
-            title="Entrar"
-            variant="primary"
-            onPress={handleSignIn}
-            style={{ width: '100%', marginTop: 10 }}
-            loading={loading}
-            disabled={loading}
-            testID="signInSubmit"
-            accessibilityLabel="Entrar"
-          />
-          <Button
-            title="Usuário de teste"
-            variant="secondary"
-            onPress={async () => {
-              setEmail('teste@teste.com');
-              setPassword('123456');
-              setLoading(true);
-              try {
-                const r = await login('teste@teste.com', '123456');
-                if (r.success) router.replace('/dashboard');
-                else setError('Usuário de teste não encontrado.');
-              } finally {
-                setLoading(false);
-              }
-            }}
-            style={{ width: '100%', marginTop: 10 }}
-            disabled={loading}
-            testID="signInTestUser"
-            accessibilityLabel="Entrar com usuário de teste"
-          />
+          {!!error && <Text style={[styles.error, { color: t.danger }]}>{error}</Text>}
+          <View style={styles.actions}>
+            <Button
+              title="Entrar"
+              variant="primary"
+              onPress={handleSignIn}
+              style={{ width: '100%' }}
+              loading={loading}
+              disabled={loading}
+              testID="signInSubmit"
+              accessibilityLabel="Entrar"
+            />
+            <Button
+              title="Usuário de teste"
+              variant="secondary"
+              onPress={async () => {
+                setEmail('teste@teste.com');
+                setPassword('123456');
+                setLoading(true);
+                try {
+                  const r = await login('teste@teste.com', '123456');
+                  if (r.success) router.replace('/dashboard');
+                  else setError('Usuário de teste não encontrado.');
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              style={{ width: '100%' }}
+              disabled={loading}
+              testID="signInTestUser"
+              accessibilityLabel="Entrar com usuário de teste"
+            />
+          </View>
           <TouchableOpacity onPress={() => router.push('/sign-up')} activeOpacity={0.8}>
-            <Text style={styles.link}>Não tem conta? Cadastre-se</Text>
+            <Text style={[styles.link, { color: t.primary }]}>Não tem conta? Cadastre-se</Text>
           </TouchableOpacity>
         </View>
-      </Screen>
-    </LinearGradient>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
   card: {
     width: width > 420 ? 380 : '92%',
     backgroundColor: '#fff',
@@ -191,4 +192,5 @@ const styles = StyleSheet.create({
   link: { marginTop: 12, color: '#6366F1', fontWeight: '600', textAlign: 'center' },
   forgotRow: { alignItems: 'flex-end', marginTop: 4 },
   forgot: { color: '#6366F1', fontWeight: '600', fontSize: Math.round(12 * __fs) },
+  actions: { marginTop: 10, gap: 12 },
 });

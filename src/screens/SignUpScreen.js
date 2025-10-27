@@ -4,6 +4,7 @@ import { useContext, useState } from 'react';
 import { Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Button from '../components/Button';
 import Screen from '../components/Screen';
+import { useTheme } from '../components/theme';
 import { DataContext } from '../contexts/DataContext';
 
 const { width } = Dimensions.get('window');
@@ -11,6 +12,7 @@ const __fs = Math.min(1.2, Math.max(0.9, width / 390));
 
 export default function SignUpScreen() {
   const { register } = useContext(DataContext);
+  const { tokens: t, scheme } = useTheme();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -38,18 +40,17 @@ export default function SignUpScreen() {
   };
 
   return (
-    <LinearGradient colors={['#3B82F6', '#8B5CF6']} style={styles.container}>
-      <Screen
-        scroll={false}
-        contentStyle={{
-          paddingTop: 0,
-          paddingHorizontal: 0,
-          flex: 1,
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      >
-        <View style={styles.card}>
+    <Screen
+      scroll={false}
+      contentStyle={{
+        paddingTop: 0,
+        paddingHorizontal: 0,
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
+      <View style={[styles.card, { backgroundColor: t.card }]}>
           <View style={styles.headerWrap}>
             <LinearGradient
               colors={['#6C7DFF', '#4F46E5']}
@@ -59,16 +60,16 @@ export default function SignUpScreen() {
             >
               <Text style={styles.badgeGlyph}>🔐</Text>
             </LinearGradient>
-            <Text style={styles.title}>Criar conta</Text>
-            <Text style={styles.subtitle}>Comece a organizar suas compras</Text>
+            <Text style={[styles.title, { color: t.text }]}>Criar conta</Text>
+            <Text style={[styles.subtitle, { color: t.muted }]}>Comece a organizar suas compras</Text>
           </View>
           <View style={styles.inputBox}>
-            <Text style={styles.label}>Nome</Text>
+            <Text style={[styles.label, { color: t.text }]}>Nome</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: t.inputBg, borderColor: t.border, color: t.text }]}
               placeholder="Seu nome"
-              placeholderTextColor="#9CA3AF"
-              selectionColor="#2563EB"
+              placeholderTextColor={t.muted}
+              selectionColor={t.primary}
               value={name}
               onChangeText={setName}
               autoCapitalize="words"
@@ -77,12 +78,12 @@ export default function SignUpScreen() {
             />
           </View>
           <View style={styles.inputBox}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={[styles.label, { color: t.text }]}>Email</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: t.inputBg, borderColor: t.border, color: t.text }]}
               placeholder="voce@email.com"
-              placeholderTextColor="#9CA3AF"
-              selectionColor="#2563EB"
+              placeholderTextColor={t.muted}
+              selectionColor={t.primary}
               autoCapitalize="none"
               autoCorrect={false}
               keyboardType="email-address"
@@ -93,12 +94,12 @@ export default function SignUpScreen() {
             />
           </View>
           <View style={styles.inputBox}>
-            <Text style={styles.label}>Senha</Text>
+            <Text style={[styles.label, { color: t.text }]}>Senha</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: t.inputBg, borderColor: t.border, color: t.text }]}
               placeholder="••••••••"
-              placeholderTextColor="#9CA3AF"
-              selectionColor="#2563EB"
+              placeholderTextColor={t.muted}
+              selectionColor={t.primary}
               secureTextEntry
               value={password}
               onChangeText={setPassword}
@@ -107,7 +108,7 @@ export default function SignUpScreen() {
               maxFontSizeMultiplier={1.2}
             />
           </View>
-          {!!error && <Text style={styles.error}>{error}</Text>}
+          {!!error && <Text style={[styles.error, { color: t.danger }]}>{error}</Text>}
           <Button
             title="Cadastrar"
             variant="primary"
@@ -119,16 +120,14 @@ export default function SignUpScreen() {
             accessibilityLabel="Cadastrar"
           />
           <TouchableOpacity onPress={() => router.push('/sign-in')} activeOpacity={0.8}>
-            <Text style={styles.link}>Já tem conta? Entrar</Text>
+            <Text style={[styles.link, { color: t.primary }]}>Já tem conta? Entrar</Text>
           </TouchableOpacity>
         </View>
-      </Screen>
-    </LinearGradient>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
   card: {
     width: width > 420 ? 380 : '92%',
     backgroundColor: '#fff',

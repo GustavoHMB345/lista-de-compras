@@ -4,6 +4,7 @@ import { Animated, Easing, Platform, StyleSheet, TouchableOpacity, View } from '
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { PlusIcon } from './Icons';
+import { useTheme } from './theme';
 
 // Simple, solid TabBar (top or bottom). Props: active, onNavigate(screen), tint, position
 export default function TabBar({
@@ -14,6 +15,7 @@ export default function TabBar({
   position = 'bottom',
   hidden = false,
 }) {
+  const { tokens } = useTheme();
   const translateY = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.timing(translateY, {
@@ -43,7 +45,7 @@ export default function TabBar({
       style={[
         styles.safe,
         position === 'bottom'
-          ? (Platform.OS === 'web' ? styles.safeBottomWeb : styles.safeBottom)
+          ? (Platform.OS === 'web' ? [styles.safeBottomWeb, { backgroundColor: tokens.card }] : [styles.safeBottom, { backgroundColor: tokens.card }])
           : null,
       ]}
       // Don't block scroll/touches outside the actual buttons
@@ -53,7 +55,7 @@ export default function TabBar({
         style={[
           styles.bar,
           position === 'top' ? styles.barTop : styles.barBottom,
-          { transform: [{ translateY }], opacity: fade },
+          { transform: [{ translateY }], opacity: fade, backgroundColor: tokens.card, borderTopColor: tokens.border },
           hidden ? styles.barHidden : null,
         ]}
         pointerEvents={hidden ? 'none' : 'box-none'}
@@ -111,7 +113,8 @@ export default function TabBar({
 }
 
 function IconTab({ active, label, icon, onPress }) {
-  const color = active ? '#2563EB' : '#9CA3AF';
+  const { tokens } = useTheme();
+  const color = active ? tokens.primary : tokens.icon;
   return (
     <TouchableOpacity
       style={styles.iconTab}
@@ -169,8 +172,8 @@ const ProfileIcon = ({ color = '#6B7280' }) => (
 
 const styles = StyleSheet.create({
   safe: { backgroundColor: 'transparent' },
-  safeBottom: { position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 50, backgroundColor: '#FFFFFF' },
-  safeBottomWeb: { position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50, backgroundColor: '#FFFFFF' },
+  safeBottom: { position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 50 },
+  safeBottomWeb: { position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50 },
   bar: {
     width: '100%',
     backgroundColor: '#FFFFFF',

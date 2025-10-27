@@ -1,7 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
-import { Colors } from '../../constants/Colors';
-import { useColorScheme } from '../../hooks/useColorScheme';
 import {
     buildButtonTokens,
     BUTTON_BASE,
@@ -10,6 +8,7 @@ import {
     BUTTON_VARIANTS as STATIC_BUTTON_VARIANTS,
     TEXT_BUTTON as STATIC_TEXT_BUTTON,
 } from '../styles/theme';
+import { useTheme } from './theme';
 
 export default function Button({
   variant = 'primary',
@@ -27,8 +26,8 @@ export default function Button({
   gradientColors,
   ...props
 }) {
-  const theme = useColorScheme?.() ?? 'light';
-  const { BUTTON_VARIANTS, TEXT_BUTTON } = buildButtonTokens(Colors?.[theme] || {});
+  const { colors: themeColors } = useTheme();
+  const { BUTTON_VARIANTS, TEXT_BUTTON } = buildButtonTokens(themeColors || {});
   const variantStyle =
     BUTTON_VARIANTS[variant] ||
     BUTTON_VARIANTS.primary ||
@@ -69,9 +68,9 @@ export default function Button({
   // Some callers set transparent or leave undefined; derive from theme in those cases
   if (!effectiveBg || effectiveBg === 'transparent') {
     if (variant === 'light') {
-      effectiveBg = (Colors?.[theme] && Colors[theme].background) || '#ffffff';
+      effectiveBg = (themeColors && themeColors.background) || '#ffffff';
     } else {
-      effectiveBg = (Colors?.[theme] && Colors[theme].tint) || '#2563EB';
+      effectiveBg = (themeColors && themeColors.tint) || '#2563EB';
     }
   }
   // Default: white text; if light variant or light bg, use dark text

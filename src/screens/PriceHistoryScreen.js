@@ -3,23 +3,25 @@ import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Screen from '../components/Screen';
 import TabBar from '../components/TabBar';
+import { useTheme } from '../components/theme';
 
 export default function PriceHistoryScreen() {
 	const router = useRouter();
+	const { tokens: t } = useTheme();
   const [measuredH, setMeasuredH] = useState(null);
 	const handleNavigate = (screen) => {
 		switch (screen) {
 			case 'DASHBOARD':
-				router.push('/dashboard');
+				router.replace('/dashboard');
 				break;
 			case 'LISTS':
-				router.push('/lists');
+				router.replace('/lists');
 				break;
 			case 'FAMILY':
-				router.push('/family');
+				router.replace('/family');
 				break;
 			case 'PROFILE':
-				router.push('/profile');
+				router.replace('/profile');
 				break;
 			default:
 				break;
@@ -43,7 +45,7 @@ export default function PriceHistoryScreen() {
 			  style={styles.center}
 			  onLayout={!measuredH ? (e) => setMeasuredH(Math.round(e.nativeEvent.layout.height)) : undefined}
 			>
-				<Text style={styles.text}>Histórico de preços – em construção</Text>
+				<Text style={[styles.text, { color: t.text }]}>Histórico de preços – em construção</Text>
 			</View>
 		</Screen>
 	);

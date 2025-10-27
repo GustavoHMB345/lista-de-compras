@@ -5,6 +5,7 @@ import { Alert, Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View 
 import Button from '../components/Button';
 import { BackIcon } from '../components/Icons';
 import Screen from '../components/Screen';
+import { useTheme } from '../components/theme';
 import { DataContext } from '../contexts/DataContext';
 
 const { width } = Dimensions.get('window');
@@ -12,6 +13,7 @@ const __fs = Math.min(1.2, Math.max(0.9, width / 390));
 
 export default function ResetPasswordScreen() {
   const { resetPassword, requestPasswordReset } = useContext(DataContext);
+  const { tokens: t, scheme } = useTheme();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
@@ -56,18 +58,17 @@ export default function ResetPasswordScreen() {
   };
 
   return (
-    <LinearGradient colors={['#3B82F6', '#8B5CF6']} style={{ flex: 1 }}>
-      <Screen
-        scroll={false}
-        contentStyle={{
-          paddingTop: 0,
-          paddingHorizontal: 0,
-          flex: 1,
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      >
-        <View style={styles.card}>
+    <Screen
+      scroll={false}
+      contentStyle={{
+        paddingTop: 0,
+        paddingHorizontal: 0,
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
+      <View style={[styles.card, { backgroundColor: t.card }]}>
           <TouchableOpacity
             accessibilityRole="button"
             accessibilityLabel="Voltar"
@@ -80,16 +81,16 @@ export default function ResetPasswordScreen() {
             <LinearGradient colors={['#6C7DFF', '#4F46E5']} style={styles.badge}>
               <Text style={styles.badgeGlyph}>🛡️</Text>
             </LinearGradient>
-            <Text style={styles.title}>Redefinir Senha</Text>
-            <Text style={styles.subtitle}>Use o código enviado ao seu email</Text>
+            <Text style={[styles.title, { color: t.text }]}>Redefinir Senha</Text>
+            <Text style={[styles.subtitle, { color: t.muted }]}>Use o código enviado ao seu email</Text>
           </View>
           <View style={styles.inputBox}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={[styles.label, { color: t.text }]}>Email</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: t.inputBg, borderColor: t.border, color: t.text }]}
               placeholder="voce@email.com"
-              placeholderTextColor="#9CA3AF"
-              selectionColor="#2563EB"
+              placeholderTextColor={t.muted}
+              selectionColor={t.primary}
               autoCapitalize="none"
               keyboardType="email-address"
               value={email}
@@ -102,9 +103,9 @@ export default function ResetPasswordScreen() {
             <View style={{ marginBottom: 8 }}>
               <Text
                 style={{
-                  color: '#065F46',
-                  backgroundColor: '#D1FAE5',
-                  borderColor: '#A7F3D0',
+                  color: t.success,
+                  backgroundColor: scheme === 'dark' ? 'rgba(16,185,129,0.12)' : '#D1FAE5',
+                  borderColor: scheme === 'dark' ? 'rgba(16,185,129,0.35)' : '#A7F3D0',
                   borderWidth: 1,
                   padding: 8,
                   borderRadius: 8,
@@ -123,12 +124,12 @@ export default function ResetPasswordScreen() {
           {step === 2 && (
             <>
               <View style={[styles.inputBox, { marginTop: 12 }]}>
-                <Text style={styles.label}>Código</Text>
+                <Text style={[styles.label, { color: t.text }]}>Código</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { backgroundColor: t.inputBg, borderColor: t.border, color: t.text }]}
                   placeholder="6 dígitos"
-                  placeholderTextColor="#9CA3AF"
-                  selectionColor="#2563EB"
+                  placeholderTextColor={t.muted}
+                  selectionColor={t.primary}
                   keyboardType="number-pad"
                   value={code}
                   onChangeText={(t) => setCode(t.replace(/[^0-9]/g, ''))}
@@ -138,12 +139,12 @@ export default function ResetPasswordScreen() {
                 />
               </View>
               <View style={styles.inputBox}>
-                <Text style={styles.label}>Nova senha</Text>
+                <Text style={[styles.label, { color: t.text }]}>Nova senha</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { backgroundColor: t.inputBg, borderColor: t.border, color: t.text }]}
                   placeholder="••••••••"
-                  placeholderTextColor="#9CA3AF"
-                  selectionColor="#2563EB"
+                  placeholderTextColor={t.muted}
+                  selectionColor={t.primary}
                   secureTextEntry
                   value={password}
                   onChangeText={setPassword}
@@ -161,8 +162,7 @@ export default function ResetPasswordScreen() {
             </>
           )}
         </View>
-      </Screen>
-    </LinearGradient>
+    </Screen>
   );
 }
 

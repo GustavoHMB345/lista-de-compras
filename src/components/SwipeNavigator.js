@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Dimensions, PanResponder } from 'react-native';
 
@@ -10,12 +11,12 @@ export default function SwipeNavigator({
   isFirst = false,
   isLast = false,
   parallax = true,
-  reduceScale = 0.02, // reduz até 2%
-  reduceOpacity = 0.04, // reduz até 4%
+  reduceScale = 0.03, // reduz até 3% (ligeiramente mais evidente)
+  reduceOpacity = 0.06, // reduz até 6% para sensação de profundidade
   progress, // Animated.Value opcional, normalizado -1..1
   edgeActivationWidth, // px a partir das bordas (se não informado, calcula responsivo)
   velocityThreshold = 0.25, // velocidade mínima para aceitar swipe
-  dragFactor = 0.35, // intensidade da tradução durante o arraste
+  dragFactor = 0.45, // tradução um pouco maior para sensação de carrossel
   enabled = true,
   allowSwipeLeft = true,
   allowSwipeRight = true,
@@ -30,6 +31,7 @@ export default function SwipeNavigator({
   const [winWidth, setWinWidth] = useState(Dimensions.get('window').width);
   const startXRef = useRef(0);
   const navigatingRef = useRef(false);
+  const wasCancelledRef = useRef(false);
 
   // Atualiza largura em mudanças de orientação/dimensão
   useEffect(() => {
@@ -65,10 +67,43 @@ export default function SwipeNavigator({
   const responder = useMemo(
     () =>
       PanResponder.create({
+        onStartShouldSetPanResponder: (evt) => {
+          // Guarda o ponto inicial mesmo quando não capturamos no start
+          const { locationX } = evt.nativeEvent;
+          startXRef.current = locationX;
+          return false;
+        },
         onStartShouldSetPanResponderCapture: (evt) => {
           const { locationX } = evt.nativeEvent;
           startXRef.current = locationX;
-          return false; // não captura imediatamente
+          // Antecipar captura quando o toque começa na borda permitida
+          const leftEdge = locationX <= effectiveEdge;
+          const rightEdge = locationX >= winWidth - effectiveEdge;
+          if (edgeFrom === 'any') return false;
+          const allowFromLeft = leftEdge && allowSwipeRight;
+          const allowFromRight = rightEdge && allowSwipeLeft;
+          return allowFromLeft || allowFromRight;
+        },
+        onMoveShouldSetPanResponderCapture: (_, gesture) => {
+          const { dx, dy, numberActiveTouches } = gesture;
+          if (multiTouchCancel && numberActiveTouches > 1) return false;
+          const leftEdge = startXRef.current <= effectiveEdge;
+          const rightEdge = startXRef.current >= winWidth - effectiveEdge;
+          const edgeOk =
+            edgeFrom === 'any'
+              ? true
+              : edgeFrom === 'both'
+                ? leftEdge || rightEdge
+                : edgeFrom === 'left'
+                  ? leftEdge
+                  : rightEdge;
+          const minDx = edgeFrom === 'any' ? 22 : 14;
+          const horizontalIntent =
+            Math.abs(dx) > minDx &&
+            Math.abs(dx) > Math.abs(dy) * 1.15 &&
+            Math.abs(dy) <= verticalTolerance;
+          const dirOk = (dx < 0 && allowSwipeLeft) || (dx > 0 && allowSwipeRight);
+          return edgeOk && horizontalIntent && dirOk;
         },
         onMoveShouldSetPanResponder: (_, gesture) => {
           const { dx, dy, numberActiveTouches } = gesture;
@@ -93,6 +128,14 @@ export default function SwipeNavigator({
           return edgeOk && horizontalIntent && dirOk;
         },
         onPanResponderMove: (_, gesture) => {
+          // Cancela em multi-toque para evitar saltos inesperados
+          if (multiTouchCancel && gesture.numberActiveTouches > 1) {
+            wasCancelledRef.current = true;
+            translateX.stopAnimation();
+            translateX.setValue(0);
+            if (progress) progress.setValue(0);
+            return;
+          }
           let { dx } = gesture;
           // bloqueia direção não permitida
           if (dx < 0 && !allowSwipeLeft) dx = 0;
@@ -108,6 +151,19 @@ export default function SwipeNavigator({
           }
         },
         onPanResponderRelease: async (_, gesture) => {
+          if (wasCancelledRef.current) {
+            wasCancelledRef.current = false;
+            animateTo(0);
+            progress &&
+              Animated.spring(progress, {
+                toValue: 0,
+                useNativeDriver: true,
+                friction: 7,
+                tension: 80,
+              }).start();
+            onSwipeCancel && onSwipeCancel();
+            return;
+          }
           const { dx, vx } = gesture;
           const fastEnough = Math.abs(vx) > velocityThreshold;
           const farEnoughLeft = dx < -threshold;
@@ -122,25 +178,27 @@ export default function SwipeNavigator({
 
           if (!navigatingRef.current && (goLeft || goRight)) {
             onSwipeStart && onSwipeStart();
-          }
-
-          if (goLeft && !navigatingRef.current) {
             navigatingRef.current = true;
-            await animateTo(-winWidth, { friction: 7, tension: 80 });
-            onSwipeLeft && onSwipeLeft();
-            translateX.setValue(0);
-            progress && progress.setValue(0);
-            setTimeout(() => (navigatingRef.current = false), 160);
-            return;
-          }
-
-          if (goRight && !navigatingRef.current) {
-            navigatingRef.current = true;
-            await animateTo(winWidth, { friction: 7, tension: 80 });
-            onSwipeRight && onSwipeRight();
-            translateX.setValue(0);
-            progress && progress.setValue(0);
-            setTimeout(() => (navigatingRef.current = false), 160);
+            // Navega imediatamente para reduzir a latência percebida.
+            const dir = goLeft ? -1 : 1;
+            try {
+              // micro feedback visual (não bloqueia a navegação)
+              Animated.timing(translateX, {
+                toValue: dir * Math.min(24, winWidth * 0.05) * dragFactor,
+                duration: 60,
+                useNativeDriver: true,
+              }).start();
+            } catch {}
+            if (goLeft) onSwipeLeft && onSwipeLeft();
+            else onSwipeRight && onSwipeRight();
+            // Caso não desmonte imediatamente (ambientes não-nativos), reseta rapidamente
+            setTimeout(() => {
+              try {
+                translateX.setValue(0);
+                progress && progress.setValue(0);
+              } catch {}
+              navigatingRef.current = false;
+            }, 120);
             return;
           }
 
@@ -156,6 +214,7 @@ export default function SwipeNavigator({
           onSwipeCancel && onSwipeCancel();
         },
         onPanResponderTerminate: () => {
+          wasCancelledRef.current = false;
           animateTo(0);
           progress &&
             Animated.spring(progress, {
@@ -208,12 +267,49 @@ export default function SwipeNavigator({
       })
     : 1;
 
+  // Sombra direcional nas bordas para realçar a sobreposição entre telas
+  const shadowWidth = Math.max(12, Math.round(winWidth * 0.045));
+  const leftShadowOpacity = translateX.interpolate({
+    inputRange: [-1, 0, winWidth * 0.2],
+    outputRange: [0, 0, 0.14],
+    extrapolate: 'clamp',
+  });
+  const rightShadowOpacity = translateX.interpolate({
+    inputRange: [-winWidth * 0.2, 0, 1],
+    outputRange: [0.14, 0, 0],
+    extrapolate: 'clamp',
+  });
+
   return (
     <Animated.View
       style={{ flex: 1, minHeight: 0, opacity, transform: [{ translateX }, { scale }] }}
       {...(enabled ? responder.panHandlers : {})}
     >
+      {/* Conteúdo da tela */}
       {children}
+      {/* Sombras direcionais para dar sensação de profundidade/overlap como carrossel */}
+      <Animated.View
+        pointerEvents="none"
+        style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: shadowWidth, opacity: leftShadowOpacity }}
+      >
+        <LinearGradient
+          colors={["rgba(0,0,0,0.14)", "rgba(0,0,0,0)"]}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={{ flex: 1 }}
+        />
+      </Animated.View>
+      <Animated.View
+        pointerEvents="none"
+        style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: shadowWidth, opacity: rightShadowOpacity }}
+      >
+        <LinearGradient
+          colors={["rgba(0,0,0,0)", "rgba(0,0,0,0.14)"]}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={{ flex: 1 }}
+        />
+      </Animated.View>
     </Animated.View>
   );
 }

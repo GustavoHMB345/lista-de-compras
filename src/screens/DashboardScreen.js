@@ -1,16 +1,17 @@
 import { useRootNavigationState, useRouter } from 'expo-router';
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Animated,
-  Dimensions,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    Animated,
+    Dimensions,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ScreensDefault from '../components/ScreensDefault';
+import { useTheme } from '../components/theme';
 import { DataContext } from '../contexts/DataContext';
 
 const { width } = Dimensions.get('window');
@@ -19,6 +20,7 @@ const MAX_WIDTH = Math.min(820, width * 0.98);
 
 export default function DashboardScreen() {
   const { shoppingLists, currentUser, loading, uiPrefs } = useContext(DataContext);
+  const { tokens: t, scheme } = useTheme();
   const router = useRouter();
   const progress = useState(new Animated.Value(0))[0];
   const rootNavigation = useRootNavigationState();
@@ -205,16 +207,16 @@ export default function DashboardScreen() {
   const handleNavigate = (screen) => {
     switch (screen) {
       case 'DASHBOARD':
-        router.push('/dashboard');
+        router.replace('/dashboard');
         break;
       case 'LISTS':
-        router.push('/lists');
+        router.replace('/lists');
         break;
       case 'FAMILY':
-        router.push('/family');
+        router.replace('/family');
         break;
       case 'PROFILE':
-        router.push('/profile');
+        router.replace('/profile');
         break;
       default:
         break;
@@ -223,21 +225,21 @@ export default function DashboardScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.root, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ color: '#222', fontSize: 18 }}>Carregando...</Text>
+      <View style={[styles.root, { justifyContent: 'center', alignItems: 'center', backgroundColor: t.background }]}>
+        <Text style={{ color: t.text, fontSize: 18 }}>Carregando...</Text>
       </View>
     );
   }
   if (!currentUser) {
     return (
-      <SafeAreaView style={[styles.root, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ color: '#222', fontSize: 16 }}>Carregando...</Text>
+      <SafeAreaView style={[styles.root, { justifyContent: 'center', alignItems: 'center', backgroundColor: t.background }]}>
+        <Text style={{ color: t.text, fontSize: 16 }}>Carregando...</Text>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.root} edges={['top']}>
+    <SafeAreaView style={[styles.root, { backgroundColor: t.background }]} edges={['top']}>
       <ScreensDefault
         active="DASHBOARD"
         leftTab="FAMILY"
@@ -252,43 +254,43 @@ export default function DashboardScreen() {
       >
           {/* Header + Stats */}
           <View
-            style={[styles.card, { width: MAX_WIDTH }]}
+            style={[styles.card, { width: MAX_WIDTH, backgroundColor: t.card }]}
             onLayout={!measuredCardH ? (e) => setMeasuredCardH(Math.round(e.nativeEvent.layout.height)) : undefined}
           >
             <View style={{ alignItems: 'center', marginBottom: 16 }}>
               <Text style={styles.emoji}>📊</Text>
-              <Text style={styles.title}>Dashboard</Text>
-              <Text style={styles.subtitle}>Análise de preços e tendências de mercado</Text>
+              <Text style={[styles.title, { color: t.text }]}>Dashboard</Text>
+              <Text style={[styles.subtitle, { color: t.muted }]}>Análise de preços e tendências de mercado</Text>
             </View>
             <View style={styles.statsGrid}>
-              <View style={[styles.statBox, { backgroundColor: '#EFF6FF' }]}>
+              <View style={[styles.statBox, { backgroundColor: scheme === 'dark' ? 'rgba(59,130,246,0.12)' : '#EFF6FF' }]}>
                 <Text style={[styles.statValue, { color: '#2563EB' }]}>
                   R$ {stats.totalSpent.toFixed(2)}
                 </Text>
-                <Text style={styles.statLabel}>Gasto Total</Text>
+                <Text style={[styles.statLabel, { color: t.muted }]}>Gasto Total</Text>
               </View>
-              <View style={[styles.statBox, { backgroundColor: '#ECFDF5' }]}>
+              <View style={[styles.statBox, { backgroundColor: scheme === 'dark' ? 'rgba(16,185,129,0.12)' : '#ECFDF5' }]}>
                 <Text style={[styles.statValue, { color: '#16A34A' }]}>
                   R$ {stats.avgPrice.toFixed(2)}
                 </Text>
-                <Text style={styles.statLabel}>Preço Médio</Text>
+                <Text style={[styles.statLabel, { color: t.muted }]}>Preço Médio</Text>
               </View>
-              <View style={[styles.statBox, { backgroundColor: '#FEFCE8' }]}>
+              <View style={[styles.statBox, { backgroundColor: scheme === 'dark' ? 'rgba(202,138,4,0.12)' : '#FEFCE8' }]}>
                 <Text style={[styles.statValue, { color: '#CA8A04' }]}>{stats.totalItems}</Text>
-                <Text style={styles.statLabel}>Itens Cadastrados</Text>
+                <Text style={[styles.statLabel, { color: t.muted }]}>Itens Cadastrados</Text>
               </View>
-              <View style={[styles.statBox, { backgroundColor: '#F5F3FF' }]}>
+              <View style={[styles.statBox, { backgroundColor: scheme === 'dark' ? 'rgba(124,58,237,0.12)' : '#F5F3FF' }]}>
                 <Text style={[styles.statValue, { color: '#7C3AED' }]}>
                   {stats.priceVariation >= 0 ? '+' : ''}
                   {stats.priceVariation.toFixed(0)}%
                 </Text>
-                <Text style={styles.statLabel}>Variação de Preços</Text>
+                <Text style={[styles.statLabel, { color: t.muted }]}>Variação de Preços</Text>
               </View>
             </View>
           </View>
 
           {/* Chart Card */}
-          <View style={[styles.card, { width: MAX_WIDTH }]}>
+          <View style={[styles.card, { width: MAX_WIDTH, backgroundColor: t.card }]}>
             <Text style={[styles.sectionTitle, { textAlign: 'center' }]}>
               📈 Evolução de Gastos
             </Text>
@@ -304,9 +306,22 @@ export default function DashboardScreen() {
                     key={p.key}
                     onPress={() => setPeriod(p.key)}
                     activeOpacity={0.9}
-                    style={[styles.segmentBtn, active && styles.segmentBtnActive]}
+                    style={[
+                      styles.segmentBtn,
+                      { backgroundColor: t.card, borderColor: t.border },
+                      active && {
+                        backgroundColor: scheme === 'dark' ? 'rgba(59,130,246,0.15)' : '#DBEAFE',
+                        borderColor: scheme === 'dark' ? 'rgba(59,130,246,0.35)' : '#93C5FD',
+                      },
+                    ]}
                   >
-                    <Text style={[styles.segmentText, active && styles.segmentTextActive]}>
+                    <Text
+                      style={[
+                        styles.segmentText,
+                        { color: t.text },
+                        active && { color: scheme === 'dark' ? '#93C5FD' : '#1D4ED8' },
+                      ]}
+                    >
                       {p.label}
                     </Text>
                   </TouchableOpacity>
@@ -324,10 +339,21 @@ export default function DashboardScreen() {
                     key={s.key}
                     onPress={() => setScope(s.key)}
                     activeOpacity={0.9}
-                    style={[styles.segmentBtnSmall, active && styles.segmentBtnSmallActive]}
+                    style={[
+                      styles.segmentBtnSmall,
+                      { backgroundColor: t.card, borderColor: t.border },
+                      active && {
+                        backgroundColor: scheme === 'dark' ? 'rgba(30,58,138,0.9)' : '#1E3A8A',
+                        borderColor: scheme === 'dark' ? 'rgba(30,58,138,0.9)' : '#1E3A8A',
+                      },
+                    ]}
                   >
                     <Text
-                      style={[styles.segmentTextSmall, active && styles.segmentTextSmallActive]}
+                      style={[
+                        styles.segmentTextSmall,
+                        { color: t.text },
+                        active && { color: '#fff' },
+                      ]}
                     >
                       {s.label}
                     </Text>
@@ -335,7 +361,7 @@ export default function DashboardScreen() {
                 );
               })}
             </View>
-            <View style={styles.chartBox}>
+            <View style={[styles.chartBox, { backgroundColor: t.inputBg }]}>
               {hasLineData ? (
                 <LineChart
                   data={lineData}
@@ -349,13 +375,13 @@ export default function DashboardScreen() {
                   thickness={3}
                   color="#3B82F6"
                   yAxisLabel="R$ "
-                  yAxisColor="#E5E7EB"
-                  xAxisColor="#E5E7EB"
+                  yAxisColor={t.border}
+                  xAxisColor={t.border}
                   hideDataPoints={false}
                   dataPointsColor="#1D4ED8"
-                  yAxisTextStyle={{ color: '#374151', fontSize: 10 * __fs }}
+                  yAxisTextStyle={{ color: t.muted, fontSize: 10 * __fs }}
                   xAxisLabelTextStyle={{
-                    color: '#374151',
+                    color: t.muted,
                     fontSize: 10 * __fs,
                     transform: [{ translateY: 4 }],
                   }}
@@ -380,7 +406,7 @@ export default function DashboardScreen() {
                       return (
                         <View
                           style={{
-                            backgroundColor: '#1F2937',
+                            backgroundColor: t.card,
                             paddingVertical: 6,
                             paddingHorizontal: 10,
                             borderRadius: 10,
@@ -389,11 +415,11 @@ export default function DashboardScreen() {
                             shadowOffset: { width: 0, height: 2 },
                           }}
                         >
-                          <Text style={{ color: '#93C5FD', fontSize: 11, fontWeight: '600' }}>
+                          <Text style={{ color: scheme === 'dark' ? '#93C5FD' : '#3B82F6', fontSize: 11, fontWeight: '600' }}>
                             {it.label}
                           </Text>
                           <Text
-                            style={{ color: '#fff', fontSize: 14, fontWeight: '700', marginTop: 2 }}
+                            style={{ color: t.text, fontSize: 14, fontWeight: '700', marginTop: 2 }}
                           >
                             R$ {Number(it.value).toFixed(2)}
                           </Text>
@@ -405,7 +431,7 @@ export default function DashboardScreen() {
               ) : (
                 <View style={{ alignItems: 'center', paddingVertical: 24 }}>
                   <Text style={{ fontSize: 42 }}>🛒</Text>
-                  <Text style={{ color: '#6B7280', marginTop: 8, textAlign: 'center' }}>
+                  <Text style={{ color: t.muted, marginTop: 8, textAlign: 'center' }}>
                     Registre preços e conclua listas para ver a evolução.
                   </Text>
                 </View>
@@ -414,26 +440,26 @@ export default function DashboardScreen() {
           </View>
 
           {/* Expensive items */}
-          <View style={[styles.card, { width: MAX_WIDTH, backgroundColor: '#FFF1F2' }]}>
-            <Text style={styles.sectionTitle}>🔥 Itens Mais Caros</Text>
+          <View style={[styles.card, { width: MAX_WIDTH, backgroundColor: scheme === 'dark' ? 'rgba(239,68,68,0.08)' : '#FFF1F2' }]}>
+            <Text style={[styles.sectionTitle, { color: t.text }]}>🔥 Itens Mais Caros</Text>
             {expensiveItems.length === 0 ? (
               <View style={{ alignItems: 'center', paddingVertical: 16 }}>
                 <Text style={{ fontSize: 28 }}>💰</Text>
-                <Text style={{ color: '#6B7280', marginTop: 6 }}>Sem dados de preços</Text>
+                <Text style={{ color: t.muted, marginTop: 6 }}>Sem dados de preços</Text>
               </View>
             ) : (
               <View style={{ gap: 8 }}>
                 {expensiveItems.map((it) => (
-                  <View key={it.name} style={styles.expRow}>
+                  <View key={it.name} style={[styles.expRow, { backgroundColor: t.card, borderColor: scheme === 'dark' ? 'rgba(239,68,68,0.35)' : '#FEE2E2' }]}>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.expName}>{it.name}</Text>
-                      <Text style={styles.expMeta}>
+                      <Text style={[styles.expName, { color: t.text }]}>{it.name}</Text>
+                      <Text style={[styles.expMeta, { color: t.muted }] }>
                         Faixa: R$ {it.min.toFixed(2)} - R$ {it.max.toFixed(2)}
                       </Text>
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
-                      <Text style={styles.expValue}>R$ {it.avg.toFixed(2)}</Text>
-                      <Text style={styles.expMeta}>Preço médio</Text>
+                      <Text style={[styles.expValue, { color: '#DC2626' }]}>R$ {it.avg.toFixed(2)}</Text>
+                      <Text style={[styles.expMeta, { color: t.muted }]}>Preço médio</Text>
                     </View>
                   </View>
                 ))}

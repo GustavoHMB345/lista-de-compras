@@ -37,16 +37,16 @@ export default function ScreensDefault({
   const handleNavigate = (screen) => {
     switch (screen) {
       case 'DASHBOARD':
-        router.push('/dashboard');
+        router.replace('/dashboard');
         break;
       case 'LISTS':
-        router.push('/lists');
+        router.replace('/lists');
         break;
       case 'FAMILY':
-        router.push('/family');
+        router.replace('/family');
         break;
       case 'PROFILE':
-        router.push('/profile');
+        router.replace('/profile');
         break;
       default:
         break;
@@ -103,7 +103,7 @@ export default function ScreensDefault({
             onSwipeRight={canSwipe && leftTab ? () => handleNavigate(leftTab) : undefined}
             allowSwipeLeft={canSwipe && !!rightTab}
             allowSwipeRight={canSwipe && !!leftTab}
-            edgeFrom="both"
+            edgeFrom="any"
             verticalTolerance={8}
           >
             <Screen

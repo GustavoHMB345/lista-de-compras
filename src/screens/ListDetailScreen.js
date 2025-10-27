@@ -4,17 +4,23 @@ import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { Alert, FlatList, Modal, Platform, ScrollView, StatusBar, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 // Certifique-se de que o caminho para seus dados mockados está correto
+import { useTheme } from '../components/theme';
 import { DataContext } from '../contexts/DataContext';
 import { categories, generateListItems, mockShoppingLists } from '../data';
 
 // --- Componente: Item da Lista (Layout Melhorado) ---
 
 const ListItem = ({ item, onToggle, onRemove, onEditPrice, compact }) => {
+  const { tokens: t } = useTheme();
   const category = categories[item.category] || categories.outros;
 
   return (
     // O estilo 'compact' agora aplica flexWrap no card principal
-    <View style={[styles.itemCard, compact && styles.itemCardCompact]}>
+    <View style={[
+      styles.itemCard,
+      compact && styles.itemCardCompact,
+      { backgroundColor: t.card, borderColor: t.border }
+    ]}>
       <Switch
         value={item.completed}
         onValueChange={onToggle}
@@ -29,7 +35,7 @@ const ListItem = ({ item, onToggle, onRemove, onEditPrice, compact }) => {
       {/* Coluna Principal: Nome e Preço */}
       <View style={styles.itemInfo}>
         <Text
-          style={[styles.itemName, item.completed && styles.itemNameCompleted]}
+          style={[styles.itemName, { color: t.text }, item.completed && styles.itemNameCompleted]}
           numberOfLines={compact ? 1 : 2}
           ellipsizeMode="tail"
         >
@@ -42,14 +48,14 @@ const ListItem = ({ item, onToggle, onRemove, onEditPrice, compact }) => {
 
       {/* Coluna da Direita: Categoria e Ações */}
       <View style={[styles.itemRightColumn, compact && styles.itemRightColumnCompact]}>
-        <Text style={styles.itemCategory} numberOfLines={1} ellipsizeMode="tail">
+        <Text style={[styles.itemCategory, { color: t.muted }]} numberOfLines={1} ellipsizeMode="tail">
           {category.name}
         </Text>
         <View style={styles.itemActions}>
-          <TouchableOpacity onPress={onEditPrice} style={styles.actionButton}>
+          <TouchableOpacity onPress={onEditPrice} style={[styles.actionButton, { backgroundColor: t.chipBg }]}>
             <Feather name="edit-2" size={16} color="#3B82F6" />
           </TouchableOpacity>
-          <TouchableOpacity onPress={onRemove} style={styles.actionButton}>
+          <TouchableOpacity onPress={onRemove} style={[styles.actionButton, { backgroundColor: t.chipBg }]}>
             <Feather name="trash-2" size={16} color="#EF4444" />
           </TouchableOpacity>
         </View>
@@ -69,6 +75,7 @@ const CategoryFilterChip = ({
   onPress,
   styleConfig,
 }) => {
+  const { tokens: t } = useTheme();
   if (count === 0 && catKey !== 'all') return null;
   const labelStyles = [styles.chipLabel, isActive && styles.chipLabelActive];
   const countWrapStyles = [styles.chipCount, isActive && styles.chipCountActive];
@@ -84,6 +91,7 @@ const CategoryFilterChip = ({
           minHeight: styleConfig.chipHeight,
           paddingVertical: styleConfig.chipPadV,
           paddingHorizontal: styleConfig.chipPadH,
+          backgroundColor: isActive ? '#2563EB' : t.chipBg,
         },
       ]}
     >
@@ -96,6 +104,7 @@ const CategoryFilterChip = ({
             flexShrink: 1,
             fontSize: styleConfig.chipLabelSize,
             lineHeight: styleConfig.chipLabelSize + 4,
+            color: isActive ? '#FFFFFF' : t.text,
           },
         ]}
         numberOfLines={1}
@@ -115,15 +124,16 @@ const CategoryFilterChip = ({
 // --- Componente: Cabeçalho da Lista ---
 
 const ListHeaderCard = ({ list, stats, onGoBack, onClearCompleted }) => {
+  const { tokens: t, scheme } = useTheme();
   return (
-    <View style={styles.headerCard}>
+    <View style={[styles.headerCard, { backgroundColor: t.card, borderColor: t.border, borderWidth: 1 }]}>
       <View style={styles.headerRow}>
-        <TouchableOpacity onPress={onGoBack} style={styles.backBtn}>
+        <TouchableOpacity onPress={onGoBack} style={[styles.backBtn, { backgroundColor: t.chipBg }]}>
           <Feather name="arrow-left" size={20} color="#6B7280" />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>{list.name}</Text>
-          <Text style={styles.headerSubtitle}>Gerencie seus itens de compra</Text>
+          <Text style={[styles.headerTitle, { color: t.text }]}>{list.name}</Text>
+          <Text style={[styles.headerSubtitle, { color: t.muted }]}>Gerencie seus itens de compra</Text>
         </View>
         <View style={styles.headerActions}>
           <TouchableOpacity onPress={() => {}} style={styles.headerIconBtn}>
@@ -137,34 +147,34 @@ const ListHeaderCard = ({ list, stats, onGoBack, onClearCompleted }) => {
 
       <View style={{ marginTop: 8 }}>
         <View style={styles.progressTopRow}>
-          <Text style={styles.progressLabel}>Progresso da Lista</Text>
-          <Text style={styles.progressText}>
+          <Text style={[styles.progressLabel, { color: t.muted }]}>Progresso da Lista</Text>
+          <Text style={[styles.progressText, { color: t.muted }]}>
             {stats.completed} de {stats.total} itens
           </Text>
         </View>
-        <View style={styles.progressBg}>
+        <View style={[styles.progressBg, { backgroundColor: scheme === 'dark' ? '#2A2F33' : '#E5E7EB' }]}>
           <View style={[styles.progressFill, { width: `${stats.percentage}%` }]} />
         </View>
       </View>
 
       <View style={styles.statsGrid}>
-        <View style={[styles.statBox, { backgroundColor: '#EEF2FF' }]}>
+        <View style={[styles.statBox, { backgroundColor: scheme === 'dark' ? '#1F2430' : '#EEF2FF' }]}>
           <Text style={styles.statValue}>{stats.total}</Text>
-          <Text style={styles.statLabel}>Total</Text>
+          <Text style={[styles.statLabel, { color: t.muted }]}>Total</Text>
         </View>
-        <View style={[styles.statBox, { backgroundColor: '#ECFDF5' }]}>
+        <View style={[styles.statBox, { backgroundColor: scheme === 'dark' ? '#14221C' : '#ECFDF5' }]}>
           <Text style={[styles.statValue, { color: '#16A34A' }]}>{stats.completed}</Text>
-          <Text style={styles.statLabel}>Concluídos</Text>
+          <Text style={[styles.statLabel, { color: t.muted }]}>Concluídos</Text>
         </View>
-        <View style={[styles.statBox, { backgroundColor: '#FEF3C7' }]}>
+        <View style={[styles.statBox, { backgroundColor: scheme === 'dark' ? '#2A2416' : '#FEF3C7' }]}>
           <Text style={[styles.statValue, { color: '#92400E' }]}>{stats.pending}</Text>
-          <Text style={styles.statLabel}>Pendentes</Text>
+          <Text style={[styles.statLabel, { color: t.muted }]}>Pendentes</Text>
         </View>
-        <View style={[styles.statBox, { backgroundColor: '#E0F2FE' }]}>
+        <View style={[styles.statBox, { backgroundColor: scheme === 'dark' ? '#0E2436' : '#E0F2FE' }]}>
           <Text style={[styles.statValue, { color: '#2563EB' }]}>
             R$ {stats.totalPrice.toFixed(2)}
           </Text>
-          <Text style={styles.statLabel}>Estimado</Text>
+          <Text style={[styles.statLabel, { color: t.muted }]}>Estimado</Text>
         </View>
       </View>
     </View>
@@ -187,15 +197,16 @@ const AddItemCard = ({
   btnHeight,
   btnTextSize,
 }) => {
+  const { tokens: t } = useTheme();
   // Aumenta levemente a altura do Picker de "Categoria" para evitar qualquer corte de texto
   const pickerH = Math.round((btnHeight || 50) + 8);
   return (
-    <View style={styles.addCard}>
+    <View style={[styles.addCard, { backgroundColor: t.card }]}>
       <View style={styles.addCardHeader}>
         <View style={styles.addGlyph}>
           <Text style={{ color: '#fff' }}>➕</Text>
         </View>
-        <Text style={styles.addTitle}>Adicionar Item</Text>
+        <Text style={[styles.addTitle, { color: t.text }]}>Adicionar Item</Text>
         <TouchableOpacity onPress={() => setIsFormVisible((v) => !v)}>
           <Feather
             name={isFormVisible ? 'chevron-up' : 'chevron-down'}
@@ -210,18 +221,20 @@ const AddItemCard = ({
             <View style={{ flexDirection: 'row', gap: 8 }}>
               {/* MUDANÇA: Aplicado height: btnHeight */}
               <TextInput
-                style={[styles.input, { flex: 1, height: btnHeight }]}
+                style={[styles.input, { flex: 1, height: btnHeight, backgroundColor: t.inputBg, borderColor: t.border, color: t.text }]}
                 placeholder="Nome do item..."
+                placeholderTextColor="#9CA3AF"
                 value={itemName}
                 onChangeText={setItemName}
               />
               {/* MUDANÇA: Aplicado height: btnHeight ao wrapper */}
-              <View style={[styles.priceWrap, { width: 130, height: btnHeight }]}>
+              <View style={[styles.priceWrap, { width: 130, height: btnHeight, backgroundColor: t.inputBg, borderColor: t.border }]}>
                 <Text style={styles.pricePrefix}>R$</Text>
                 {/* MUDANÇA: Usado priceTextInput, sem borda/padding extra */}
                 <TextInput
-                  style={styles.priceTextInput}
+                  style={[styles.priceTextInput, { color: t.text }]}
                   placeholder="Preço"
+                  placeholderTextColor="#9CA3AF"
                   keyboardType="numeric"
                   value={itemPrice}
                   onChangeText={setItemPrice}
@@ -236,11 +249,12 @@ const AddItemCard = ({
                 alignItems: 'stretch',
               }}
             >
-              <View style={[styles.pickerWrap, { flex: 1, height: pickerH }]}>
+              <View style={[styles.pickerWrap, { flex: 1, height: pickerH, backgroundColor: t.inputBg, borderColor: t.border }]}>
                 <Picker
                   selectedValue={itemCategory}
                   onValueChange={(v) => setItemCategory(v)}
-                  style={[styles.picker, { height: pickerH }]}
+                  style={[styles.picker, { height: pickerH, color: t.text }]}
+                  dropdownIconColor="#111827"
                 >
                   <Picker.Item label="Categoria" value="" />
                   {Object.entries(categories).map(([key, cfg]) => (
@@ -268,16 +282,18 @@ const AddItemCard = ({
           <View style={styles.addFormGrid}>
             {/* MUDANÇA: Aplicado height: btnHeight */}
             <TextInput
-              style={[styles.input, { height: btnHeight }]}
+              style={[styles.input, { height: btnHeight, backgroundColor: t.inputBg, borderColor: t.border, color: t.text }]}
               placeholder="Nome do item..."
+              placeholderTextColor="#9CA3AF"
               value={itemName}
               onChangeText={setItemName}
             />
-            <View style={[styles.pickerWrap, { height: pickerH }]}>
+            <View style={[styles.pickerWrap, { height: pickerH, backgroundColor: t.inputBg, borderColor: t.border }]}>
               <Picker
                 selectedValue={itemCategory}
                 onValueChange={(v) => setItemCategory(v)}
-                style={[styles.picker, { height: pickerH }]}
+                style={[styles.picker, { height: pickerH, color: t.text }]}
+                dropdownIconColor="#111827"
               >
                 <Picker.Item label="Categoria" value="" />
                 {Object.entries(categories).map(([key, cfg]) => (
@@ -286,12 +302,13 @@ const AddItemCard = ({
               </Picker>
             </View>
             {/* MUDANÇA: Aplicado height: btnHeight ao wrapper */}
-            <View style={[styles.priceWrap, { height: btnHeight }]}>
+            <View style={[styles.priceWrap, { height: btnHeight, backgroundColor: t.inputBg, borderColor: t.border }]}>
               <Text style={styles.pricePrefix}>R$</Text>
               {/* MUDANÇA: Usado priceTextInput */}
               <TextInput
-                style={styles.priceTextInput}
+                style={[styles.priceTextInput, { color: t.text }]}
                 placeholder="Preço"
+                placeholderTextColor="#9CA3AF"
                 keyboardType="numeric"
                 value={itemPrice}
                 onChangeText={setItemPrice}
@@ -335,24 +352,27 @@ const ItemsListCard = ({
   sortWidth,
   chipStyleConfig,
 }) => {
+  const { tokens: t } = useTheme();
   return (
-    <View style={styles.itemsCard}>
+    <View style={[styles.itemsCard, { backgroundColor: t.card }]}>
       {/* Search and Sort (com estilos de alinhamento corrigidos) */}
       <View style={styles.listTopBar}>
-        <View style={[styles.searchWrap, isNarrow && { marginRight: 6, paddingHorizontal: 8 }]}>
+        <View style={[styles.searchWrap, { backgroundColor: t.inputBg, borderColor: t.border }, isNarrow && { marginRight: 6, paddingHorizontal: 8 }]}>
           <Feather name="search" size={14} color="#9CA3AF" style={{ marginRight: 6 }} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: t.text }]}
             placeholder="Buscar..."
+            placeholderTextColor="#9CA3AF"
             value={searchTerm}
             onChangeText={setSearchTerm}
           />
         </View>
-        <View style={[styles.sortWrap, { width: sortWidth }]}>
+        <View style={[styles.sortWrap, { width: sortWidth, backgroundColor: t.inputBg, borderColor: t.border }]}>
           <Picker
             selectedValue={sortBy}
             onValueChange={(v) => setSortBy(v)}
-            style={[styles.sortPicker, { width: sortWidth }]}
+            style={[styles.sortPicker, { width: sortWidth, color: t.text }]}
+            dropdownIconColor="#111827"
           >
             <Picker.Item label="A-Z" value="name" />
             <Picker.Item label="Categoria" value="category" />
@@ -394,11 +414,11 @@ const ItemsListCard = ({
       {/* Items */}
       {items.length === 0 ? (
         <View style={styles.emptyItems}>
-          <View style={styles.emptyGlyph}>
+          <View style={[styles.emptyGlyph, { backgroundColor: t.chipBg }]}>
             <Text style={{ fontSize: 22 }}>🛒</Text>
           </View>
-          <Text style={styles.emptyTitle}>Lista vazia</Text>
-          <Text style={styles.emptySubtitle}>Comece adicionando alguns itens à sua lista</Text>
+          <Text style={[styles.emptyTitle, { color: t.text }]}>Lista vazia</Text>
+          <Text style={[styles.emptySubtitle, { color: t.muted }]}>Comece adicionando alguns itens à sua lista</Text>
         </View>
       ) : (
         <FlatList
@@ -432,6 +452,7 @@ const PriceEditModal = ({
   btnHeight,
   btnTextSize,
 }) => {
+  const { tokens: t } = useTheme();
   const h = typeof btnHeight === 'number' ? btnHeight : 48;
   const ts = typeof btnTextSize === 'number' ? btnTextSize : 16;
   return (
@@ -452,17 +473,17 @@ const PriceEditModal = ({
       >
         <View
           style={{
-            backgroundColor: '#fff',
+            backgroundColor: t.card,
             width: '100%',
             maxWidth: 360,
             borderRadius: 14,
             padding: 16,
           }}
         >
-          <Text style={{ fontWeight: '700', fontSize: 16, color: '#111827' }}>
+          <Text style={{ fontWeight: '700', fontSize: 16, color: t.text }}>
             Editar Preço
           </Text>
-          <Text style={{ color: '#6B7280', marginTop: 4 }}>
+          <Text style={{ color: t.muted, marginTop: 4 }}>
             Item: {item?.name || ''}
           </Text>
           <View
@@ -471,9 +492,10 @@ const PriceEditModal = ({
               alignItems: 'center',
               marginTop: 12,
               borderWidth: 1,
-              borderColor: '#E5E7EB',
+              borderColor: t.border,
               borderRadius: 10,
               paddingHorizontal: 10,
+              backgroundColor: t.inputBg,
             }}
           >
             <Text style={{ color: '#9CA3AF' }}>R$</Text>
@@ -481,7 +503,8 @@ const PriceEditModal = ({
               autoFocus
               keyboardType="numeric"
               placeholder="0,00"
-              style={{ flex: 1, height: 44, marginLeft: 8 }}
+              placeholderTextColor="#9CA3AF"
+              style={{ flex: 1, height: 44, marginLeft: 8, color: t.text }}
               value={value}
               onChangeText={setValue}
             />
@@ -491,14 +514,14 @@ const PriceEditModal = ({
               onPress={onClose}
               style={{
                 flex: 1,
-                backgroundColor: '#E5E7EB',
+                backgroundColor: t.chipBg,
                 minHeight: h,
                 borderRadius: 10,
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <Text style={{ color: '#374151', fontWeight: '700', fontSize: ts, lineHeight: ts + 6, includeFontPadding: false }}>
+              <Text style={{ color: t.text, fontWeight: '700', fontSize: ts, lineHeight: ts + 6, includeFontPadding: false }}>
                 Cancelar
               </Text>
             </TouchableOpacity>
@@ -529,6 +552,7 @@ const PriceEditModal = ({
 const ListDetailScreen = ({ route, navigation }) => {
   const { listId } = route.params;
   const { width } = useWindowDimensions();
+  const { tokens: t, scheme } = useTheme();
   const isWide = width >= 420;
   const isNarrow = width < 380;
   const sortWidth = width < 360 ? 110 : 130;
@@ -747,18 +771,18 @@ const ListDetailScreen = ({ route, navigation }) => {
 
   if (!list) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: t.background }]}>
+        <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={t.background} />
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <Text style={{ color: '#6B7280' }}>Carregando...</Text>
+          <Text style={{ color: t.muted }}>Carregando...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: t.background }]}>
+      <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={t.background} />
 
       <ListHeaderCard
         list={list}
@@ -904,6 +928,7 @@ const styles = StyleSheet.create({
   input: {
     ...inputContainerBase,
     paddingHorizontal: 12,
+    color: '#111827',
     textAlignVertical: 'center', // Mantém para centralizar
     // Removido paddingVertical e lineHeight, a altura será definida por 'btnHeight' no JSX
   },
@@ -915,7 +940,7 @@ const styles = StyleSheet.create({
     // Altura definida por 'btnHeight' no JSX
   },
   // Ajuste de baseline no Android para centralizar o texto do Picker (evita corte)
-  picker: { marginTop: Platform.OS === 'android' ? -2 : 0 }, // Estilo do picker em si
+  picker: { marginTop: Platform.OS === 'android' ? -2 : 0, color: '#111827' }, // Estilo do picker em si
   
   // MUDANÇA: 'priceWrap' usa o estilo base
   priceWrap: {
@@ -930,6 +955,7 @@ const styles = StyleSheet.create({
   priceTextInput: {
     flex: 1,
     marginLeft: 6,
+    color: '#111827',
     textAlignVertical: 'center',
     // Removemos o paddingVertical para deixar o alinhamento do wrapper funcionar
   },
@@ -986,6 +1012,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     textAlignVertical: 'center', // Mantido
+    color: '#111827',
   },
   sortWrap: {
     borderWidth: 1,
@@ -997,7 +1024,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
   },
   // Mesma correção para o Picker de ordenação
-  sortPicker: { height: 56, width: 130, marginTop: Platform.OS === 'android' ? -2 : 0 },
+  sortPicker: { height: 56, width: 130, marginTop: Platform.OS === 'android' ? -2 : 0, color: '#111827' },
   chipsRow: { paddingHorizontal: 14, paddingTop: 4, paddingBottom: 10, gap: 10 },
   categoryChip: {
     flexDirection: 'row',
@@ -1078,7 +1105,6 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 8,
   },
-  itemName: { fontWeight: '700', color: '#111827', lineHeight: 18, marginBottom: 2 },
   // Improve text layout on small screens
   // Allow name to shrink and remove extra font padding for tighter alignment
   itemName: { fontWeight: '700', color: '#111827', lineHeight: 18, marginBottom: 2, flexShrink: 1, includeFontPadding: false },

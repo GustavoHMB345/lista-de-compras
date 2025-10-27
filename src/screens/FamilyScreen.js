@@ -2,28 +2,29 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useContext, useMemo, useState } from 'react';
 import {
-  Alert,
-  Dimensions,
-  Modal,
-  Pressable,
-  ScrollView,
-  Share,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    Alert,
+    Dimensions,
+    Modal,
+    Pressable,
+    ScrollView,
+    Share,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../components/Button';
 import {
-  ChevronRightIcon,
-  ListCheckIcon,
-  MagnifyingGlassIcon,
-  ShieldIcon,
-  UserIcon,
-  UsersGroupIcon,
+    ChevronRightIcon,
+    ListCheckIcon,
+    MagnifyingGlassIcon,
+    ShieldIcon,
+    UserIcon,
+    UsersGroupIcon,
 } from '../components/Icons';
 import ScreensDefault from '../components/ScreensDefault';
+import { useTheme } from '../components/theme';
 import { DataContext } from '../contexts/DataContext';
 
 const { width } = Dimensions.get('window');
@@ -123,6 +124,7 @@ const familyStyles = StyleSheet.create({
 function FamilyScreen() {
   const { families, users, currentUser, shoppingLists, updateFamilies } =
     useContext(DataContext);
+  const { tokens: t, scheme } = useTheme();
   const router = useRouter();
   const [showNewFamily, setShowNewFamily] = useState(false);
   const [famName, setFamName] = useState('');
@@ -228,7 +230,7 @@ function FamilyScreen() {
   };
 
   return (
-    <SafeAreaView style={familyStyles.root} edges={['top']}>
+    <SafeAreaView style={[familyStyles.root, { backgroundColor: t.background }]} edges={['top']}>
       <ScreensDefault
         active="FAMILY"
         leftTab="LISTS"
@@ -241,54 +243,56 @@ function FamilyScreen() {
             : { cardHeight: 160, factor: 0.5, gap: 12, min: 24, max: 52 }
         }
       >
-        <LinearGradient
-          colors={['#EFF6FF', '#E0E7FF']}
-          style={[StyleSheet.absoluteFillObject, { zIndex: -1 }]}
-        />
+        {scheme === 'light' && (
+          <LinearGradient
+            colors={['#EFF6FF', '#E0E7FF']}
+            style={[StyleSheet.absoluteFillObject, { zIndex: -1 }]}
+          />
+        )}
 
         {/* Header */}
-        <View style={familyStyles.card}>
+        <View style={[familyStyles.card, { backgroundColor: t.card }]}>
           <View style={familyStyles.headerCenter}>
             <Text style={familyStyles.emoji}>👨‍👩‍👧‍👦</Text>
-            <Text style={familyStyles.title}>Minhas Famílias</Text>
-            <Text style={familyStyles.subtitle}>
+            <Text style={[familyStyles.title, { color: t.text }]}>Minhas Famílias</Text>
+            <Text style={[familyStyles.subtitle, { color: t.muted }]}>
               Gerencie as listas de compras das suas famílias
             </Text>
           </View>
           <View style={familyStyles.statsGrid}>
-            <View style={[familyStyles.statBox, { backgroundColor: '#EFF6FF' }]}>
+            <View style={[familyStyles.statBox, { backgroundColor: scheme === 'dark' ? 'rgba(59,130,246,0.12)' : '#EFF6FF' }]}>
               <UsersGroupIcon color="#2563EB" />
               <Text style={[familyStyles.statValue, { color: '#2563EB', marginTop: 4 }]}>
                 {stats.totalFamilies}
               </Text>
-              <Text style={familyStyles.statLabel}>Famílias</Text>
+              <Text style={[familyStyles.statLabel, { color: t.muted }]}>Famílias</Text>
             </View>
-            <View style={[familyStyles.statBox, { backgroundColor: '#ECFDF5' }]}>
+            <View style={[familyStyles.statBox, { backgroundColor: scheme === 'dark' ? 'rgba(16,185,129,0.12)' : '#ECFDF5' }]}>
               <ShieldIcon color="#16A34A" />
               <Text style={[familyStyles.statValue, { color: '#16A34A', marginTop: 4 }]}>
                 {stats.adminFamilies}
               </Text>
-              <Text style={familyStyles.statLabel}>Admin</Text>
+              <Text style={[familyStyles.statLabel, { color: t.muted }]}>Admin</Text>
             </View>
-            <View style={[familyStyles.statBox, { backgroundColor: '#FEFCE8' }]}>
+            <View style={[familyStyles.statBox, { backgroundColor: scheme === 'dark' ? 'rgba(202,138,4,0.12)' : '#FEFCE8' }]}>
               <UserIcon color="#CA8A04" />
               <Text style={[familyStyles.statValue, { color: '#CA8A04', marginTop: 4 }]}>
                 {stats.totalMembers}
               </Text>
-              <Text style={familyStyles.statLabel}>Membros</Text>
+              <Text style={[familyStyles.statLabel, { color: t.muted }]}>Membros</Text>
             </View>
-            <View style={[familyStyles.statBox, { backgroundColor: '#F5F3FF' }]}>
+            <View style={[familyStyles.statBox, { backgroundColor: scheme === 'dark' ? 'rgba(124,58,237,0.12)' : '#F5F3FF' }]}>
               <ListCheckIcon color="#7C3AED" />
               <Text style={[familyStyles.statValue, { color: '#7C3AED', marginTop: 4 }]}>
                 {stats.activeLists}
               </Text>
-              <Text style={familyStyles.statLabel}>Listas Ativas</Text>
+              <Text style={[familyStyles.statLabel, { color: t.muted }]}>Listas Ativas</Text>
             </View>
           </View>
           <View style={{ marginTop: 12 }}>
             <Text
               style={{
-                color: '#374151',
+                color: t.text,
                 fontSize: 12 * __fs,
                 marginBottom: 6,
                 fontWeight: '600',
@@ -302,11 +306,11 @@ function FamilyScreen() {
               </View>
               <TextInput
                 placeholder="Digite um nome ou descrição"
-                style={[familyStyles.input, familyStyles.inputWithIcon]}
+                style={[familyStyles.input, familyStyles.inputWithIcon, { backgroundColor: t.inputBg, borderColor: t.border, color: t.text }]}
                 value={famSearch}
                 onChangeText={setFamSearch}
-                placeholderTextColor="#9CA3AF"
-                selectionColor="#2563EB"
+                placeholderTextColor={t.muted}
+                selectionColor={t.primary}
               />
             </View>
             <View
@@ -336,7 +340,7 @@ function FamilyScreen() {
         >
           <View style={{ gap: 12 }}>
             {/* Quick access create pinned at top */}
-            <View style={[familyStyles.familyCard, { alignItems: 'center' }]}> 
+            <View style={[familyStyles.familyCard, { alignItems: 'center', backgroundColor: t.card, borderColor: t.border }]}> 
               <Button
                 title="Criar Nova Família"
                 onPress={() => setShowNewFamily(true)}
@@ -360,7 +364,7 @@ function FamilyScreen() {
               return (
                 <View
                   key={f.id}
-                  style={[familyStyles.familyCard, idx === 0 ? { minHeight: 200 } : null]}
+                  style={[familyStyles.familyCard, { backgroundColor: t.card, borderColor: t.border }, idx === 0 ? { minHeight: 200 } : null]}
                   onLayout={!measuredFamilyCardH && idx === 0 ? (e) => setMeasuredFamilyCardH(Math.round(e.nativeEvent.layout.height)) : undefined}
                 >
                   {isOwner && (
@@ -376,26 +380,26 @@ function FamilyScreen() {
                     onPress={() => setDetailsFamily(f)}
                   >
                     <View style={familyStyles.famHeaderText}>
-                      <Text style={familyStyles.famTitle}>{f.name}</Text>
-                      <Text style={familyStyles.famDesc}>
+                      <Text style={[familyStyles.famTitle, { color: t.text }]}>{f.name}</Text>
+                      <Text style={[familyStyles.famDesc, { color: t.muted }]}>
                         {f.description || 'Sem descrição'}
                       </Text>
                       {isOwner && (
-                        <Text style={{ color: '#6B7280', marginTop: 4, fontSize: 11 * __fs }}>
+                        <Text style={{ color: t.muted, marginTop: 4, fontSize: 11 * __fs }}>
                           Você é admin
                         </Text>
                       )}
                     </View>
-                    <ChevronRightIcon color="#9CA3AF" />
+                    <ChevronRightIcon color={t.muted} />
                   </Pressable>
                   <View style={[familyStyles.row, { marginTop: 12 }]}>
-                    <View style={[familyStyles.miniStat, { backgroundColor: '#EFF6FF' }]}>
+                    <View style={[familyStyles.miniStat, { backgroundColor: scheme === 'dark' ? 'rgba(59,130,246,0.12)' : '#EFF6FF' }]}>
                       <Text style={[familyStyles.miniVal, { color: '#2563EB' }]}>
                         {mems.length}
                       </Text>
                       <Text style={familyStyles.miniLab}>Membros</Text>
                     </View>
-                    <View style={[familyStyles.miniStat, { backgroundColor: '#ECFDF5' }]}>
+                    <View style={[familyStyles.miniStat, { backgroundColor: scheme === 'dark' ? 'rgba(16,185,129,0.12)' : '#ECFDF5' }]}>
                       <Text style={[familyStyles.miniVal, { color: '#16A34A' }]}>
                         {activeCount}
                       </Text>
@@ -442,28 +446,28 @@ function FamilyScreen() {
         onRequestClose={() => setShowNewFamily(false)}
       >
         <View style={familyStyles.modalWrap}>
-          <View style={familyStyles.modalCard}>
-            <Text style={{ fontSize: 18 * __fs, fontWeight: '700', color: '#111827' }}>
+          <View style={[familyStyles.modalCard, { backgroundColor: t.card }] }>
+            <Text style={{ fontSize: 18 * __fs, fontWeight: '700', color: t.text }}>
               Nova Família
             </Text>
-            <Text style={{ fontSize: 12 * __fs, color: '#6B7280', marginTop: 2 }}>
+            <Text style={{ fontSize: 12 * __fs, color: t.muted, marginTop: 2 }}>
               Dê um nome para sua família
             </Text>
             <TextInput
               placeholder="Nome da família"
-              style={familyStyles.input}
+              style={[familyStyles.input, { backgroundColor: t.inputBg, borderColor: t.border, color: t.text }]}
               value={famName}
               onChangeText={setFamName}
-              placeholderTextColor="#9CA3AF"
-              selectionColor="#2563EB"
+              placeholderTextColor={t.muted}
+              selectionColor={t.primary}
             />
             <TextInput
               placeholder="Descrição (opcional)"
-              style={familyStyles.input}
+              style={[familyStyles.input, { backgroundColor: t.inputBg, borderColor: t.border, color: t.text }]}
               value={famDesc}
               onChangeText={setFamDesc}
-              placeholderTextColor="#9CA3AF"
-              selectionColor="#2563EB"
+              placeholderTextColor={t.muted}
+              selectionColor={t.primary}
             />
             <View style={[familyStyles.rowEnd, { justifyContent: 'center' }]}>
               <Button variant="light" title="Cancelar" onPress={() => setShowNewFamily(false)} />
@@ -529,6 +533,7 @@ export default FamilyScreen;
 
 // Details & Manage Modals
 function FamilyDetailsModal({ visible, family, onClose, shoppingLists, users, currentUserId }) {
+  const { tokens: t } = useTheme();
   if (!family) return null;
   const mems = (family.members || []).map((id) => users.find((u) => u.id === id)).filter(Boolean);
   const active = shoppingLists.filter((l) => {
@@ -542,33 +547,33 @@ function FamilyDetailsModal({ visible, family, onClose, shoppingLists, users, cu
   return (
     <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
       <View style={familyStyles.modalWrap}>
-        <View style={familyStyles.modalCard}>
-          <Text style={{ fontSize: 18 * __fs, fontWeight: '700', color: '#111827' }}>
+        <View style={[familyStyles.modalCard, { backgroundColor: t.card }] }>
+          <Text style={{ fontSize: 18 * __fs, fontWeight: '700', color: t.text }}>
             {family.name}
           </Text>
           {currentUserId === family.owner && (
-            <Text style={{ color: '#6B7280', marginTop: 2, fontSize: 11 * __fs }}>
+            <Text style={{ color: t.muted, marginTop: 2, fontSize: 11 * __fs }}>
               Você é admin
             </Text>
           )}
           {family.description ? (
-            <Text style={{ color: '#6B7280', marginTop: 4 }}>{family.description}</Text>
+            <Text style={{ color: t.muted, marginTop: 4 }}>{family.description}</Text>
           ) : null}
           <View style={{ marginTop: 12 }}>
-            <Text style={{ fontWeight: '700', color: '#111827' }}>Membros</Text>
+            <Text style={{ fontWeight: '700', color: t.text }}>Membros</Text>
             {mems.length === 0 ? (
-              <Text style={{ color: '#6B7280' }}>Sem membros</Text>
+              <Text style={{ color: t.muted }}>Sem membros</Text>
             ) : (
               mems.map((m) => (
-                <Text key={m.id} style={{ color: '#374151', marginTop: 4 }}>
+                <Text key={m.id} style={{ color: t.text, marginTop: 4 }}>
                   • {m.displayName} {m.id === family.owner ? '(Admin)' : ''}
                 </Text>
               ))
             )}
           </View>
           <View style={{ marginTop: 12 }}>
-            <Text style={{ fontWeight: '700', color: '#111827' }}>Listas</Text>
-            <Text style={{ color: '#6B7280', marginTop: 4 }}>Ativas: {active.length}</Text>
+            <Text style={{ fontWeight: '700', color: t.text }}>Listas</Text>
+            <Text style={{ color: t.muted, marginTop: 4 }}>Ativas: {active.length}</Text>
           </View>
           <View style={[familyStyles.rowEnd, { justifyContent: 'center' }]}>
             <Button
@@ -598,17 +603,18 @@ function ManageMembersModal({
   onOwnerLeave,
 }) {
   if (!family) return null;
+  const { tokens: t } = useTheme();
   const sortedUsers = users.slice().sort((a, b) => a.displayName.localeCompare(b.displayName));
   return (
     <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
       <View style={familyStyles.modalWrap}>
-        <View style={familyStyles.modalCard}>
-          <Text style={{ fontSize: 18 * __fs, fontWeight: '700', color: '#111827' }}>
+        <View style={[familyStyles.modalCard, { backgroundColor: t.card }] }>
+          <Text style={{ fontSize: 18 * __fs, fontWeight: '700', color: t.text }}>
             Gerenciar Membros
           </Text>
-          <Text style={{ color: '#6B7280', marginTop: 2 }}>{family.name}</Text>
+          <Text style={{ color: t.muted, marginTop: 2 }}>{family.name}</Text>
           {currentUserId === family.owner && (
-            <Text style={{ color: '#6B7280', marginTop: 4, fontSize: 11 * __fs }}>
+            <Text style={{ color: t.muted, marginTop: 4, fontSize: 11 * __fs }}>
               Você é admin
             </Text>
           )}
@@ -626,7 +632,7 @@ function ManageMembersModal({
                     paddingVertical: 8,
                   }}
                 >
-                  <Text style={{ color: '#111827' }}>
+                  <Text style={{ color: t.text }}>
                     {u.displayName} {isOwner ? '(Admin)' : ''}
                   </Text>
                   <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -649,7 +655,7 @@ function ManageMembersModal({
             <View style={{ marginTop: 8, alignItems: 'center' }}>
               <Text
                 style={{
-                  color: '#6B7280',
+                  color: t.muted,
                   fontSize: 11 * __fs,
                   textAlign: 'center',
                   marginBottom: 6,
