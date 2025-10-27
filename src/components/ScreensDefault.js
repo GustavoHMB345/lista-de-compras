@@ -1,11 +1,11 @@
 import { useRouter } from 'expo-router';
 import React, { useContext, useMemo, useRef, useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { Dimensions, StyleSheet, View } from 'react-native';
+import PagerView from 'react-native-pager-view';
 import { DataContext } from '../contexts/DataContext';
 import { EVENTS, on } from '../navigation/EventBus';
 import Screen from './Screen';
 import SimpleAddListModal from './SimpleAddListModal';
-import SwipeNavigator from './SwipeNavigator';
 import TabBar from './TabBar';
 
 
@@ -24,6 +24,7 @@ export default function ScreensDefault({
   onPrimaryAction,
   primaryActionPlacement = 'tabbar', // 'tabbar' | 'floating'
   forceHideTabBar = false,
+  enableSwipeOverlay = true,
 }) {
   const router = useRouter();
   const { uiPrefs, shoppingLists, updateLists, currentUser } = useContext(DataContext) || {};
@@ -96,16 +97,33 @@ export default function ScreensDefault({
         );
       })()}
       {(() => {
-        const canSwipe = MAIN_TABS.current.has(active) && !forceHideTabBar;
+        const canSwipe = enableSwipeOverlay && MAIN_TABS.current.has(active) && !forceHideTabBar;
+        const tabsOrder = ['PROFILE', 'LISTS', 'FAMILY', 'DASHBOARD'];
+        const currentIndex = Math.max(0, tabsOrder.indexOf(active));
+        const { width, height } = Dimensions.get('window');
         return (
-          <SwipeNavigator
-            onSwipeLeft={canSwipe && rightTab ? () => handleNavigate(rightTab) : undefined}
-            onSwipeRight={canSwipe && leftTab ? () => handleNavigate(leftTab) : undefined}
-            allowSwipeLeft={canSwipe && !!rightTab}
-            allowSwipeRight={canSwipe && !!leftTab}
-            edgeFrom="any"
-            verticalTolerance={8}
-          >
+          <View style={{ flex: 1 }}>
+            {/* Overlay PagerView to capture horizontal swipe and navigate between tabs for a fluid feel. */}
+            {canSwipe ? (
+              <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} pointerEvents="box-none">
+                <PagerView
+                  style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                  initialPage={currentIndex < 0 ? 0 : currentIndex}
+                  scrollEnabled
+                  overScrollMode="never"
+                  orientation="horizontal"
+                  onPageSelected={(e) => {
+                    const idx = e.nativeEvent.position;
+                    const target = tabsOrder[idx];
+                    if (target && target !== active) handleNavigate(target);
+                  }}
+                >
+                  {tabsOrder.map((_, i) => (
+                    <View key={String(i)} style={{ width, height }} />
+                  ))}
+                </PagerView>
+              </View>
+            ) : null}
             <Screen
               tabBarHeight={56}
               tabBarPosition={uiPrefs?.tabBarPosition === 'top' ? 'top' : 'bottom'}
@@ -118,7 +136,7 @@ export default function ScreensDefault({
             >
               {children}
             </Screen>
-          </SwipeNavigator>
+          </View>
         );
       })()}
       {/* Global Add List modal for main tabs */}

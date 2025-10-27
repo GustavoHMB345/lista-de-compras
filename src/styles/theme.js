@@ -142,10 +142,15 @@ export const buildButtonTokens = (themeColors) => {
 };
 
 export const buildChipTokens = (themeColors) => {
+  // Determine light/dark heuristically from the theme background
+  const bg = (themeColors?.background || '').toLowerCase();
+  const isDark = !!bg && bg !== '#fff' && bg !== '#ffffff';
+
   const CHIP_BASE = {
     borderWidth: 1,
-    borderColor: themeColors?.tabIconDefault || colors.chipBorder,
-    backgroundColor: themeColors?.background || colors.chipBg,
+    // Light: soft gray pill; Dark: solid black as requested
+    borderColor: isDark ? '#2A2F33' : colors.chipBorder,
+    backgroundColor: isDark ? '#000000' : colors.chipBg,
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderRadius: 999,
@@ -157,16 +162,19 @@ export const buildChipTokens = (themeColors) => {
     gap: 6,
   };
   const CHIP_ACTIVE = {
-    backgroundColor: themeColors?.tint || colors.primary,
-    borderColor: themeColors?.tint || colors.primary,
+    // Light: keep brand primary; Dark: invert to white with black text
+    backgroundColor: isDark ? '#FFFFFF' : colors.primary,
+    borderColor: isDark ? '#FFFFFF' : colors.primary,
   };
   const CHIP_TEXT = {
-    color: themeColors?.text || '#374151',
+    // Light: dark text; Dark: light text (on black base)
+    color: isDark ? '#FFFFFF' : '#111827',
     fontWeight: '600',
     fontSize: 12,
   };
   const CHIP_TEXT_ACTIVE = {
-    color: themeColors?.background || '#ffffff',
+    // Light active (blue bg): white; Dark active (white bg): black
+    color: isDark ? '#000000' : '#ffffff',
   };
   return { CHIP_BASE, CHIP_ACTIVE, CHIP_TEXT, CHIP_TEXT_ACTIVE };
 };

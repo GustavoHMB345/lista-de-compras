@@ -1,21 +1,22 @@
 import * as Haptics from 'expo-haptics';
 import React from 'react';
 import {
-    Animated,
-    Dimensions,
-    FlatList,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Animated,
+  Dimensions,
+  FlatList,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import useFontScale from '../hooks/useFontScale';
 import Button from './Button';
+import Chip from './Chip';
 import { BackIcon, CategoryIcon, PlusIcon } from './Icons';
 
 // Categorias da LISTA (mantidas separadas das categorias de itens)
@@ -482,6 +483,7 @@ export default function AddListModal({ visible, onClose, onCreate }) {
                       ]}
                       onPress={() => setCategory(cat.key)}
                       activeOpacity={0.85}
+                      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                     >
                       <CategoryIcon
                         type={cat.key}
@@ -510,31 +512,15 @@ export default function AddListModal({ visible, onClose, onCreate }) {
                   renderItem={({ item }) => {
                     const [key, cfg] = item;
                     return (
-                      <TouchableOpacity
+                      <Chip
+                        emoji={cfg.emoji}
+                        label={cfg.name}
+                        active={itemCategory === key}
                         onPress={() => setItemCategory(key)}
-                        style={{
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          backgroundColor: itemCategory === key ? '#4f46e5' : '#fff',
-                          borderWidth: 1,
-                          borderColor: itemCategory === key ? '#4f46e5' : '#e5e7eb',
-                          paddingHorizontal: 12,
-                          paddingVertical: 8,
-                          borderRadius: 12,
-                          marginRight: 8,
-                        }}
-                        activeOpacity={0.85}
-                      >
-                        <Text
-                          style={{
-                            color: itemCategory === key ? '#fff' : '#111827',
-                            fontWeight: '600',
-                            fontSize: 13 * fs,
-                          }}
-                        >
-                          {cfg.emoji} {cfg.name}
-                        </Text>
-                      </TouchableOpacity>
+                        style={{ marginRight: 8, minHeight: 40 }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Categoria do item: ${cfg.name}`}
+                      />
                     );
                   }}
                 />

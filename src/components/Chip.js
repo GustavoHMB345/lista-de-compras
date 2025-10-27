@@ -1,7 +1,5 @@
-import React from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import { Colors } from '../../constants/Colors';
-import { useColorScheme } from '../../hooks/useColorScheme';
 import {
   CHIP_ACTIVE as STATIC_CHIP_ACTIVE,
   CHIP_BASE as STATIC_CHIP_BASE,
@@ -10,6 +8,7 @@ import {
   buildChipTokens,
   getRipple,
 } from '../styles/theme';
+import { useTheme } from './theme';
 
 export default function Chip({
   label,
@@ -18,15 +17,19 @@ export default function Chip({
   onPress,
   style,
   textStyle,
+  count,
+  countContainerStyle,
+  countTextStyle,
   children,
   accessibilityLabel,
   accessibilityRole,
   testID,
   ...rest
 }) {
-  const theme = useColorScheme?.() ?? 'light';
+  // Use app ThemeProvider for consistent scheme across the app (avoids mismatch with system scheme)
+  const { scheme } = useTheme?.() || { scheme: 'light' };
   const { CHIP_BASE, CHIP_ACTIVE, CHIP_TEXT, CHIP_TEXT_ACTIVE } = buildChipTokens(
-    Colors?.[theme] || {},
+    Colors?.[scheme] || {},
   );
   // Compute effective background to choose contrasting text color
   const isLightColor = (c) => {
@@ -59,27 +62,52 @@ export default function Chip({
   const baseStyle = CHIP_BASE || STATIC_CHIP_BASE;
   const activeStyle = active ? CHIP_ACTIVE || STATIC_CHIP_ACTIVE : null;
   const flattened = StyleSheet.flatten([baseStyle, activeStyle, style]) || {};
+  // Fallbacks for responsiveness and touch target when theme doesn't define them
+  const fallbackChipStyle = {};
+  if (flattened.minHeight == null) fallbackChipStyle.minHeight = 40;
+  if (flattened.paddingHorizontal == null) fallbackChipStyle.paddingHorizontal = 12;
+  if (flattened.paddingVertical == null) fallbackChipStyle.paddingVertical = 8;
+  if (flattened.borderRadius == null) fallbackChipStyle.borderRadius = 999;
+  if (flattened.alignItems == null) fallbackChipStyle.alignItems = 'center';
+  if (flattened.flexDirection == null) fallbackChipStyle.flexDirection = 'row';
   const effectiveBg = flattened.backgroundColor;
   const computedLabelColor = isLightColor(effectiveBg) ? '#111827' : '#ffffff';
+  // Badge styles derived from background brightness (works for both active/inactive)
+  const bgIsLight = isLightColor(effectiveBg);
+  const badgeBg = bgIsLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.18)';
+  const badgeTextColor = bgIsLight ? '#1F2937' : '#ECEDEE';
+  // Adaptive ripple color to avoid odd tints on different backgrounds
+  const rippleColor = (() => {
+    // When background is light (e.g., white active chip in dark theme), use a subtle dark ripple
+    // When background is dark (e.g., black base in dark theme or blue active in light), use a subtle light ripple
+    if (isLightColor((StyleSheet.flatten([baseStyle, active && activeStyle]) || {}).backgroundColor)) {
+      return 'rgba(0,0,0,0.08)';
+    }
+    return 'rgba(255,255,255,0.16)';
+  })();
+
   return (
     <Pressable
       onPress={onPress}
-      android_ripple={getRipple('rgba(37,99,235,0.18)')}
+      android_ripple={getRipple(rippleColor)}
       style={({ pressed }) => [
         baseStyle,
         active && (activeStyle || STATIC_CHIP_ACTIVE),
-        pressed && { opacity: 0.9 },
+        // Avoid whitening the chip on press; use a subtle scale instead of opacity
+        pressed && { transform: [{ scale: 0.98 }] },
+        fallbackChipStyle,
         style,
       ]}
       accessibilityRole={accessibilityRole || 'button'}
       accessibilityLabel={accessibilityLabel || label}
       testID={testID}
+      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
       {...rest}
     >
       {emoji ? (
         <Text
           style={[
-            { fontSize: 12 },
+            { fontSize: 12, marginRight: 8 },
             active && (CHIP_TEXT_ACTIVE || STATIC_CHIP_TEXT_ACTIVE),
             { color: computedLabelColor },
           ]}
@@ -91,17 +119,42 @@ export default function Chip({
       {children ? (
         children
       ) : (
-        <Text
-          style={[
-            CHIP_TEXT || STATIC_CHIP_TEXT,
-            active && (CHIP_TEXT_ACTIVE || STATIC_CHIP_TEXT_ACTIVE),
-            { color: computedLabelColor },
-            textStyle,
-          ]}
-          maxFontSizeMultiplier={1.2}
-        >
-          {label}
-        </Text>
+        <>
+          <Text
+            style={[
+              CHIP_TEXT || STATIC_CHIP_TEXT,
+              active && (CHIP_TEXT_ACTIVE || STATIC_CHIP_TEXT_ACTIVE),
+              { color: computedLabelColor },
+              textStyle,
+            ]}
+            maxFontSizeMultiplier={1.2}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {label}
+          </Text>
+          {typeof count !== 'undefined' && count !== null && (
+            <Text
+              style={[
+                {
+                  marginLeft: 10,
+                  backgroundColor: badgeBg,
+                  paddingHorizontal: 8,
+                  paddingVertical: 3,
+                  borderRadius: 999,
+                  fontSize: 12,
+                  color: badgeTextColor,
+                  textAlignVertical: 'center',
+                  includeFontPadding: false,
+                },
+                countTextStyle,
+              ]}
+              maxFontSizeMultiplier={1.2}
+            >
+              {String(count)}
+            </Text>
+          )}
+        </>
       )}
     </Pressable>
   );

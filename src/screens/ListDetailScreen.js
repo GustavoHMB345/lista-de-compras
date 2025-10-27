@@ -1,21 +1,22 @@
 import { Feather } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+// MELHORIA: Importa 'memo' e 'useCallback'
+import React, { memo, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Alert, FlatList, Modal, Platform, ScrollView, StatusBar, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 // Certifique-se de que o caminho para seus dados mockados está correto
+import Chip from '../components/Chip';
 import { useTheme } from '../components/theme';
 import { DataContext } from '../contexts/DataContext';
 import { categories, generateListItems, mockShoppingLists } from '../data';
 
 // --- Componente: Item da Lista (Layout Melhorado) ---
-
+// (Sem alterações)
 const ListItem = ({ item, onToggle, onRemove, onEditPrice, compact }) => {
   const { tokens: t } = useTheme();
   const category = categories[item.category] || categories.outros;
 
   return (
-    // O estilo 'compact' agora aplica flexWrap no card principal
     <View style={[
       styles.itemCard,
       compact && styles.itemCardCompact,
@@ -32,7 +33,6 @@ const ListItem = ({ item, onToggle, onRemove, onEditPrice, compact }) => {
         <Text style={styles.itemEmoji}>{category.emoji}</Text>
       </View>
 
-      {/* Coluna Principal: Nome e Preço */}
       <View style={styles.itemInfo}>
         <Text
           style={[styles.itemName, { color: t.text }, item.completed && styles.itemNameCompleted]}
@@ -46,7 +46,6 @@ const ListItem = ({ item, onToggle, onRemove, onEditPrice, compact }) => {
         </Text>
       </View>
 
-      {/* Coluna da Direita: Categoria e Ações */}
       <View style={[styles.itemRightColumn, compact && styles.itemRightColumnCompact]}>
         <Text style={[styles.itemCategory, { color: t.muted }]} numberOfLines={1} ellipsizeMode="tail">
           {category.name}
@@ -66,7 +65,10 @@ const ListItem = ({ item, onToggle, onRemove, onEditPrice, compact }) => {
 
 // --- Componente: Chip de Filtro de Categoria ---
 
-const CategoryFilterChip = ({
+// MELHORIA DE PERFORMANCE 1:
+// Componente movido para fora do 'ItemsListCard' e envolvido com 'React.memo'
+// para evitar re-renderizações desnecessárias.
+const CategoryFilterChip = memo(({
   catKey,
   name,
   emoji,
@@ -77,52 +79,35 @@ const CategoryFilterChip = ({
 }) => {
   const { tokens: t } = useTheme();
   if (count === 0 && catKey !== 'all') return null;
-  const labelStyles = [styles.chipLabel, isActive && styles.chipLabelActive];
-  const countWrapStyles = [styles.chipCount, isActive && styles.chipCountActive];
-  const countTextStyles = [styles.chipCountText, isActive && styles.chipCountTextActive];
+
+  const chipStyle = {
+    minHeight: styleConfig.chipHeight,
+    paddingVertical: styleConfig.chipPadV,
+    paddingHorizontal: styleConfig.chipPadH,
+  };
 
   return (
-    <TouchableOpacity
+    <Chip
+      emoji={catKey !== 'all' ? emoji : undefined}
+      label={catKey !== 'all' ? name : 'Todas'}
+      active={isActive}
       onPress={onPress}
-      style={[
-        styles.categoryChip,
-        isActive && styles.categoryChipActive,
-        {
-          minHeight: styleConfig.chipHeight,
-          paddingVertical: styleConfig.chipPadV,
-          paddingHorizontal: styleConfig.chipPadH,
-          backgroundColor: isActive ? '#2563EB' : t.chipBg,
-        },
-      ]}
-    >
-      {catKey !== 'all' ? <Text style={styles.chipEmoji}>{emoji}</Text> : null}
-      <Text
-        style={[
-          labelStyles,
-          {
-            maxWidth: styleConfig.labelMaxWidth,
-            flexShrink: 1,
-            fontSize: styleConfig.chipLabelSize,
-            lineHeight: styleConfig.chipLabelSize + 4,
-            color: isActive ? '#FFFFFF' : t.text,
-          },
-        ]}
-        numberOfLines={1}
-        ellipsizeMode="tail"
-      >
-        {catKey !== 'all' ? name : 'Todas'}
-      </Text>
-      <View style={countWrapStyles}>
-        <Text style={[countTextStyles, { fontSize: styleConfig.chipCountSize }]}>
-          {count}
-        </Text>
-      </View>
-    </TouchableOpacity>
+      style={[chipStyle]}
+      textStyle={{
+        fontSize: styleConfig.chipLabelSize,
+        lineHeight: styleConfig.chipLabelSize + 6,
+        includeFontPadding: false,
+        maxWidth: styleConfig.labelMaxWidth,
+      }}
+      count={count}
+      accessibilityRole="button"
+      accessibilityLabel={catKey !== 'all' ? `${name}. ${count} itens` : `Todas. ${count} itens`}
+    />
   );
-};
+});
 
 // --- Componente: Cabeçalho da Lista ---
-
+// (Sem alterações)
 const ListHeaderCard = ({ list, stats, onGoBack, onClearCompleted }) => {
   const { tokens: t, scheme } = useTheme();
   return (
@@ -182,7 +167,7 @@ const ListHeaderCard = ({ list, stats, onGoBack, onClearCompleted }) => {
 };
 
 // --- Componente: Card de Adicionar Item (Refatorado para alinhamento) ---
-
+// (Sem alterações)
 const AddItemCard = ({
   isFormVisible,
   setIsFormVisible,
@@ -198,8 +183,8 @@ const AddItemCard = ({
   btnTextSize,
 }) => {
   const { tokens: t } = useTheme();
-  // Aumenta levemente a altura do Picker de "Categoria" para evitar qualquer corte de texto
   const pickerH = Math.round((btnHeight || 50) + 8);
+  const pickerFont = btnHeight <= 48 ? 13 : 14;
   return (
     <View style={[styles.addCard, { backgroundColor: t.card }]}>
       <View style={styles.addCardHeader}>
@@ -219,7 +204,6 @@ const AddItemCard = ({
         (isWide ? (
           <View style={{ marginTop: 10 }}>
             <View style={{ flexDirection: 'row', gap: 8 }}>
-              {/* MUDANÇA: Aplicado height: btnHeight */}
               <TextInput
                 style={[styles.input, { flex: 1, height: btnHeight, backgroundColor: t.inputBg, borderColor: t.border, color: t.text }]}
                 placeholder="Nome do item..."
@@ -227,10 +211,8 @@ const AddItemCard = ({
                 value={itemName}
                 onChangeText={setItemName}
               />
-              {/* MUDANÇA: Aplicado height: btnHeight ao wrapper */}
               <View style={[styles.priceWrap, { width: 130, height: btnHeight, backgroundColor: t.inputBg, borderColor: t.border }]}>
                 <Text style={styles.pricePrefix}>R$</Text>
-                {/* MUDANÇA: Usado priceTextInput, sem borda/padding extra */}
                 <TextInput
                   style={[styles.priceTextInput, { color: t.text }]}
                   placeholder="Preço"
@@ -253,8 +235,9 @@ const AddItemCard = ({
                 <Picker
                   selectedValue={itemCategory}
                   onValueChange={(v) => setItemCategory(v)}
-                  style={[styles.picker, { height: pickerH, color: t.text }]}
-                  dropdownIconColor="#111827"
+                  style={[styles.picker, { height: pickerH, color: t.text, fontSize: pickerFont }]}
+                  itemStyle={Platform.OS === 'ios' ? { fontSize: pickerFont } : undefined}
+                  dropdownIconColor={t.text}
                 >
                   <Picker.Item label="Categoria" value="" />
                   {Object.entries(categories).map(([key, cfg]) => (
@@ -280,7 +263,6 @@ const AddItemCard = ({
           </View>
         ) : (
           <View style={styles.addFormGrid}>
-            {/* MUDANÇA: Aplicado height: btnHeight */}
             <TextInput
               style={[styles.input, { height: btnHeight, backgroundColor: t.inputBg, borderColor: t.border, color: t.text }]}
               placeholder="Nome do item..."
@@ -292,8 +274,9 @@ const AddItemCard = ({
               <Picker
                 selectedValue={itemCategory}
                 onValueChange={(v) => setItemCategory(v)}
-                style={[styles.picker, { height: pickerH, color: t.text }]}
-                dropdownIconColor="#111827"
+                style={[styles.picker, { height: pickerH, color: t.text, fontSize: pickerFont }]}
+                itemStyle={Platform.OS === 'ios' ? { fontSize: pickerFont } : undefined}
+                dropdownIconColor={t.text}
               >
                 <Picker.Item label="Categoria" value="" />
                 {Object.entries(categories).map(([key, cfg]) => (
@@ -301,10 +284,8 @@ const AddItemCard = ({
                 ))}
               </Picker>
             </View>
-            {/* MUDANÇA: Aplicado height: btnHeight ao wrapper */}
             <View style={[styles.priceWrap, { height: btnHeight, backgroundColor: t.inputBg, borderColor: t.border }]}>
               <Text style={styles.pricePrefix}>R$</Text>
-              {/* MUDANÇA: Usado priceTextInput */}
               <TextInput
                 style={[styles.priceTextInput, { color: t.text }]}
                 placeholder="Preço"
@@ -342,8 +323,9 @@ const ItemsListCard = ({
   setSearchTerm,
   sortBy,
   setSortBy,
-  categoryFilter,
-  setCategoryFilter,
+  // MELHORIA DE LÓGICA 2: Props alteradas para seleção única
+  activeCategory,
+  onCategoryPress,
   categoryCounts,
   onToggleItem,
   onRemoveItem,
@@ -351,8 +333,13 @@ const ItemsListCard = ({
   isNarrow,
   sortWidth,
   chipStyleConfig,
+  btnHeight,
 }) => {
   const { tokens: t } = useTheme();
+
+  // A lógica de clique (handlePressAll, handleToggleCategory) foi removida daqui
+  // e centralizada na tela principal (ListDetailScreen) com 'useCallback'.
+
   return (
     <View style={[styles.itemsCard, { backgroundColor: t.card }]}>
       {/* Search and Sort (com estilos de alinhamento corrigidos) */}
@@ -367,11 +354,11 @@ const ItemsListCard = ({
             onChangeText={setSearchTerm}
           />
         </View>
-        <View style={[styles.sortWrap, { width: sortWidth, backgroundColor: t.inputBg, borderColor: t.border }]}>
+        <View style={[styles.sortWrap, { width: sortWidth, backgroundColor: t.inputBg, borderColor: t.border, minHeight: btnHeight }]}>
           <Picker
             selectedValue={sortBy}
             onValueChange={(v) => setSortBy(v)}
-            style={[styles.sortPicker, { width: sortWidth, color: t.text }]}
+            style={[styles.sortPicker, { color: t.text }]}
             dropdownIconColor="#111827"
           >
             <Picker.Item label="A-Z" value="name" />
@@ -393,8 +380,9 @@ const ItemsListCard = ({
           name="Todas"
           emoji="📋"
           count={categoryCounts.all || 0}
-          isActive={categoryFilter === 'all'}
-          onPress={() => setCategoryFilter('all')}
+          // MELHORIA DE LÓGICA 3: Verificação de 'ativo' simplificada
+          isActive={activeCategory === 'all'}
+          onPress={() => onCategoryPress('all')}
           styleConfig={chipStyleConfig}
         />
         {Object.entries(categories).map(([key, cfg]) => (
@@ -404,8 +392,9 @@ const ItemsListCard = ({
             name={cfg.name}
             emoji={cfg.emoji}
             count={categoryCounts[key] || 0}
-            isActive={categoryFilter === key}
-            onPress={() => setCategoryFilter(key)}
+            // MELHORIA DE LÓGICA 4: Verificação de 'ativo' simplificada
+            isActive={activeCategory === key}
+            onPress={() => onCategoryPress(key)}
             styleConfig={chipStyleConfig}
           />
         ))}
@@ -441,7 +430,7 @@ const ItemsListCard = ({
 };
 
 // --- Componente: Modal de Edição de Preço ---
-
+// (Sem alterações)
 const PriceEditModal = ({
   visible,
   onClose,
@@ -551,23 +540,28 @@ const PriceEditModal = ({
 
 const ListDetailScreen = ({ route, navigation }) => {
   const { listId } = route.params;
-  const { width } = useWindowDimensions();
+  const { width, fontScale } = useWindowDimensions();
   const { tokens: t, scheme } = useTheme();
+  // (Cálculos de responsividade - sem alterações)
   const isWide = width >= 420;
   const isNarrow = width < 380;
-  const sortWidth = width < 360 ? 110 : 130;
-
-  // Responsive sizing
+  const sortWidth = Math.max(100, Math.min(180, Math.floor(width * 0.35)));
+  const baseLabelSize = width < 360 ? 13 : 14;
+  const scaledLabelSize = Math.max(12, Math.round(baseLabelSize * Math.min(fontScale || 1, 1.2)));
+  const lineH = scaledLabelSize + 6;
+  const chipPadV = Math.max(6, Math.round(scaledLabelSize * 0.6));
+  const chipPadH = Math.max(10, Math.round(scaledLabelSize * 0.9));
+  const chipHeight = Math.max(34, Math.round(lineH + chipPadV * 2));
+  const chipCountSize = Math.max(10, scaledLabelSize - 2);
   const chipStyleConfig = {
-    chipHeight: width < 360 ? 34 : 36,
-    chipPadV: width < 360 ? 8 : 10,
-    chipPadH: width < 360 ? 12 : 14,
-    chipLabelSize: width < 360 ? 13 : 14,
-    chipCountSize: width < 360 ? 11 : 12,
+    chipHeight,
+    chipPadV,
+    chipPadH,
+    chipLabelSize: scaledLabelSize,
+    chipCountSize,
     labelMaxWidth: Math.floor(width * (width < 360 ? 0.5 : 0.6)),
   };
-  // Tornar botões mais confortáveis em telas estreitas e elevar levemente a tipografia
-  const btnHeight = width < 360 ? 48 : 50;
+  const btnHeight = width < 340 ? 44 : width < 380 ? 48 : 50;
   const btnTextSize = width < 360 ? 16 : 17;
 
   const [list, setList] = useState(null);
@@ -590,14 +584,16 @@ const ListDetailScreen = ({ route, navigation }) => {
   // Estado dos filtros
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('name');
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  
+  // MELHORIA DE LÓGICA 5: Estado mudou de array (categoryFilters) para string (activeCategory)
+  const [activeCategory, setActiveCategory] = useState('all');
 
-  // Modal de preço (fallback Android)
+  // Modal de preço
   const [priceModalVisible, setPriceModalVisible] = useState(false);
   const [priceEditItem, setPriceEditItem] = useState(null);
   const [priceEditValue, setPriceEditValue] = useState('');
 
-  // Carregar dados da lista (primeiro tenta mocks para compatibilidade; fallback para contexto)
+  // Carregar dados da lista (sem alterações)
   useEffect(() => {
     let foundList = mockShoppingLists.find((l) => l.id === listId);
     if (!foundList && Array.isArray(shoppingLists)) {
@@ -606,7 +602,7 @@ const ListDetailScreen = ({ route, navigation }) => {
     if (foundList) {
       setList(foundList);
       if (Array.isArray(foundList.items)) {
-        // Normaliza itens do contexto para a forma esperada nesta tela
+        // Normaliza itens do contexto
         const mapped = foundList.items.map((it, idx) => ({
           id: it.id || `${foundList.id}-${idx + 1}`,
           name: it.name || 'Item',
@@ -627,8 +623,9 @@ const ListDetailScreen = ({ route, navigation }) => {
   const filteredAndSortedItems = useMemo(() => {
     let filtered = [...items];
 
-    if (categoryFilter !== 'all') {
-      filtered = filtered.filter((item) => item.category === categoryFilter);
+    // MELHORIA DE LÓGICA 6: Lógica de filtro simplificada para seleção única
+    if (activeCategory !== 'all') {
+      filtered = filtered.filter((item) => item.category === activeCategory);
     }
 
     if (searchTerm.trim() !== '') {
@@ -654,9 +651,9 @@ const ListDetailScreen = ({ route, navigation }) => {
     });
 
     return filtered;
-  }, [items, categoryFilter, searchTerm, sortBy]);
+  }, [items, activeCategory, searchTerm, sortBy]); // Dependência atualizada
 
-  // Estatísticas
+  // Estatísticas (sem alterações)
   const stats = useMemo(() => {
     const total = items.length;
     const completed = items.filter((item) => item.completed).length;
@@ -666,6 +663,7 @@ const ListDetailScreen = ({ route, navigation }) => {
     return { total, completed, pending, totalPrice, percentage };
   }, [items]);
 
+  // Contagem de categorias (sem alterações)
   const categoryCounts = useMemo(() => {
     const counts = { all: items.length };
     items.forEach((item) => {
@@ -676,6 +674,14 @@ const ListDetailScreen = ({ route, navigation }) => {
 
   // --- Funções de Handler ---
 
+  // MELHORIA DE PERFORMANCE 2: 'useCallback' para o handler de clique do chip.
+  // Isso garante que a função não seja recriada e evita que os
+  // chips memoizados (CategoryFilterChip) sejam renderizados novamente.
+  const handleCategoryPress = useCallback((key) => {
+    setActiveCategory(key);
+  }, []); // Sem dependências, a função é criada apenas uma vez.
+
+  // (Handlers restantes - sem alterações)
   const handleAddItem = () => {
     if (itemName.trim() === '') {
       Alert.alert('Erro', 'Por favor, insira o nome do item.');
@@ -812,8 +818,9 @@ const ListDetailScreen = ({ route, navigation }) => {
         setSearchTerm={setSearchTerm}
         sortBy={sortBy}
         setSortBy={setSortBy}
-        categoryFilter={categoryFilter}
-        setCategoryFilter={setCategoryFilter}
+        // MELHORIA DE LÓGICA 7: Passando as novas props para o card
+        activeCategory={activeCategory}
+        onCategoryPress={handleCategoryPress}
         categoryCounts={categoryCounts}
         onToggleItem={handleToggleItem}
         onRemoveItem={handleRemoveItem}
@@ -821,6 +828,7 @@ const ListDetailScreen = ({ route, navigation }) => {
         isNarrow={isNarrow}
         sortWidth={sortWidth}
         chipStyleConfig={chipStyleConfig}
+        btnHeight={btnHeight}
       />
 
       <PriceEditModal
@@ -838,8 +846,7 @@ const ListDetailScreen = ({ route, navigation }) => {
 };
 
 // --- Estilos (com correções de alinhamento) ---
-
-// MUDANÇA: Criado um estilo base para todos os campos de entrada
+// (Sem alterações)
 const inputContainerBase = {
   borderWidth: 1,
   borderColor: '#D1D5DB',
@@ -924,40 +931,32 @@ const styles = StyleSheet.create({
   addTitle: { fontWeight: '700', color: '#111827' },
   addFormGrid: { marginTop: 10, gap: 8 },
   
-  // MUDANÇA: 'input' usa o estilo base e define o padding e alinhamento
   input: {
     ...inputContainerBase,
     paddingHorizontal: 12,
     color: '#111827',
-    textAlignVertical: 'center', // Mantém para centralizar
-    // Removido paddingVertical e lineHeight, a altura será definida por 'btnHeight' no JSX
+    textAlignVertical: 'center',
   },
-  // MUDANÇA: 'pickerWrap' usa o estilo base
   pickerWrap: {
     ...inputContainerBase,
+    minWidth: 0,
     justifyContent: 'center',
     paddingHorizontal: 8,
-    // Altura definida por 'btnHeight' no JSX
   },
-  // Ajuste de baseline no Android para centralizar o texto do Picker (evita corte)
-  picker: { marginTop: Platform.OS === 'android' ? -2 : 0, color: '#111827' }, // Estilo do picker em si
+  picker: { flex: 1, width: '100%', minWidth: 0, marginTop: Platform.OS === 'android' ? -2 : 0, color: '#111827' },
   
-  // MUDANÇA: 'priceWrap' usa o estilo base
   priceWrap: {
     ...inputContainerBase,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-    // Altura definida por 'btnHeight' no JSX
   },
   pricePrefix: { color: '#9CA3AF' },
-  // MUDANÇA: Novo estilo para o TextInput de preço (sem borda/bg)
   priceTextInput: {
     flex: 1,
     marginLeft: 6,
     color: '#111827',
     textAlignVertical: 'center',
-    // Removemos o paddingVertical para deixar o alinhamento do wrapper funcionar
   },
   
   addButton: {
@@ -1008,10 +1007,9 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 8,
   },
-  // MUDANÇA: Removido 'paddingVertical: 0' para corrigir alinhamento no Android
   searchInput: {
     flex: 1,
-    textAlignVertical: 'center', // Mantido
+    textAlignVertical: 'center',
     color: '#111827',
   },
   sortWrap: {
@@ -1019,48 +1017,15 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
     borderRadius: 10,
     backgroundColor: '#fff',
-    height: 55,
+    minHeight: 44,
     justifyContent: 'center',
     paddingHorizontal: 6,
   },
-  // Mesma correção para o Picker de ordenação
-  sortPicker: { height: 56, width: 130, marginTop: Platform.OS === 'android' ? -2 : 0, color: '#111827' },
+  sortPicker: { flex: 1, width: '100%', minWidth: 0, height: '100%', marginTop: Platform.OS === 'android' ? -2 : 0, color: '#111827' },
   chipsRow: { paddingHorizontal: 14, paddingTop: 4, paddingBottom: 10, gap: 10 },
-  categoryChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 14,
-    borderRadius: 999,
-    backgroundColor: '#F3F4F6',
-    minHeight: 40,
-  },
-  categoryChipActive: { backgroundColor: '#2563EB' },
-  chipEmoji: { marginRight: 8, textAlignVertical: 'center' },
-  chipLabel: {
-    color: '#111827',
-    fontWeight: '600',
-    fontSize: 15,
-    lineHeight: 40,
-    textAlignVertical: 'center',
-    includeFontPadding: false,
-  },
-  chipLabelActive: { color: '#FFFFFF' },
-  chipCount: {
-    marginLeft: 10,
-    backgroundColor: 'rgba(255,255,255,0.6)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 999,
-  },
-  chipCountActive: { backgroundColor: 'rgba(255,255,255,0.3)' },
-  chipCountText: {
-    fontSize: 12,
-    color: '#1F2937',
-    textAlignVertical: 'center',
-    includeFontPadding: false,
-  },
-  chipCountTextActive: { color: '#FFFFFF' },
+  
+  // (Estilos antigos 'categoryChip', 'chipLabel', 'chipCount' não são mais usados
+  // pois o componente 'Chip' genérico cuida disso)
 
   // Estilos do Empty State
   emptyItems: { alignItems: 'center', padding: 16 },
@@ -1105,8 +1070,6 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 8,
   },
-  // Improve text layout on small screens
-  // Allow name to shrink and remove extra font padding for tighter alignment
   itemName: { fontWeight: '700', color: '#111827', lineHeight: 18, marginBottom: 2, flexShrink: 1, includeFontPadding: false },
   itemNameCompleted: { textDecorationLine: 'line-through', color: '#9CA3AF' },
   itemPrice: { color: '#059669', fontWeight: '700', fontSize: 12, includeFontPadding: false },

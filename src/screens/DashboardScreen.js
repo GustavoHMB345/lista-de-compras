@@ -244,6 +244,7 @@ export default function DashboardScreen() {
         active="DASHBOARD"
         leftTab="FAMILY"
         rightTab={undefined}
+        enableSwipeOverlay={false}
         contentStyle={styles.scroll}
   overlayBottomSpacer={0}
         scrollEndFromCardHeight={

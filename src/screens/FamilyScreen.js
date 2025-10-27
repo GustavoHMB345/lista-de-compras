@@ -235,6 +235,7 @@ function FamilyScreen() {
         active="FAMILY"
         leftTab="LISTS"
         rightTab="DASHBOARD"
+        enableSwipeOverlay={false}
         contentStyle={familyStyles.scroll}
   overlayBottomSpacer={0}
         scrollEndFromCardHeight={

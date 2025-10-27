@@ -2,14 +2,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useContext, useEffect, useState } from 'react';
 import {
-  Animated,
-  Dimensions,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    Animated,
+    Dimensions,
+    StyleSheet,
+    Switch,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../components/Button';
@@ -159,6 +159,7 @@ function ProfileScreen() {
         active="PROFILE"
         leftTab={undefined}
         rightTab="LISTS"
+        enableSwipeOverlay={false}
         contentStyle={profileStyles.scrollContent}
   overlayBottomSpacer={0}
       >

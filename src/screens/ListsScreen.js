@@ -104,11 +104,12 @@ const ListScreen = () => {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: t.background }]}>
       <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={t.background} />
 
-      <ScreensDefault
+  <ScreensDefault
         active="LISTS"
         leftTab="PROFILE"
         rightTab="FAMILY"
         scroll={false}
+  enableSwipeOverlay={false}
   overlayBottomSpacer={0}
         scrollEndFromCardHeight={
           measuredCardH
