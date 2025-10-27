@@ -28,7 +28,11 @@ const ListItem = ({ item, onToggle, onRemove, onEditPrice, compact }) => {
 
       {/* Coluna Principal: Nome e Preço */}
       <View style={styles.itemInfo}>
-        <Text style={[styles.itemName, item.completed && styles.itemNameCompleted]}>
+        <Text
+          style={[styles.itemName, item.completed && styles.itemNameCompleted]}
+          numberOfLines={compact ? 1 : 2}
+          ellipsizeMode="tail"
+        >
           {item.name}
         </Text>
         <Text style={[styles.itemPrice, !item.price && styles.itemPriceEmpty]}>
@@ -38,7 +42,9 @@ const ListItem = ({ item, onToggle, onRemove, onEditPrice, compact }) => {
 
       {/* Coluna da Direita: Categoria e Ações */}
       <View style={[styles.itemRightColumn, compact && styles.itemRightColumnCompact]}>
-        <Text style={styles.itemCategory}>{category.name}</Text>
+        <Text style={styles.itemCategory} numberOfLines={1} ellipsizeMode="tail">
+          {category.name}
+        </Text>
         <View style={styles.itemActions}>
           <TouchableOpacity onPress={onEditPrice} style={styles.actionButton}>
             <Feather name="edit-2" size={16} color="#3B82F6" />
@@ -181,6 +187,8 @@ const AddItemCard = ({
   btnHeight,
   btnTextSize,
 }) => {
+  // Aumenta levemente a altura do Picker de "Categoria" para evitar qualquer corte de texto
+  const pickerH = Math.round((btnHeight || 50) + 8);
   return (
     <View style={styles.addCard}>
       <View style={styles.addCardHeader}>
@@ -228,11 +236,11 @@ const AddItemCard = ({
                 alignItems: 'stretch',
               }}
             >
-              <View style={[styles.pickerWrap, { flex: 1, height: btnHeight }]}>
+              <View style={[styles.pickerWrap, { flex: 1, height: pickerH }]}>
                 <Picker
                   selectedValue={itemCategory}
                   onValueChange={(v) => setItemCategory(v)}
-                  style={[styles.picker, { height: btnHeight }]}
+                  style={[styles.picker, { height: pickerH }]}
                 >
                   <Picker.Item label="Categoria" value="" />
                   {Object.entries(categories).map(([key, cfg]) => (
@@ -244,11 +252,11 @@ const AddItemCard = ({
                 style={[styles.addButton, { width: 140, minHeight: btnHeight }]}
                 onPress={onAddItem}
               >
-                <Feather name="plus" size={20} color="#fff" />
+                <Feather name="plus" size={btnTextSize + 2} color="#fff" style={{ marginTop: Platform.OS === 'android' ? -1 : 0 }} />
                 <Text
                   style={[
                     styles.addButtonText,
-                    { fontSize: btnTextSize, lineHeight: btnTextSize + 4 },
+                    { fontSize: btnTextSize, lineHeight: btnTextSize + 6 },
                   ]}
                 >
                   Adicionar
@@ -265,11 +273,11 @@ const AddItemCard = ({
               value={itemName}
               onChangeText={setItemName}
             />
-            <View style={[styles.pickerWrap, { height: btnHeight }]}>
+            <View style={[styles.pickerWrap, { height: pickerH }]}>
               <Picker
                 selectedValue={itemCategory}
                 onValueChange={(v) => setItemCategory(v)}
-                style={[styles.picker, { height: btnHeight }]}
+                style={[styles.picker, { height: pickerH }]}
               >
                 <Picker.Item label="Categoria" value="" />
                 {Object.entries(categories).map(([key, cfg]) => (
@@ -293,11 +301,11 @@ const AddItemCard = ({
               style={[styles.addButton, { minHeight: btnHeight }]}
               onPress={onAddItem}
             >
-              <Feather name="plus" size={16} color="#fff" />
+              <Feather name="plus" size={btnTextSize + 2} color="#fff" style={{ marginTop: Platform.OS === 'android' ? -1 : 0 }} />
               <Text
                 style={[
                   styles.addButtonText,
-                  { fontSize: btnTextSize, lineHeight: btnTextSize + 4 },
+                  { fontSize: btnTextSize, lineHeight: btnTextSize + 6 },
                 ]}
               >
                 Adicionar
@@ -421,7 +429,11 @@ const PriceEditModal = ({
   item,
   value,
   setValue,
+  btnHeight,
+  btnTextSize,
 }) => {
+  const h = typeof btnHeight === 'number' ? btnHeight : 48;
+  const ts = typeof btnTextSize === 'number' ? btnTextSize : 16;
   return (
     <Modal
       visible={visible}
@@ -480,24 +492,30 @@ const PriceEditModal = ({
               style={{
                 flex: 1,
                 backgroundColor: '#E5E7EB',
-                paddingVertical: 10,
+                minHeight: h,
                 borderRadius: 10,
                 alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
-              <Text style={{ color: '#374151', fontWeight: '600' }}>Cancelar</Text>
+              <Text style={{ color: '#374151', fontWeight: '700', fontSize: ts, lineHeight: ts + 6, includeFontPadding: false }}>
+                Cancelar
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={onSubmit}
               style={{
                 flex: 1,
                 backgroundColor: '#2563EB',
-                paddingVertical: 10,
+                minHeight: h,
                 borderRadius: 10,
                 alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
-              <Text style={{ color: '#fff', fontWeight: '700' }}>Salvar</Text>
+              <Text style={{ color: '#fff', fontWeight: '800', fontSize: ts, lineHeight: ts + 6, includeFontPadding: false }}>
+                Salvar
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -524,8 +542,9 @@ const ListDetailScreen = ({ route, navigation }) => {
     chipCountSize: width < 360 ? 11 : 12,
     labelMaxWidth: Math.floor(width * (width < 360 ? 0.5 : 0.6)),
   };
-  const btnHeight = width < 360 ? 44 : 48;
-  const btnTextSize = width < 360 ? 15 : 16;
+  // Tornar botões mais confortáveis em telas estreitas e elevar levemente a tipografia
+  const btnHeight = width < 360 ? 48 : 50;
+  const btnTextSize = width < 360 ? 16 : 17;
 
   const [list, setList] = useState(null);
   const [items, setItems] = useState([]);
@@ -787,6 +806,8 @@ const ListDetailScreen = ({ route, navigation }) => {
         item={priceEditItem}
         value={priceEditValue}
         setValue={setPriceEditValue}
+        btnHeight={btnHeight}
+        btnTextSize={btnTextSize}
       />
     </SafeAreaView>
   );
@@ -857,6 +878,7 @@ const styles = StyleSheet.create({
   addCard: {
     backgroundColor: '#fff',
     marginHorizontal: 12,
+    marginBottom: 12,
     borderRadius: 16,
     padding: 14,
     shadowColor: '#000',
@@ -892,8 +914,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     // Altura definida por 'btnHeight' no JSX
   },
-  // Ajuste de baseline no Android para centralizar o texto do Picker
-  picker: { marginTop: Platform.OS === 'android' ? -8 : 0 }, // Estilo do picker em si
+  // Ajuste de baseline no Android para centralizar o texto do Picker (evita corte)
+  picker: { marginTop: Platform.OS === 'android' ? -2 : 0 }, // Estilo do picker em si
   
   // MUDANÇA: 'priceWrap' usa o estilo base
   priceWrap: {
@@ -956,7 +978,7 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
     borderRadius: 10,
     paddingHorizontal: 10,
-    height: 40,
+    height: 44,
     flex: 1,
     marginRight: 8,
   },
@@ -970,28 +992,29 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
     borderRadius: 10,
     backgroundColor: '#fff',
-    height: 40,
+    height: 55,
     justifyContent: 'center',
     paddingHorizontal: 6,
   },
-  sortPicker: { height: 40, width: 130, marginTop: Platform.OS === 'android' ? -8 : 0 },
+  // Mesma correção para o Picker de ordenação
+  sortPicker: { height: 56, width: 130, marginTop: Platform.OS === 'android' ? -2 : 0 },
   chipsRow: { paddingHorizontal: 14, paddingTop: 4, paddingBottom: 10, gap: 10 },
   categoryChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 15,
     paddingHorizontal: 14,
     borderRadius: 999,
     backgroundColor: '#F3F4F6',
-    minHeight: 36,
+    minHeight: 40,
   },
   categoryChipActive: { backgroundColor: '#2563EB' },
   chipEmoji: { marginRight: 8, textAlignVertical: 'center' },
   chipLabel: {
     color: '#111827',
     fontWeight: '600',
-    fontSize: 14,
-    lineHeight: 18,
+    fontSize: 15,
+    lineHeight: 40,
     textAlignVertical: 'center',
     includeFontPadding: false,
   },
@@ -1056,9 +1079,12 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   itemName: { fontWeight: '700', color: '#111827', lineHeight: 18, marginBottom: 2 },
+  // Improve text layout on small screens
+  // Allow name to shrink and remove extra font padding for tighter alignment
+  itemName: { fontWeight: '700', color: '#111827', lineHeight: 18, marginBottom: 2, flexShrink: 1, includeFontPadding: false },
   itemNameCompleted: { textDecorationLine: 'line-through', color: '#9CA3AF' },
-  itemPrice: { color: '#059669', fontWeight: '700', fontSize: 12 },
-  itemPriceEmpty: { color: '#9CA3AF', fontWeight: '600', fontSize: 12 },
+  itemPrice: { color: '#059669', fontWeight: '700', fontSize: 12, includeFontPadding: false },
+  itemPriceEmpty: { color: '#9CA3AF', fontWeight: '600', fontSize: 12, includeFontPadding: false },
   itemRightColumn: {
     alignItems: 'flex-end',
   },
@@ -1069,7 +1095,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
     alignItems: 'center',
   },
-  itemCategory: { color: '#6B7280', fontSize: 12, marginBottom: 6 },
+  itemCategory: { color: '#6B7280', fontSize: 12, marginBottom: 6, includeFontPadding: false },
   itemActions: {
     flexDirection: 'row',
   },

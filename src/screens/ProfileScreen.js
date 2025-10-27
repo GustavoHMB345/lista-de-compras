@@ -99,6 +99,7 @@ function ProfileScreen() {
   } = useContext(DataContext);
   const [displayName, setDisplayName] = useState(currentUser?.displayName || '');
   const [isEditing, setIsEditing] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const [measuredCardH, setMeasuredCardH] = useState(null);
   const router = useRouter();
   const progress = useState(new Animated.Value(0))[0];
@@ -302,7 +303,24 @@ function ProfileScreen() {
               <Button
                 variant="light"
                 title="Resetar Demo"
-                onPress={resetDemoData}
+                onPress={async () => {
+                  if (isResetting) return;
+                  try {
+                    setIsResetting(true);
+                    await resetDemoData();
+                    // Feedback simples pós-reset
+                    try {
+                      const { Alert } = await import('react-native');
+                      Alert.alert('Pronto!', 'Os dados de demonstração foram recarregados.');
+                    } catch (_e) {
+                      // fallback silencioso caso Alert falhe em ambientes não-nativos
+                    }
+                  } finally {
+                    setIsResetting(false);
+                  }
+                }}
+                loading={isResetting}
+                disabled={isResetting}
                 accessibilityLabel="Limpar dados e recarregar exemplo"
               />
             </View>
