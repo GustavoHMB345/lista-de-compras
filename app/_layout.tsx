@@ -1,16 +1,23 @@
 import { DarkTheme, DefaultTheme, ThemeProvider as NavThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
+import * as Haptics from 'expo-haptics';
 import { Stack, usePathname, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import '../src/setup/layoutAnimation';
 
-import { Dimensions, Platform, View } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import PagerView from 'react-native-pager-view';
+import React, { useContext } from 'react';
+import { Platform, View } from 'react-native';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import MainTabsCarousel from '../components/MainTabsCarousel';
 import ErrorBoundary from '../src/components/ErrorBoundary';
 import { ThemeProvider as AppThemeProvider, useTheme } from '../src/components/theme';
-import { DataProvider } from '../src/contexts/DataContext';
+import { DataContext, DataProvider } from '../src/contexts/DataContext';
+import DashboardScreen from '../src/screens/DashboardScreen';
+import FamilyScreen from '../src/screens/FamilyScreen';
+import ListsScreen from '../src/screens/ListsScreen';
+import ProfileScreen from '../src/screens/ProfileScreen';
 
 export default function RootLayout() {
   const [loaded] = useFonts({
@@ -18,6 +25,8 @@ export default function RootLayout() {
   });
   const router = useRouter();
   const pathname = usePathname();
+  const { uiPrefs } = useContext(DataContext) || {};
+  const insets = useSafeAreaInsets();
 
   if (!loaded) {
     // Async font loading only occurs in development.
@@ -33,35 +42,37 @@ export default function RootLayout() {
           <DataProvider>
             <ErrorBoundary>
               <View style={{ flex: 1 }}>
-                {/* Global swipe overlay for main tabs using PagerView, transparent and non-visual. */}
+                {/* Carrossel animado das abas principais */}
                 {(() => {
                   const tabsOrder = ['/profile', '/lists', '/family', '/dashboard'];
                   const isOnMainTab = tabsOrder.includes(pathname || '');
                   if (!isOnMainTab) return null;
                   const currentIndex = Math.max(0, tabsOrder.indexOf(pathname || ''));
-                  const { width, height } = Dimensions.get('window');
+                  const navigateTo = (idx: number) => {
+                    const target = tabsOrder[idx];
+                    if (target && target !== pathname) {
+                      try { void Haptics.selectionAsync(); } catch {}
+                      router.replace(target as any);
+                    }
+                  };
+                  // Renderiza cada tela principal como elemento do carrossel
+                  const tabElements = [
+                    <ProfileScreen key="profile" />,
+                    <ListsScreen key="lists" />,
+                    <FamilyScreen key="family" />,
+                    <DashboardScreen key="dashboard" />,
+                  ];
                   return (
-                    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} pointerEvents="box-none">
-                      <PagerView
-                        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-                        initialPage={currentIndex < 0 ? 0 : currentIndex}
-                        scrollEnabled
-                        overScrollMode="never"
-                        orientation="horizontal"
-                        onPageSelected={(e) => {
-                          const idx = e.nativeEvent.position;
-                          const target = tabsOrder[idx];
-                          if (target && target !== pathname) router.replace(target as any);
-                        }}
-                      >
-                        {tabsOrder.map((_, i) => (
-                          <View key={String(i)} style={{ width, height }} />
-                        ))}
-                      </PagerView>
-                    </View>
+                    <MainTabsCarousel
+                      tabElements={tabElements}
+                      currentIndex={currentIndex}
+                      onIndexChange={navigateTo}
+                    />
                   );
                 })()}
-                <Stack
+                {/* Wrap content to register native gestures for simultaneous recognition */}
+                <GestureDetector gesture={Gesture.Native()}>
+                  <Stack
                 screenOptions={{
                   gestureEnabled: true,
                   fullScreenGestureEnabled: true,
@@ -81,7 +92,8 @@ export default function RootLayout() {
                 <Stack.Screen name="list-detail" options={{ headerShown: false }} />
                 <Stack.Screen name="join-family" options={{ headerShown: false }} />
                 <Stack.Screen name="+not-found" />
-                </Stack>
+                  </Stack>
+                </GestureDetector>
               </View>
             </ErrorBoundary>
             <StatusBar style="auto" />
