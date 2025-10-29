@@ -1,114 +1,147 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { Dimensions, StyleSheet } from 'react-native';
-import { PanGestureHandler, PanGestureHandlerGestureEvent } from 'react-native-gesture-handler';
+// Importações atualizadas do gesture-handler
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+    clamp,
+    Easing,
     Extrapolate,
     interpolate,
     runOnJS,
     useAnimatedStyle,
     useSharedValue,
-    withSpring,
+    withTiming,
 } from 'react-native-reanimated';
-
-const TABS = [
-  { key: 'profile' },
-  { key: 'lists' },
-  { key: 'family' },
-  { key: 'dashboard' },
-];
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 type MainTabsCarouselProps = {
-  tabElements: React.ReactNode[];
-  currentIndex: number;
-  onIndexChange: (index: number) => void;
+    tabElements: React.ReactNode[];
+    currentIndex: number;
+    onIndexChange: (index: number) => void;
 };
 
-export default function MainTabsCarousel({ tabElements, currentIndex, onIndexChange }: MainTabsCarouselProps) {
-  const translateX = useSharedValue(-currentIndex * SCREEN_WIDTH);
-  const gestureStartX = useRef(0);
+export default function MainTabsCarousel({
+    tabElements,
+    currentIndex,
+    onIndexChange,
+}: MainTabsCarouselProps) {
+    const numTabs = tabElements.length;
+    const translateX = useSharedValue(-currentIndex * SCREEN_WIDTH);
+    const gestureContext = useSharedValue({ startX: 0 });
 
-  // Atualiza translateX quando currentIndex muda externamente
-  React.useEffect(() => {
-    translateX.value = -currentIndex * SCREEN_WIDTH;
-  }, [currentIndex]);
+    const MIN_SWIPE_DISTANCE = SCREEN_WIDTH * 0.20;
+    const ACTIVE_OFFSET_X: [number, number] = [-25, 25];
+    const FAIL_OFFSET_Y: [number, number] = [-15, 15];
+    const ANIMATION_DURATION = 100;
+    const ANIMATION_EASING = Easing.out(Easing.quad);
 
-  const onGestureEvent = (event: PanGestureHandlerGestureEvent) => {
-    if (event.nativeEvent.state === 2) { // BEGAN
-      gestureStartX.current = translateX.value;
-    }
-    if (event.nativeEvent.state === 4) { // ACTIVE
-      translateX.value = gestureStartX.current + event.nativeEvent.translationX;
-    }
-    if (event.nativeEvent.state === 5) { // END
-      const rawIndex = -translateX.value / SCREEN_WIDTH;
-      let newIndex = Math.round(rawIndex);
-      if (newIndex < 0) newIndex = TABS.length - 1;
-      if (newIndex >= TABS.length) newIndex = 0;
-      translateX.value = withSpring(-newIndex * SCREEN_WIDTH);
-      if (newIndex !== currentIndex) {
-        runOnJS(onIndexChange)(newIndex);
-      }
-    }
-  };
+    React.useEffect(() => {
+        translateX.value = withTiming(-currentIndex * SCREEN_WIDTH, {
+            duration: ANIMATION_DURATION,
+            easing: ANIMATION_EASING,
+        });
+    }, [currentIndex, translateX]);
 
-  // onHandlerStateChange removido, tudo tratado no onGestureEvent
+    const panGesture = Gesture.Pan()
+        .activeOffsetX(ACTIVE_OFFSET_X)
+        .failOffsetY(FAIL_OFFSET_Y)
+        .onBegin(() => {
+            'worklet';
+            gestureContext.value.startX = translateX.value;
+        })
+        .onUpdate((event) => {
+            'worklet';
+            const newTranslateX = gestureContext.value.startX + event.translationX;
+            const minTranslateX = -(numTabs - 1) * SCREEN_WIDTH;
+            const maxTranslateX = 0;
+            translateX.value = clamp(newTranslateX, minTranslateX, maxTranslateX);
+        })
+        .onEnd((event) => {
+            'worklet';
+            const dragDistance = event.translationX;
+            let newIndex = currentIndex;
 
-  return (
-    <PanGestureHandler
-      onGestureEvent={onGestureEvent}
-      activeOffsetX={[-20, 20]}
-    >
-      <Animated.View style={styles.carouselContainer}>
-        {tabElements.map((Element, i) => {
-          const animatedStyle = useAnimatedStyle(() => {
-            const inputRange = [
-              -SCREEN_WIDTH * (i + 1),
-              -SCREEN_WIDTH * i,
-              -SCREEN_WIDTH * (i - 1),
-            ];
-            const scale = interpolate(
-              translateX.value,
-              inputRange,
-              [0.85, 1, 0.85],
-              Extrapolate.CLAMP
-            );
-            const opacity = interpolate(
-              translateX.value,
-              inputRange,
-              [0.5, 1, 0.5],
-              Extrapolate.CLAMP
-            );
-            return {
-              transform: [{ scale }, { translateX: i * SCREEN_WIDTH + translateX.value }],
-              opacity,
-            };
-          });
-          return (
-            <Animated.View key={TABS[i].key} style={[styles.tab, animatedStyle]}>
-              {Element}
+            if (dragDistance < -MIN_SWIPE_DISTANCE && currentIndex < numTabs - 1) {
+                newIndex = currentIndex + 1;
+            } else if (dragDistance > MIN_SWIPE_DISTANCE && currentIndex > 0) {
+                newIndex = currentIndex - 1;
+            }
+
+            translateX.value = withTiming(-newIndex * SCREEN_WIDTH, {
+                duration: ANIMATION_DURATION,
+                easing: ANIMATION_EASING,
+            });
+
+            if (newIndex !== currentIndex) {
+                runOnJS(onIndexChange)(newIndex);
+            }
+        });
+
+    const carouselAnimatedStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{ translateX: translateX.value }],
+        };
+    });
+
+    return (
+        <GestureDetector gesture={panGesture}>
+            <Animated.View
+                style={[
+                    styles.carouselContainer,
+                    { width: SCREEN_WIDTH * numTabs },
+                    carouselAnimatedStyle,
+                ]}
+            >
+                {tabElements.map((Element, i) => {
+                    const tabAnimatedStyle = useAnimatedStyle(() => {
+                        const inputRange = [
+                            -SCREEN_WIDTH * (i + 1),
+                            -SCREEN_WIDTH * i,
+                            -SCREEN_WIDTH * (i - 1),
+                        ];
+
+                        // --- Efeitos de Animação Ajustados ---
+                        const scale = interpolate(
+                            translateX.value,
+                            inputRange,
+                            [0.8, 1, 0.8], // Mais escala nas telas inativas
+                            Extrapolate.CLAMP
+                        );
+                        const opacity = interpolate(
+                            translateX.value,
+                            inputRange,
+                            [0.5, 1, 0.5], // Mais transparência nas telas inativas
+                            Extrapolate.CLAMP
+                        );
+
+                        return {
+                            transform: [{ scale }],
+                            opacity,
+                        };
+                    });
+
+                    return (
+                        <Animated.View
+                            key={i}
+                            style={[styles.tab, tabAnimatedStyle]}
+                        >
+                            {Element}
+                        </Animated.View>
+                    );
+                })}
             </Animated.View>
-          );
-        })}
-      </Animated.View>
-    </PanGestureHandler>
-  );
+        </GestureDetector>
+    );
 }
 
 const styles = StyleSheet.create({
-  carouselContainer: {
-    flexDirection: 'row',
-    width: SCREEN_WIDTH * TABS.length,
-    height: '100%',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-  },
-  tab: {
-    width: SCREEN_WIDTH,
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+    carouselContainer: {
+        flexDirection: 'row',
+        height: '100%',
+    },
+    tab: {
+        width: SCREEN_WIDTH,
+        height: '100%',
+    },
 });
