@@ -17,14 +17,33 @@ The project was developed with a focus on a smooth user experience and operates 
 
 
 ### Dashboard, Price History, and Item Detail
-* **Dashboard:** [Dashboard Image]
-* **Price History:** [Price History Screen Image]
-* **Item Detail:** [Price Fluctuation Chart Image]
+* **Dashboard:**
+  
+  <img width="150" height="300" alt="IMG-20251028-WA0008" src="https://github.com/user-attachments/assets/b467e8c6-4e05-49cb-a3b1-b51fced56480" />
+
+* **Price History:** 
+
+  <img width="150" height="300" alt="IMG-20251028-WA0012" src="https://github.com/user-attachments/assets/0569e313-55d3-4dfe-be49-c9a1b439d940" />
+
+* **Item Detail:**
+  
+  <img width="150" height="300" alt="IMG-20251028-WA0014" src="https://github.com/user-attachments/assets/a678249c-9f90-48f9-8f6a-5cdba5948c6b" />
+
+
 
 ### Active Lists, List Detail, and Family Management
-* **Active Lists:** [Lists Screen Image]
-* **List Detail:** [List Detail Screen Image]
-* **Family Management:** [Family Screen Image]
+* **Active Lists:**
+
+   <img width="150" height="300" alt="IMG-20251028-WA0010 (1)" src="https://github.com/user-attachments/assets/0db6243d-7a7d-4cfa-9c7a-663fd4aaa46c" />
+
+* **List Detail:**
+  
+   <img width="150" height="300" alt="IMG-20251028-WA0005" src="https://github.com/user-attachments/assets/0b9eae97-78b7-4cfb-b255-f9306ee20792" />
+   
+* **Family Management:**
+  
+  <img width="150" height="300" alt="IMG-20251028-WA0013" src="https://github.com/user-attachments/assets/a48b9530-b225-4af0-a6f0-68d26bfafa21" />
+
 
 ## Technologies Used
 
