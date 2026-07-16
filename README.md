@@ -1,111 +1,47 @@
-# SuperLista - App de Lista de Compras Familiar 🛒
+SuperLista is a comprehensive mobile application developed in React Native, designed to manage shopping lists in a collaborative and intelligent way. It allows families to create and share lists, add items with prices and quantities, and, most importantly, analyze the price evolution of products over time, helping to save money and shop more consciously.
 
-SuperLista é um aplicativo móvel completo, desenvolvido em React Native, para gerenciar listas de compras de forma colaborativa e inteligente. Ele permite que famílias criem e compartilhem listas, adicionem itens com preços e quantidades, e o mais importante: analisem a evolução dos preços dos produtos ao longo do tempo, ajudando a economizar e a fazer compras mais conscientes.
+The project was developed with a focus on a smooth user experience and operates completely offline, saving all data locally on the device.
 
-O projeto foi desenvolvido com foco em uma experiência de usuário fluida e funciona de forma totalmente offline, salvando todos os dados localmente no dispositivo.
+## Key Features
 
-✨ Funcionalidades Principais
-👨‍👩‍👧‍👦 Gestão de Família: Crie um grupo familiar e convide membros para participar.
+* **Family Management:** Create a family group and invite members to participate.
+* **Shared Lists:** Create shopping lists that can be edited by multiple family members in real-time (either on the same network or on the same device, since it operates locally).
+* **Item Addition:** Add products with name, quantity, and price (optional).
+* **Purchase Marking:** Mark items as "purchased" with a smooth animation.
+* **Smart Dashboard:** A home screen that shows the top 5 most purchased items by the family and their average price.
+* **Price History:** View the average price of all previously purchased products, ordered from cheapest to most expensive.
+* **Advanced Item Analysis:** Tap an item in the history to view a detailed chart of its price fluctuation over time.
+* **Personal Profile:** Manage your display name.
+* **Smooth Interface:** Animations and transitions that make the user experience more pleasant and professional.
+* **Local Storage:** All data is securely saved on the device using AsyncStorage, ensuring offline operation.
 
-🛒 Listas Compartilhadas: Crie listas de compras que podem ser editadas por múltiplos membros da família em tempo real (na mesma rede ou no mesmo dispositivo, já que é local).
 
-➕ Adição de Itens: Adicione produtos com nome, quantidade e preço (opcional).
+### Dashboard, Price History, and Item Detail
+* **Dashboard:** [Dashboard Image]
+* **Price History:** [Price History Screen Image]
+* **Item Detail:** [Price Fluctuation Chart Image]
 
-✔️ Marcação de Compras: Marque itens como "comprados" com uma animação suave.
+### Active Lists, List Detail, and Family Management
+* **Active Lists:** [Lists Screen Image]
+* **List Detail:** [List Detail Screen Image]
+* **Family Management:** [Family Screen Image]
 
-📊 Dashboard Inteligente: Uma tela inicial que mostra os 5 itens mais comprados pela família e a média de preço de cada um.
+## Technologies Used
 
-📈 Histórico de Preços: Consulte a média de preço de todos os produtos já comprados, ordenados do mais barato para o mais caro.
+* **React Native:** A framework for building cross-platform mobile applications.
+* **Expo:** A platform and toolset to facilitate the development and execution of React Native apps.
+* **AsyncStorage:** For local data storage on the device.
+* **React Context API:** For simple and efficient global state management.
+* **React Native Gifted Charts:** For creating interactive bar and line charts.
 
-📉 Análise Avançada por Item: Toque em um item no histórico para ver um gráfico detalhado da flutuação de seu preço ao longo do tempo.
+## Project Structure
 
-👤 Perfil Pessoal: Gerencie seu nome de exibição.
+The source code is organized in the `src` folder to facilitate maintenance and scalability:
 
-📱 Interface Fluida: Animações e transições que tornam a experiência de uso mais agradável e profissional.
-
-🔒 Armazenamento Local: Todos os dados são salvos de forma segura no dispositivo usando AsyncStorage, garantindo o funcionamento offline.
-
-📸 Telas do Aplicativo
-(Aqui você pode adicionar screenshots do seu aplicativo em funcionamento)
-
-Dashboard
-
-Histórico de Preços
-
-Detalhe do Item
-
-[Imagem do Dashboard]
-
-[Imagem da tela de Histórico de Preços]
-
-[Imagem do gráfico de flutuação de preço]
-
-Listas Ativas
-
-Detalhe da Lista
-
-Gestão Familiar
-
-[Imagem da tela de Listas]
-
-[Imagem da tela de Detalhe da Lista]
-
-[Imagem da tela de Família]
-
-🛠️ Tecnologias Utilizadas
-React Native: Framework para desenvolvimento de aplicativos móveis multiplataforma.
-
-Expo: Plataforma e conjunto de ferramentas para facilitar o desenvolvimento e a execução de apps React Native.
-
-AsyncStorage: Para armazenamento de dados localmente no dispositivo.
-
-React Context API: Para gerenciamento de estado global de forma simples e eficiente.
-
-React Native Gifted Charts: Para a criação de gráficos interativos de barra e linha.
-
-📂 Estrutura do Projeto
-O código-fonte está organizado na pasta src para facilitar a manutenção e escalabilidade:
-
+```text
 /src
-|-- /components # Componentes reutilizáveis (NavBar, Ícones)
-|-- /contexts # Gerenciamento de estado global (DataContext)
-|-- /navigation # Lógica de navegação entre telas (MainNavigator)
-|-- /screens # Componentes de cada tela do app
-|-- /styles # Arquivo de estilos globais
-
-🚀 Como Rodar o Projeto
-Siga os passos abaixo para executar o projeto localmente:
-
-Clone o repositório:
-
-git clone https://github.com/seu-usuario/nome-do-repositorio.git
-
-Navegue até a pasta do projeto:
-
-cd nome-do-repositorio
-
-Instale as dependências:
-Este comando irá baixar todas as bibliotecas necessárias para o projeto.
-
-npm install
-
-Inicie o servidor de desenvolvimento do Expo:
-
-npx expo start
-
-Execute o aplicativo:
-
-No seu celular: Baixe o app Expo Go (Android/iOS) e escaneie o QR Code que aparecerá no terminal.
-
-No emulador: Com o servidor rodando, pressione a para o emulador Android ou i para o simulador iOS (macOS).
-
-🔮 Próximos Passos e Melhorias
-[ ] Implementar um leitor de código de barras para adicionar itens rapidamente.
-
-[ ] Adicionar categorias para os itens (ex: "higiene", "alimentos", "limpeza").
-
-[ ] Criar um sistema de notificações para avisar quando um membro adiciona um item a uma lista.
-
-[ ] Opção de backup dos dados na nuvem (ex: Google Drive, iCloud).
-
-[ ] Modo escuro (Dark Mode).
+|-- /components     # Reusable components (NavBar, Icons)
+|-- /contexts       # Global state management (DataContext)
+|-- /navigation     # Navigation logic between screens (MainNavigator)
+|-- /screens        # Individual screen components
+|-- /styles         # Global styles file
